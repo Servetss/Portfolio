@@ -1,0 +1,1676 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Портфоліо команди</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:wght@400;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=PT+Mono&family=Oswald:wght@600&display=swap">
+<style>
+/* Layout: a manila folder on a night desk, sized to the viewport. Folder tabs switch Люди / Проєкти.
+   Люди: index-card roster | personnel sheet on cardboard (scrolls inside, torn edge at the very end) | teal bookmarks tucked behind.
+   Проєкти: selected-project card + a cork board where project cards are dragged freely. Single paper look by design. */
+:root {
+  color-scheme: light;
+  /* scene */
+  --night: #0b1118;
+  --night-2: #142029;
+  --lamp: rgba(255, 186, 102, .18);
+  /* paper & folder */
+  --paper: #fbf7ec;
+  --paper-2: #f2ead6;
+  --paper-3: #e9dec2;
+  --manila: #e5cd95;
+  --manila-2: #b99a5f;
+  --manila-edge: #b2945a;
+  --card: #c9a86a;
+  --card-2: #b8945a;
+  --card-edge: #7d5f30;
+  --cork: #a9784a;
+  --cork-frame: #4a3020;
+  /* ink */
+  --ink: #25211b;
+  --ink-2: #5d5444;
+  --ink-3: #8a7f69;
+  --rule: #ddd1b6;
+  --line-blue: #cfdbe8;
+  --red: #ad3326;
+  --blue: #23428a;
+  --note-ink: #23305a;
+  --green: #3c6a33;
+  --amber: #8b5a10;
+  --pin: #c8261f;
+  --clip: #9a978f;
+  /* sticky notes */
+  --sticky-y: #f1dc7c;
+  --sticky-g: #c4e2a6;
+  --sticky-p: #f2bcb6;
+  /* bookmarks */
+  --teal-1: #4b8a8e;
+  --teal-2: #41797e;
+  --teal-3: #386c71;
+  --teal-4: #305f63;
+  --teal-lite: #7fbcbc;
+  /* project label colors */
+  --l0-bg: #e4e9f2; --l0-fg: #2b4a8c;
+  --l1-bg: #e3ecdc; --l1-fg: #3c6a33;
+  --l2-bg: #f2e5cc; --l2-fg: #8b5a10;
+  --l3-bg: #f3dfd9; --l3-fg: #ad3326;
+  --l4-bg: #e9e2ef; --l4-fg: #5b3c86;
+  --l5-bg: #dcebea; --l5-fg: #2c6b6a;
+  /* textures */
+  --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .32  0 0 0 0 .26  0 0 0 0 .16  0 0 0 .09 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  --cork-tex: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='c'><feTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .25  0 0 0 0 .14  0 0 0 0 .05  0 0 0 .55 -.08'/></filter><rect width='100%25' height='100%25' filter='url(%23c)'/></svg>");
+  --torn: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='8' viewBox='0 0 240 8' preserveAspectRatio='none'><path d='M0,0 L0,4 L6,4 L10,2 L15,4 L17,3 L19,5 L24,4 L29,3 L35,4 L37,4 L42,4 L45,5 L48,3 L51,6 L54,3 L56,2 L59,4 L62,3 L66,5 L69,4 L72,4 L77,4 L79,5 L84,3 L87,4 L89,5 L93,2 L99,5 L101,4 L105,4 L110,5 L113,6 L118,3 L120,4 L122,5 L127,2 L133,5 L137,5 L143,2 L148,2 L151,4 L153,4 L158,5 L164,5 L170,4 L175,3 L181,5 L185,2 L190,3 L193,5 L199,5 L202,5 L206,3 L210,5 L214,3 L216,3 L220,6 L223,2 L225,5 L227,4 L233,5 L237,6 L240,4 L240,0 Z' fill='black'/></svg>");
+  /* type */
+  --font-display: "Old Standard TT", "PT Serif", Georgia, serif;
+  --font-body: "PT Serif", Georgia, "Times New Roman", serif;
+  --font-type: "PT Mono", "Courier New", ui-monospace, monospace;
+  --font-stamp: "Oswald", "Arial Narrow", Impact, sans-serif;
+  /* motion */
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --t-fast: 140ms;
+  --t-med: 240ms;
+}
+
+/* ---------- base ---------- */
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0; color: var(--ink); font-family: var(--font-body); font-size: 15.5px; line-height: 1.55;
+  background:
+    radial-gradient(70% 55% at 50% 10%, var(--lamp) 0%, transparent 70%),
+    radial-gradient(120% 80% at 50% 100%, rgba(30, 70, 90, .35) 0%, transparent 60%),
+    linear-gradient(180deg, var(--night-2) 0%, var(--night) 100%);
+  background-color: var(--night);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 14px 18px;
+}
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.wrap { max-width: 1320px; height: 100%; margin: 0 auto; display: flex; flex-direction: column; }
+
+/* ---------- controls ---------- */
+input, textarea, select {
+  font: inherit; font-family: var(--font-type); font-size: .92rem; color: var(--ink); background: transparent;
+  border: 0; border-bottom: 1px solid var(--ink-3); border-radius: 0; padding: 6px 2px; width: 100%;
+}
+input::placeholder, textarea::placeholder { color: var(--ink-3); opacity: .85; }
+input[type="file"] { border-bottom: 0; padding: 4px 0; font-size: .82rem; }
+input[type="checkbox"] { width: 18px; height: 18px; padding: 0; accent-color: var(--blue); flex: none; margin: 3px 0 0; }
+textarea {
+  resize: vertical; min-height: 96px; border: 1px solid var(--rule); padding: 6px 10px; line-height: 28px;
+  background: repeating-linear-gradient(transparent 0 27px, var(--line-blue) 27px 28px); background-attachment: local;
+}
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+label { display: grid; gap: 2px; font-family: var(--font-type); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+label.check { display: flex; gap: 8px; align-items: flex-start; font-family: var(--font-body); font-size: .92rem; text-transform: none; letter-spacing: 0; color: var(--ink); }
+button { font: inherit; cursor: pointer; color: inherit; }
+.btn {
+  font-family: var(--font-type); font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+  border-radius: 3px; padding: 7px 14px; border: 1.5px solid var(--ink-2); background: transparent; color: var(--ink);
+  transition: background-color var(--t-fast) ease-out, color var(--t-fast) ease-out;
+}
+.btn:hover { background-color: rgba(60, 45, 20, .08); }
+.btn.primary { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.btn.primary:hover { background: #3a3329; }
+.btn.light { background: var(--paper); border-color: var(--paper); color: var(--ink); }
+.btn.light:hover { background: #fff; }
+.btn.ghost { border-color: transparent; color: var(--ink-2); padding: 4px 8px; }
+.btn.ghost:hover { color: var(--ink); }
+.btn.danger { color: var(--red); border-color: var(--red); }
+.btn:disabled { opacity: .45; cursor: default; }
+.link { border: 0; background: transparent; color: var(--blue); padding: 0; font-family: var(--font-type); font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 3px; justify-self: start; }
+.x { border: 0; background: transparent; color: var(--ink-2); padding: 0 7px; font-size: .85rem; line-height: 1.6; border-radius: 3px; transition: background-color var(--t-fast) ease-out; }
+.x:hover { background: rgba(60, 45, 20, .1); color: var(--ink); }
+.x.danger { color: var(--red); font-family: var(--font-type); font-size: .75rem; text-transform: uppercase; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; }
+.row.start { justify-content: flex-start; }
+.notice { color: var(--ink-3); font-size: .9rem; font-style: italic; }
+.err { color: var(--red); font-size: .85rem; font-family: var(--font-type); }
+.err:empty { display: none; }
+.grid2, .grid3 { display: grid; gap: 14px 18px; }
+.grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* ---------- folder tabs ---------- */
+.toolbar { flex: none; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; justify-content: space-between; }
+.toolbar > .btn { margin-bottom: 8px; }
+.tabs { display: flex; gap: 4px; padding-left: 14px; }
+.tabs button {
+  position: relative; border: 1px solid var(--manila-edge); border-bottom: 0; border-radius: 10px 10px 0 0;
+  padding: 9px 22px 8px; margin-bottom: -1px; transform: translateY(3px);
+  font-family: var(--font-type); font-size: .85rem; letter-spacing: .12em; text-transform: uppercase; color: #3d3220;
+  background: var(--noise), var(--manila-2);
+  transition: transform var(--t-med) var(--ease), background-color var(--t-med) ease-out, color var(--t-med) ease-out;
+}
+.tabs button:hover { transform: translateY(1px); }
+.tabs button[aria-selected="true"] { z-index: 2; transform: translateY(0); padding-top: 12px; color: var(--ink); background: var(--noise), var(--manila); }
+.tabs .count { font-size: .75rem; margin-left: 6px; color: var(--ink-3); }
+
+/* ---------- folder ---------- */
+.folder {
+  flex: 1 1 auto; min-height: 0; position: relative; z-index: 1; display: flex; flex-direction: column; gap: 14px;
+  padding: 16px 18px; border: 1px solid var(--manila-edge); border-radius: 4px 12px 12px 12px;
+  background:
+    radial-gradient(circle at 92% 88%, transparent 34px, rgba(110, 62, 18, .2) 36px, rgba(110, 62, 18, .1) 39px, transparent 43px),
+    radial-gradient(40% 30% at 18% 22%, rgba(255, 240, 200, .35), transparent 70%),
+    radial-gradient(35% 28% at 70% 12%, rgba(150, 100, 40, .18), transparent 70%),
+    radial-gradient(30% 40% at 40% 85%, rgba(140, 95, 35, .2), transparent 70%),
+    radial-gradient(25% 25% at 85% 45%, rgba(255, 235, 190, .25), transparent 70%),
+    radial-gradient(22% 18% at 55% 55%, rgba(120, 80, 25, .12), transparent 70%),
+    repeating-linear-gradient(176deg, rgba(120, 80, 30, .035) 0 2px, transparent 2px 7px),
+    var(--noise), var(--manila);
+  box-shadow: inset 0 0 0 1px rgba(255, 240, 200, .25), inset 0 0 70px rgba(90, 52, 8, .45), 0 26px 60px rgba(0, 0, 0, .65);
+}
+.view { flex: 1 1 auto; min-height: 0; }
+.view.enter { animation: view-in var(--t-med) var(--ease) both; }
+@keyframes view-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* blanks (add forms) */
+.blank {
+  flex: none; max-height: 48%; overflow: auto; display: grid; gap: 14px; padding: 18px;
+  background: var(--noise), var(--paper); box-shadow: 0 6px 16px rgba(60, 40, 10, .22);
+}
+.blank-title { font-family: var(--font-type); font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3); border-bottom: 3px double var(--ink-2); padding-bottom: 8px; }
+.inline-form { display: grid; gap: 14px; padding: 16px; border: 1.5px dashed var(--ink-3); background: var(--paper-2); }
+
+/* ---------- people view ---------- */
+.layout { display: grid; grid-template-columns: 280px minmax(0, 1fr) 56px; height: 100%; }
+
+/* roster: index cards */
+.roster { min-height: 0; overflow: auto; display: grid; gap: 8px; align-content: start; padding: 2px 18px 12px 2px; margin-right: 6px; }
+.roster > input { position: sticky; top: 0; z-index: 3; background: var(--noise), var(--paper); border: 0; padding: 10px 12px; box-shadow: 0 2px 6px rgba(60, 40, 10, .18); margin-bottom: 4px; }
+.people { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.person-btn {
+  width: 100%; display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 10px; align-items: center;
+  text-align: left; border: 0; border-top: 3px solid #e2a59b; border-radius: 2px; padding: 10px 12px; color: var(--ink);
+  background: var(--noise), var(--paper);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .06), 0 3px 8px rgba(60, 40, 10, .18);
+  transition: transform var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease);
+}
+.person-btn:hover { transform: translateX(4px); box-shadow: 0 1px 0 rgba(0, 0, 0, .06), 0 6px 12px rgba(60, 40, 10, .24); }
+.person-btn[aria-current="true"] { transform: translateX(10px); box-shadow: -6px 0 0 var(--red), 0 6px 14px rgba(60, 40, 10, .28); }
+.person-btn .avatar { grid-row: span 3; }
+.p-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-role { color: var(--ink-2); font-size: .85rem; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-rate { font-family: var(--font-type); font-size: .8rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.p-due { margin-left: 6px; font-family: var(--font-stamp); text-transform: uppercase; letter-spacing: .08em; font-size: .66rem; color: var(--red); }
+.avatar { width: 40px; height: 48px; display: block; overflow: hidden; border: 2px solid #f4f1e8; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); background: #4b3f8f; }
+.avatar svg, .photo svg { width: 100%; height: 100%; display: block; }
+.empty { color: var(--ink-3); padding: 18px 8px; text-align: center; font-style: italic; }
+.roster .empty { background: var(--noise), var(--paper); box-shadow: 0 3px 8px rgba(60, 40, 10, .18); }
+
+/* sheet: cardboard backing + small paper stack */
+.sheet-card {
+  position: relative; z-index: 3; min-height: 0; height: 100%; padding: 12px 14px 16px 12px; border-radius: 9px; border: 1px solid var(--card-edge);
+  background:
+    radial-gradient(50% 40% at 25% 15%, rgba(255, 235, 190, .22), transparent 70%),
+    radial-gradient(40% 35% at 80% 75%, rgba(90, 55, 15, .22), transparent 70%),
+    repeating-linear-gradient(4deg, rgba(90, 55, 15, .05) 0 1px, transparent 1px 5px),
+    var(--noise), linear-gradient(170deg, var(--card), var(--card-2));
+  box-shadow: inset 0 0 0 2px rgba(255, 235, 190, .18), inset 0 0 22px rgba(70, 40, 8, .45), 0 10px 22px rgba(30, 18, 4, .45);
+}
+.sheet-card::after {
+  content: ""; position: absolute; top: -10px; right: 70px; width: 15px; height: 48px; z-index: 6; transform: rotate(8deg);
+  border: 2px solid var(--clip); border-radius: 9px; background: linear-gradient(var(--clip), var(--clip)) 50% 9px / 2px 28px no-repeat;
+}
+.paper-stack { position: relative; height: 100%; }
+.under { position: absolute; inset: 0; background: var(--noise), #efe6cf; box-shadow: 0 1px 3px rgba(60, 40, 10, .25); }
+.under.u1 { transform: translate(5px, 5px) rotate(.5deg); }
+.under.u2 { transform: translate(9px, 9px) rotate(-.4deg); background: var(--noise), #e6d9b9; }
+.detail { position: relative; height: 100%; overflow: auto; overscroll-behavior: contain; box-shadow: 0 1px 3px rgba(40, 25, 5, .3); }
+.page {
+  min-height: 100%; padding: 30px 34px 44px; display: grid; gap: 22px; align-content: start; position: relative;
+  background:
+    radial-gradient(60% 40% at 80% 100%, rgba(170, 130, 60, .12), transparent 70%),
+    radial-gradient(30% 20% at 10% 0%, rgba(170, 130, 60, .1), transparent 70%),
+    var(--noise), var(--paper);
+  -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 7px) no-repeat, var(--torn) bottom left / 240px 8px repeat-x;
+          mask: linear-gradient(#000 0 0) top / 100% calc(100% - 7px) no-repeat, var(--torn) bottom left / 240px 8px repeat-x;
+}
+.page .body.enter { animation: view-in var(--t-med) var(--ease) both; }
+
+/* dossier head */
+.case { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 3px double var(--ink-2); }
+.case-no { font-family: var(--font-type); font-size: .85rem; letter-spacing: .2em; text-transform: uppercase; display: inline-flex; align-items: center; }
+.case-no b { font-weight: 400; font-size: 1.05rem; letter-spacing: .1em; margin-left: .4em; }
+.ico { width: 18px; height: 18px; fill: none; stroke: var(--ink); stroke-width: 1.6; margin-right: 8px; }
+.dossier { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 26px; align-items: start; }
+.photo {
+  position: relative; width: 104px; height: 130px; border: 6px solid #f4f1e8; border-bottom-width: 20px; background: #4b3f8f;
+  box-shadow: 0 2px 4px rgba(60, 40, 10, .25); transform: rotate(-1.5deg);
+}
+.photo::after { content: "фото"; position: absolute; left: 0; right: 0; bottom: -17px; text-align: center; font-family: var(--font-type); font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3); }
+.photo::before {
+  content: ""; position: absolute; top: -18px; left: 20px; width: 14px; height: 46px; z-index: 1;
+  border: 2px solid var(--clip); border-radius: 8px; background: linear-gradient(var(--clip), var(--clip)) 50% 8px / 2px 26px no-repeat;
+}
+.fields { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 16px; margin: 0; align-items: baseline; }
+.fields dt { font-family: var(--font-type); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.fields dd { margin: 0; border-bottom: 1px dotted var(--ink-3); padding-bottom: 2px; min-width: 0; overflow-wrap: anywhere; }
+.fields h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; margin: 0; line-height: 1.15; text-wrap: balance; }
+.fields .money { font-family: var(--font-type); font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.fields .money small { font-size: .85rem; color: var(--ink-2); }
+.stamps { display: flex; flex-direction: column; gap: 14px; align-items: flex-end; padding-top: 6px; }
+.stamp {
+  display: inline-block; font-family: var(--font-stamp); font-weight: 600; text-transform: uppercase; letter-spacing: .12em;
+  color: var(--red); border: 3px double var(--red); padding: 2px 12px; border-radius: 4px; transform: rotate(-7deg);
+  opacity: .85; line-height: 1.3; white-space: nowrap;
+}
+.stamp.blue { color: var(--blue); border-color: var(--blue); transform: rotate(4deg); }
+.badge { display: inline-block; font-family: var(--font-stamp); font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; padding: 0 7px; border: 2px solid currentColor; border-radius: 3px; vertical-align: middle; transform: rotate(-3deg); }
+.badge.example, .badge.due { color: var(--amber); }
+.badge.late { color: var(--red); }
+.badge.plain { color: var(--ink-3); }
+
+/* bookmarks, tucked behind the sheet */
+.ptabs { position: relative; z-index: 0; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; margin-left: -24px; padding-top: 96px; }
+.ptabs button {
+  writing-mode: vertical-rl; text-orientation: mixed; display: block; width: 66px; padding: 18px 0 18px 26px; line-height: 40px; text-align: center;
+  border: 1px solid rgba(10, 40, 42, .5); border-radius: 0 9px 9px 0;
+  font-family: var(--font-type); font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: #eef3ea; text-shadow: 0 1px 0 rgba(0, 0, 0, .25);
+  box-shadow: 2px 3px 5px rgba(40, 25, 5, .3);
+  transition: width var(--t-med) var(--ease), background-color var(--t-med) ease-out, color var(--t-med) ease-out;
+}
+.ptabs button:hover { width: 72px; }
+.ptabs .pt-projects { background: var(--noise), var(--teal-1); }
+.ptabs .pt-salary { background: var(--noise), var(--teal-2); }
+.ptabs .pt-review { background: var(--noise), var(--teal-3); }
+.ptabs .pt-notes { background: var(--noise), var(--teal-4); }
+.ptabs button[aria-selected="true"] { width: 76px; background: var(--noise), var(--teal-lite); color: #102a2c; text-shadow: none; font-weight: 700; box-shadow: 2px 3px 6px rgba(20, 12, 2, .4); }
+.ptabs .count { margin-top: 6px; font-size: .7rem; letter-spacing: 0; color: #cfe3e0; }
+.ptabs button[aria-selected="true"] .count { color: #1e4446; }
+
+/* sections */
+section { display: grid; gap: 14px; min-width: 0; }
+section h3 { font-family: var(--font-type); font-size: .8rem; letter-spacing: .16em; text-transform: uppercase; font-weight: 400; margin: 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+section h3 .notice { text-transform: none; letter-spacing: 0; }
+
+/* cork + pinned cards */
+.cork {
+  position: relative; padding: 28px 22px 26px; border: 10px solid var(--cork-frame); border-radius: 3px;
+  background: var(--cork-tex), radial-gradient(80% 70% at 50% 30%, #b98653, var(--cork) 70%, #8c5f37);
+  box-shadow: inset 0 0 26px rgba(40, 20, 5, .55), 0 4px 10px rgba(0, 0, 0, .35);
+}
+.cork-legend { position: absolute; right: 12px; bottom: 6px; font-family: var(--font-type); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; color: rgba(255, 240, 215, .8); pointer-events: none; }
+.cork-empty { color: #fff2dc; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); font-style: italic; }
+.pin {
+  position: absolute; top: 7px; left: 50%; width: 13px; height: 13px; margin-left: -6.5px; border-radius: 50%; z-index: 2;
+  background: radial-gradient(circle at 35% 30%, #ff8a7c 0%, var(--pin) 45%, #6e100c 100%); box-shadow: 2px 3px 3px rgba(0, 0, 0, .45);
+}
+.pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px; }
+.tile-wrap { position: relative; min-width: 0; display: grid; transform: rotate(var(--rot, 0deg)); transition: transform var(--t-med) var(--ease); }
+.tile-wrap:hover { transform: rotate(0deg) translateY(-2px); }
+.tile-wrap > .x { position: absolute; top: 2px; right: 2px; z-index: 3; }
+.tile {
+  width: 100%; min-width: 0; display: grid; justify-items: center; align-content: start; gap: 8px; padding: 26px 10px 14px;
+  text-align: center; border: 0; border-radius: 1px; color: var(--ink); background: var(--noise), var(--paper);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 3px 8px 14px rgba(30, 15, 0, .45);
+  transition: box-shadow var(--t-med) var(--ease);
+}
+.tile:hover { box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 4px 12px 18px rgba(30, 15, 0, .5); }
+.tile[aria-current="true"] { box-shadow: 0 0 0 2px var(--ink), 4px 12px 18px rgba(30, 15, 0, .5); }
+.tile .name { font-weight: 700; font-size: .92rem; line-height: 1.3; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tile .meta { font-size: .78rem; color: var(--ink-2); font-style: italic; overflow-wrap: anywhere; }
+.tile .meta.missing { color: var(--amber); }
+.label {
+  width: 58px; height: 58px; border-radius: 4px; display: grid; place-items: center; overflow: hidden; flex: none;
+  font-family: var(--font-stamp); font-weight: 600; font-size: 1.05rem; letter-spacing: .04em;
+  border: 2.5px solid currentColor; box-shadow: inset 0 0 0 2px var(--paper);
+}
+.label.lg { width: 84px; height: 84px; font-size: 1.5rem; }
+.label.has-img { border: 1px solid var(--rule); box-shadow: none; }
+.label img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.c0 { background: var(--l0-bg); color: var(--l0-fg); }
+.c1 { background: var(--l1-bg); color: var(--l1-fg); }
+.c2 { background: var(--l2-bg); color: var(--l2-fg); }
+.c3 { background: var(--l3-bg); color: var(--l3-fg); }
+.c4 { background: var(--l4-bg); color: var(--l4-fg); }
+.c5 { background: var(--l5-bg); color: var(--l5-fg); }
+
+.picker { display: grid; gap: 14px; padding: 16px; border: 1.5px dashed var(--ink-3); background: var(--paper-2); }
+.picker-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.picker-head input { flex: 1 1 200px; width: auto; }
+.picker .pgrid .tile { box-shadow: 0 2px 6px rgba(60, 40, 10, .2); padding-top: 16px; }
+
+/* work memo */
+.work {
+  display: grid; gap: 14px; padding: 22px 22px 22px 46px; position: relative;
+  background: linear-gradient(#e2a59b, #e2a59b) 32px 0 / 1px 100% no-repeat, var(--noise), var(--paper-2);
+  box-shadow: 0 4px 12px rgba(60, 40, 10, .2);
+}
+.work-kicker { font-family: var(--font-type); font-size: .7rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3); }
+.work-head { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.work-title { display: flex; gap: 14px; align-items: center; min-width: 0; }
+.work-title h4 { margin: 0; font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; overflow-wrap: anywhere; }
+.work-title .m { color: var(--ink-2); font-family: var(--font-type); font-size: .82rem; }
+.work-text { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 68ch; line-height: 1.7; }
+.work textarea { min-height: 160px; }
+
+/* salary */
+.sal-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1.5px solid var(--ink-2); background: var(--paper); }
+.sal-sum > div { padding: 14px 16px; display: grid; gap: 2px; align-content: start; }
+.sal-sum > div + div { border-left: 1px solid var(--rule); }
+.sal-sum .k { font-family: var(--font-type); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+.sal-sum .v { font-family: var(--font-type); font-size: 1.5rem; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.sal-sum .v small { font-size: .85rem; color: var(--ink-2); }
+.sal-sum .v.up { color: var(--green); }
+.sal-sum .v.down { color: var(--red); }
+.sal-sum .n { font-size: .88rem; color: var(--ink-2); }
+.bars { display: flex; gap: 14px; padding: 0 4px; overflow-x: auto; }
+.bar { flex: 1 0 64px; max-width: 120px; display: grid; text-align: center; }
+.track { height: 160px; display: flex; flex-direction: column; justify-content: flex-end; border-bottom: 2px solid var(--ink-2); background: repeating-linear-gradient(0deg, var(--rule) 0 1px, transparent 1px 40px); }
+.bar .bv { font-family: var(--font-type); font-size: .82rem; padding-bottom: 4px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar .bb { display: block; margin: 0 6px; background: #b9c4d6; border: 1.5px solid var(--blue); border-bottom: 0; }
+.bar.now .bb { background: var(--blue); }
+.bar.now .bv { font-weight: 700; }
+.bar .bd { font-family: var(--font-type); font-size: .74rem; color: var(--ink-2); padding-top: 6px; }
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; }
+.ev { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 6px 18px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.ev:first-child { border-top: 1px solid var(--rule); }
+.ev-date { font-family: var(--font-type); font-size: .85rem; color: var(--ink-2); padding-top: 3px; }
+.ev-body { display: grid; gap: 6px; min-width: 0; justify-items: start; }
+.ev-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.ev-amt { font-family: var(--font-type); font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.chg { font-size: .9rem; padding: 1px 8px; border-radius: 3px; background: var(--paper-2); color: var(--ink-2); }
+.chg.up { background: #e1ecd9; color: var(--green); }
+.chg.down { background: #f3dfd9; color: var(--red); }
+.chg.start { background: transparent; color: var(--ink-3); font-style: italic; padding-left: 0; }
+.args-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; width: 100%; padding: 12px; background: var(--paper-2); }
+.args-grid b { font-family: var(--font-type); font-weight: 400; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
+.args-grid ul { margin: 4px 0 0; padding-left: 18px; font-size: .92rem; color: var(--note-ink); }
+
+/* review: meta + sticky notes */
+.review-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: end; padding: 16px; border: 1.5px solid var(--ink-2); background: var(--paper-2); }
+.review-meta .sum { font-size: .88rem; color: var(--ink-2); display: grid; gap: 2px; }
+.review-meta .sum b { color: var(--ink); font-family: var(--font-type); font-weight: 400; }
+.board3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.sticky { position: relative; display: grid; grid-template-rows: auto 1fr auto; min-width: 0; padding-top: 14px; background: var(--noise), var(--sticky-y); box-shadow: 2px 10px 14px rgba(30, 15, 0, .45); }
+.sticky.plus { background: var(--noise), var(--sticky-g); transform: rotate(-.5deg); }
+.sticky.minus { background: var(--noise), var(--sticky-p); transform: rotate(-.8deg); }
+.sticky.fix { transform: rotate(.4deg); }
+.sticky-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px 8px; font-family: var(--font-stamp); font-weight: 600; text-transform: uppercase; letter-spacing: .12em; font-size: .95rem; }
+.sticky.plus .sticky-head { color: var(--green); }
+.sticky.minus .sticky-head { color: var(--red); }
+.sticky.fix .sticky-head { color: var(--amber); }
+.sticky-head .n { font-family: var(--font-type); font-size: .8rem; color: var(--ink-2); font-weight: 400; letter-spacing: 0; }
+.items { list-style: none; margin: 0; padding: 0 14px; display: grid; align-content: start; }
+.item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; border-top: 1px dashed rgba(0, 0, 0, .14); }
+.item:first-child { border-top: 0; }
+.item .t { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: .95rem; line-height: 1.45; color: var(--note-ink); }
+.item.done .t { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--ink-2); color: var(--ink-3); }
+.item .d { display: block; font-family: var(--font-type); font-size: .68rem; color: var(--ink-3); }
+.items .none { color: var(--ink-3); font-size: .9rem; font-style: italic; padding: 4px 0; }
+.sticky form { display: flex; gap: 6px; padding: 10px 14px 12px; border-top: 1px dashed rgba(0, 0, 0, .2); background: rgba(255, 255, 255, .35); }
+.sticky form input { padding: 4px 2px; font-size: .85rem; }
+.sticky form .btn { padding: 4px 10px; }
+
+/* notes as stickies */
+.notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; align-items: start; }
+.note { position: relative; display: grid; gap: 4px; padding: 26px 16px 14px; background: var(--noise), var(--sticky-y); box-shadow: 2px 10px 14px rgba(30, 15, 0, .45); transform: rotate(var(--rot, 0deg)); }
+.note .when { font-family: var(--font-type); font-size: .72rem; color: #6b5a2a; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.note .text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 1rem; line-height: 1.55; color: var(--note-ink); }
+
+/* ---------- projects view ---------- */
+.base { height: 100%; display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+.base-head { flex: none; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; padding: 12px 16px; background: var(--noise), var(--paper); box-shadow: 0 3px 8px rgba(60, 40, 10, .18); }
+.base-head input { flex: 1 1 220px; width: auto; }
+.proj-card { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 20px; padding: 18px 20px; border-top: 3px solid #e2a59b; background: var(--noise), var(--paper); box-shadow: 0 4px 12px rgba(60, 40, 10, .22); max-height: 46%; overflow: auto; }
+.proj-card h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; margin: 0; text-wrap: balance; overflow-wrap: anywhere; }
+.proj-card .body { display: grid; gap: 12px; min-width: 0; align-content: start; }
+.team { display: grid; border-top: 1px solid var(--rule); }
+.team-row { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; padding: 8px 4px; border: 0; border-bottom: 1px solid var(--rule); background: transparent; text-align: left; width: 100%; transition: background-color var(--t-fast) ease-out; }
+.team-row:hover { background: var(--paper-2); }
+.team-row .avatar { width: 32px; height: 38px; }
+.team-row .nm { font-weight: 700; }
+.team-row .rl { color: var(--ink-2); font-size: .85rem; font-style: italic; }
+.team-row .tx { font-size: .9rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; color: var(--ink-2); }
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatch { width: 30px; height: 30px; border-radius: 4px; padding: 0; border: 2.5px solid currentColor; }
+.swatch[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 2px; }
+.filebtn { display: inline-flex; cursor: pointer; }
+.filebtn span { font-family: var(--font-type); font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; border: 1.5px solid var(--ink-2); border-radius: 3px; padding: 7px 14px; }
+.label-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+
+/* free-form board (drag like stickies) */
+.board-wrap { flex: 1 1 auto; min-height: 260px; padding: 0; overflow: auto; }
+.board { position: relative; min-height: 100%; }
+.bcard {
+  position: absolute; width: 168px; display: grid; justify-items: center; gap: 8px; padding: 26px 10px 14px; text-align: center;
+  border: 0; border-radius: 1px; color: var(--ink); background: var(--noise), var(--paper);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 3px 8px 14px rgba(30, 15, 0, .45);
+  transform: rotate(var(--rot, 0deg)); touch-action: none; user-select: none; cursor: grab;
+  transition: transform var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease);
+}
+.bcard:hover { transform: rotate(0deg) translateY(-2px); box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 5px 14px 20px rgba(30, 15, 0, .5); }
+.bcard[aria-current="true"] { box-shadow: 0 0 0 2px var(--ink), 5px 14px 20px rgba(30, 15, 0, .5); }
+.bcard.dragging { cursor: grabbing; transform: rotate(0deg) scale(1.04); box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 10px 24px 30px rgba(20, 10, 0, .55); transition: none; z-index: 9999 !important; }
+.bcard.locked { cursor: pointer; }
+.bcard .name { font-weight: 700; font-size: .92rem; line-height: 1.3; overflow-wrap: anywhere; }
+.bcard .meta { font-size: .78rem; color: var(--ink-2); font-style: italic; }
+
+/* photos */
+.photo img, .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* roster groups by position */
+.group-sel { position: sticky; top: 46px; z-index: 3; background: var(--noise), var(--paper); border: 0; padding: 8px 12px; box-shadow: 0 2px 6px rgba(60, 40, 10, .18); margin-bottom: 4px; cursor: pointer; }
+.grp { list-style: none; display: flex; justify-content: space-between; gap: 8px; margin: 10px 2px 0; padding: 0 2px 4px; border-bottom: 1px solid rgba(70, 45, 10, .35); font-family: var(--font-type); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: #5a4524; }
+.grp:first-child { margin-top: 0; }
+
+/* profile edit */
+.profile-form { gap: 16px; }
+.pf-grid { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: start; }
+.pf-photo { display: grid; gap: 12px; justify-items: center; }
+.pf-photo .photo { transform: none; }
+
+/* trash bin + trash panel on the projects board */
+.board-area { position: relative; flex: 1 1 auto; min-height: 260px; display: flex; }
+.board-area > .board-wrap { flex: 1 1 auto; }
+.board-wrap.drop-ok { box-shadow: inset 0 0 0 3px rgba(255, 240, 200, .7), inset 0 0 26px rgba(40, 20, 5, .55); }
+.bin {
+  position: absolute; right: 24px; bottom: 30px; z-index: 10001; width: 76px; height: 92px; border: 0; padding: 0; background: transparent;
+  display: grid; justify-items: center; align-content: end; cursor: pointer; filter: drop-shadow(2px 6px 6px rgba(20, 10, 0, .5));
+  transition: transform var(--t-med) var(--ease);
+}
+.bin svg { width: 64px; height: 78px; overflow: visible; }
+.bin .lid { transform-origin: 8px 14px; transition: transform var(--t-med) var(--ease); }
+.bin:hover .lid, .bin.open .lid { transform: rotate(-14deg); }
+.bin.hot { transform: scale(1.12); }
+.bin.hot .lid { transform: rotate(-32deg) translateY(-3px); }
+.bin .count { position: absolute; top: 2px; right: 0; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--paper); color: var(--ink); font-family: var(--font-type); font-size: .75rem; line-height: 22px; text-align: center; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+.bin.open .bin-label { color: var(--ink-2); }
+.bin-label { position: absolute; bottom: -18px; font-family: var(--font-type); font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(255, 240, 215, .85); white-space: nowrap; }
+.trash {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 250px; z-index: 20; display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 120px;
+  background: var(--noise), var(--paper-3); border-left: 2px dashed var(--ink-3); box-shadow: -10px 0 22px rgba(20, 10, 0, .35); overflow: auto;
+  animation: trash-in var(--t-med) var(--ease) both;
+}
+@keyframes trash-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+.trash.hot { background: var(--noise), #e3d3ad; }
+.trash-head { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-type); font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; }
+.tlist { display: grid; gap: 10px; }
+.tcard {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: center; padding: 10px; text-align: left;
+  background: var(--noise), var(--paper); box-shadow: 0 2px 6px rgba(60, 40, 10, .25); transform: rotate(var(--rot, 0deg));
+  cursor: grab; touch-action: none; user-select: none; filter: saturate(.55);
+  transition: transform var(--t-med) var(--ease), filter var(--t-med) ease-out;
+}
+.tcard:hover { transform: rotate(0deg) translateX(-3px); filter: none; }
+.tcard .label { width: 40px; height: 40px; font-size: .8rem; border-width: 2px; }
+.tcard .name { font-weight: 700; font-size: .88rem; line-height: 1.25; overflow-wrap: anywhere; }
+.tcard .link { font-size: .68rem; margin-top: 2px; }
+.tcard.lifted { opacity: .35; }
+.drag-ghost { position: fixed; z-index: 10000; pointer-events: none; transform: rotate(3deg) scale(1.04); box-shadow: 10px 24px 30px rgba(20, 10, 0, .55); filter: none; }
+.bcard.to-trash { opacity: .55; transform: rotate(-6deg) scale(.9); }
+.badge.archived { color: var(--ink-3); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 860px) {
+  html, body { height: auto; }
+  .wrap, .layout, .base { height: auto; }
+  .folder { flex: none; }
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .roster { overflow: visible; margin: 0 0 18px; padding-right: 2px; order: 1; }
+  .roster > input, .group-sel { position: static; }
+  .ptabs { order: 2; flex-direction: row; flex-wrap: wrap; margin: 0; padding: 0 0 0 10px; gap: 4px; align-items: flex-end; }
+  .ptabs button { writing-mode: horizontal-tb; width: auto; padding: 8px 12px; line-height: 1.4; border-radius: 9px 9px 0 0; }
+  .ptabs button:hover, .ptabs button[aria-selected="true"] { width: auto; }
+  .ptabs button[aria-selected="true"] { padding-top: 11px; box-shadow: none; }
+  .ptabs .count { margin: 0 0 0 6px; }
+  .sheet-card { order: 3; height: auto; }
+  .paper-stack, .detail { height: auto; }
+  .detail { overflow: visible; }
+  .board-wrap { min-height: 420px; max-height: 70vh; }
+  .proj-card { max-height: none; }
+}
+@media (max-width: 680px) {
+  .pf-grid { grid-template-columns: minmax(0, 1fr); }
+  .trash { width: min(250px, 80%); }
+  .dossier { grid-template-columns: auto minmax(0, 1fr); }
+  .stamps { grid-column: 1 / -1; flex-direction: row; }
+  .sal-sum, .review-meta, .board3, .args-grid { grid-template-columns: minmax(0, 1fr); }
+  .sal-sum > div + div { border-left: 0; border-top: 1px solid var(--rule); }
+  .proj-card { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .folder { padding: 12px; }
+  .page { padding: 22px 16px 32px; }
+  .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); }
+  .fields { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .fields dt { margin-top: 8px; }
+  .ev { grid-template-columns: minmax(0, 1fr) auto; }
+  .ev-date { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+  .person-btn:hover, .tile-wrap:hover, .bcard:hover { transform: rotate(var(--rot, 0deg)); }
+}
+img { max-width: 100%; }
+/* login + account bar */
+.tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.acct { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.acct-email { font-family: var(--font-type); font-size: .75rem; color: #d8cdb4; margin-right: 4px; }
+.acct .btn { padding: 5px 10px; font-size: .72rem; }
+.login { flex: 1 1 auto; display: grid; place-items: center; padding: 24px; }
+.login-card { width: min(440px, 100%); display: grid; gap: 14px; padding: 26px 28px 30px; background: var(--noise), var(--paper); box-shadow: 0 10px 24px rgba(60, 40, 10, .3); transform: rotate(-.6deg); }
+.login-card h2 { font-family: var(--font-display); font-size: 1.8rem; margin: 0; }
+.login-card .btn { justify-self: start; }
+.toast { font-family: var(--font-type); font-size: .75rem; color: #f1e6c8; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1 class="sr-only">Портфоліо команди</h1>
+
+  <div class="toolbar">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-people" aria-selected="true">Люди<span class="count" id="cnt-people"></span></button>
+      <button type="button" role="tab" id="tab-projects" aria-selected="false">Проєкти<span class="count" id="cnt-projects"></span></button>
+    </div>
+    <div class="tools">
+      <div class="acct" id="acct" hidden>
+        <span class="acct-email" id="acct-email"></span>
+        <span class="toast" id="toast" role="status"></span>
+        <button class="btn light" id="exportBtn" type="button" title="Зберегти всі дані у файл JSON">Експорт</button>
+        <label class="btn light" for="importFile" title="Завантажити дані з файлу JSON">Імпорт</label>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+        <button class="btn light" id="logoutBtn" type="button">Вийти</button>
+      </div>
+      <button class="btn light" id="addBtn" type="button" hidden>+ Додати людину</button>
+    </div>
+  </div>
+
+  <div class="folder">
+    <form class="blank" id="addPersonForm" novalidate hidden>
+      <div class="blank-title">Бланк: нова особова справа</div>
+      <div class="grid2">
+        <label>Ім’я та прізвище<input id="np-name" required maxlength="80" placeholder="Напр. Олена Коваль"></label>
+        <label>Посада<input id="np-role" maxlength="80" list="roleList" placeholder="Напр. Frontend-розробниця"></label>
+        <label>ЗП на місяць<input id="np-rate" type="text" inputmode="decimal" autocomplete="off" required placeholder="15000"></label>
+        <label>Валюта<select id="np-cur"><option>PLN</option><option>EUR</option><option>USD</option><option>UAH</option></select></label>
+        <label>У фірмі з (рік-місяць)<input id="np-since" type="month" placeholder="2025-03"></label>
+      </div>
+      <div class="row">
+        <span class="err" id="np-err"></span>
+        <button class="btn" type="button" id="np-cancel">Скасувати</button>
+        <button class="btn primary" type="submit">Додати людину</button>
+      </div>
+    </form>
+
+    <form class="blank" id="addProjectForm" novalidate hidden>
+      <div class="blank-title">Бланк: новий проєкт у базі</div>
+      <div class="label-row">
+        <span class="label lg c0" id="npr-preview">?</span>
+        <div style="display:grid;gap:10px;flex:1 1 240px;min-width:0">
+          <label>Назва проєкту<input id="npr-name" required maxlength="100" placeholder="Напр. Кабінет клієнта TransLog"></label>
+          <label id="npr-file-wrap">Ярлик (картинка, необов’язково)<input id="npr-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"></label>
+        </div>
+      </div>
+      <div style="display:grid;gap:6px">
+        <span class="notice">Колір ярлика, якщо без картинки</span>
+        <div class="swatches" id="npr-swatches"></div>
+      </div>
+      <div class="row">
+        <span class="err" id="npr-err"></span>
+        <button class="btn" type="button" id="npr-cancel">Скасувати</button>
+        <button class="btn primary" type="submit" id="npr-submit">Додати в базу</button>
+      </div>
+    </form>
+
+    <div class="login" id="login" hidden>
+      <div class="login-card">
+        <div class="blank-title">Кадровий архів · вхід</div>
+        <h2>Портфоліо команди</h2>
+        <p class="notice" style="margin:0">Дані зберігаються у вашій базі Firebase. Увійдіть акаунтом Google, якому відкрито доступ.</p>
+        <button class="btn primary" id="loginBtn" type="button">Увійти через Google</button>
+        <span class="err" id="login-err"></span>
+      </div>
+    </div>
+
+    <div class="view layout" id="view-people">
+      <aside class="roster">
+        <input id="search" type="search" placeholder="Пошук за ім’ям чи посадою" aria-label="Пошук людей">
+        <select id="groupSel" class="group-sel" aria-label="Група за посадою"><option value="">Усі посади</option></select>
+        <ul class="people" id="people"><li class="empty">Завантажуємо команду…</li></ul>
+      </aside>
+      <div class="sheet-card">
+        <div class="paper-stack">
+          <div class="under u2" aria-hidden="true"></div>
+          <div class="under u1" aria-hidden="true"></div>
+          <main class="detail" id="detail"><div class="page"><p class="empty">Завантажуємо справу…</p></div></main>
+        </div>
+      </div>
+      <nav class="ptabs" id="ptabs" role="tablist" aria-label="Розділи справи"></nav>
+    </div>
+
+    <main class="view base" id="view-projects" hidden></main>
+    <datalist id="roleList"></datalist>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import { initializeFirestore, collection, query, orderBy, limit, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, writeBatch, FieldPath } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCXokwMSeeqNRzo1UWKLY73bbEiXVFvsoE",
+    authDomain: "portfolio-5feba.firebaseapp.com",
+    projectId: "portfolio-5feba",
+    storageBucket: "portfolio-5feba.firebasestorage.app",
+    messagingSenderId: "291351156579",
+    appId: "1:291351156579:web:829ad7691e43fe690aa556"
+  };
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const fdb = initializeFirestore(fbApp, { ignoreUndefinedProperties: true });
+
+/* Small adapter: the same db interface the app used inside claude.ai, backed by Firestore. */
+const mapErr = (e) => {
+  const c = e && e.code;
+  if (c === "permission-denied" || c === "unauthenticated") return { code: "invalid_argument", message: e.message, denied: true };
+  if (c === "resource-exhausted") return { code: "quota_exceeded", message: e.message };
+  return { code: "unavailable", message: (e && e.message) || String(e) };
+};
+const isPlain = (v) => v !== null && typeof v === "object" && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;
+function flatten(obj, pre = [], out = []) {
+  for (const [k, v] of Object.entries(obj)) { const p = [...pre, k]; if (isPlain(v) && Object.keys(v).length) flatten(v, p, out); else out.push([p, v]); }
+  return out;
+}
+const docApi = (path) => {
+  const ref = doc(fdb, path);
+  return {
+    id: path.split("/").pop(),
+    update: (data) => { const args = flatten(data).flatMap(([p, v]) => [new FieldPath(...p), v]); return updateDoc(ref, ...args).catch((e) => { throw mapErr(e); }); },
+    set: (data) => setDoc(ref, data).catch((e) => { throw mapErr(e); }),
+    delete: () => deleteDoc(ref).catch((e) => { throw mapErr(e); }),
+  };
+};
+const colApi = (path, cons = []) => ({
+  orderBy: (f, d) => colApi(path, [...cons, orderBy(f, d || "asc")]),
+  limit: (n) => colApi(path, [...cons, limit(n)]),
+  onSnapshot: (next, err) => onSnapshot(query(collection(fdb, path), ...cons),
+    (snap) => next({ docs: snap.docs.map((d) => ({ id: d.id, data: () => d.data() })) }),
+    (e) => err && err(mapErr(e))),
+  add: (data) => addDoc(collection(fdb, path), data).then((r) => ({ id: r.id })).catch((e) => { throw mapErr(e); }),
+  doc: (id) => docApi(path + "/" + id),
+});
+const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
+
+(() => {
+  "use strict";
+
+  /* ================= constants & state ================= */
+  const COLORS = 6;
+  const CURS = ["PLN", "EUR", "USD", "UAH"];
+  const KINDS = [
+    { k: "plus", t: "Плюси", ph: "Що людина робить добре" },
+    { k: "minus", t: "Мінуси", ph: "Що заважає підвищенню" },
+    { k: "fix", t: "Що поправити", ph: "Конкретна ціль до перегляду" },
+  ];
+  const PTABS = [["projects", "Проєкти"], ["salary", "Зарплата"], ["review", "Перегляд ЗП"], ["notes", "Коментарі"]];
+  const CARD_W = 168, CARD_H = 172, GAP_X = 22, GAP_Y = 26, PAD = 24;
+
+  const S = {
+    db: null, assets: null, canWrite: true, loaded: false,
+    people: [], projects: [], comments: [], reviews: [],
+    tab: "people", ptab: "projects", selected: null, selProject: null,
+    q: "", pq: "", linkQ: "",
+    ui: {}, pui: {}, drafts: {},
+    newColor: 0, newFile: null, newFileUrl: null,
+    localPos: {}, drag: null, renderPending: false, animate: { view: false, body: false },
+  };
+  const $ = (id) => document.getElementById(id);
+
+  /* ================= formatting helpers ================= */
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const num = (n) => new Intl.NumberFormat("uk-UA").format(Math.round(Number(n) || 0));
+  const pct = (n) => new Intl.NumberFormat("uk-UA", { maximumFractionDigits: 1 }).format(n);
+  const sign = (d) => (d > 0 ? "+" : d < 0 ? "−" : "");
+  const uid = () => "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const initials = (name) => String(name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+  const hash = (str, seed = 7) => { let h = seed; for (const ch of String(str)) h = (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0; return h; };
+  const rotFor = (id, max = 1.4) => ((hash(id, 13) % 1000) / 1000 * 2 - 1) * max;
+  const thisMonth = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); };
+  const mIndex = (ym) => { const [y, m] = String(ym || "").split("-").map(Number); return y && m ? y * 12 + (m - 1) : null; };
+  const fmtMonth = (ym) => { const i = mIndex(ym); if (i == null) return "—"; try { return new Date(Math.floor(i / 12), i % 12, 1).toLocaleString("uk-UA", { month: "long", year: "numeric" }); } catch { return ym; } };
+  const fmtShort = (ym) => { const i = mIndex(ym); return i == null ? "" : String(i % 12 + 1).padStart(2, "0") + "." + Math.floor(i / 12); };
+  const fmtDate = (iso) => { try { return new Date(iso).toLocaleString("uk-UA", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
+  const fmtDay = (iso) => { try { return new Date(iso).toLocaleDateString("uk-UA", { day: "numeric", month: "short" }); } catch { return ""; } };
+  const span = (months) => { const yy = Math.floor(months / 12), mm = months % 12; return [yy ? yy + " р." : "", mm ? mm + " міс." : ""].filter(Boolean).join(" ") || "менше місяця"; };
+  const tenure = (ym) => { const i = mIndex(ym); return i == null ? "" : span(Math.max(0, mIndex(thisMonth()) - i)); };
+  const plural = (n, a, b, c) => { const m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? a : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? b : c; };
+  const caseNo = (id) => String(hash(id) % 9000 + 1000);
+
+  /* ================= data selectors ================= */
+  const person = () => S.people.find((p) => p.id === S.selected);
+  const projById = (id) => S.projects.find((x) => x.id === id);
+  const linkedIds = (p) => (Array.isArray(p.projectIds) ? p.projectIds : []).filter((id) => projById(id));
+  const peopleOn = (pid) => S.people.filter((p) => (p.projectIds || []).includes(pid));
+  const historyOf = (p) => (Array.isArray(p.rateHistory) ? p.rateHistory.slice() : []).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const reviewOf = (p) => S.reviews.filter((r) => r.personId === p.id && !r.raiseId);
+  const notesOf = (p) => S.comments.filter((c) => c.personId === p.id);
+  const workOf = (p, pid) => (p.work && p.work[pid]) || {};
+  const reviewState = (p) => {
+    const i = mIndex(p.nextReview && p.nextReview.date); if (i == null) return null;
+    const diff = i - mIndex(thisMonth());
+    if (diff < 0) return { cls: "late", text: "прострочено на " + span(-diff) };
+    if (diff === 0) return { cls: "due", text: "цього місяця" };
+    return { cls: diff <= 1 ? "due" : "", text: "через " + span(diff) };
+  };
+
+  /* ================= drafts & errors ================= */
+  const dv = (id, def) => (Object.prototype.hasOwnProperty.call(S.drafts, id) ? S.drafts[id] : (def ?? ""));
+  const clearDrafts = (...ids) => ids.forEach((id) => delete S.drafts[id]);
+  const keepDraft = (e) => { const t = e.target; if (t.id && t.hasAttribute("data-draft")) S.drafts[t.id] = t.type === "checkbox" ? t.checked : t.value; };
+  document.addEventListener("input", keepDraft);
+  document.addEventListener("change", keepDraft);
+  const failText = (e) => {
+    const c = e && e.code;
+    if (c === "invalid_argument" || c === "not_granted") return "Немає прав на зміни в цьому перегляді.";
+    if (c === "quota_exceeded" || c === "quota_or_state") return "Сховище заповнене: видаліть старі записи.";
+    if (c === "too_large") return "Картинка завелика. Ліміт 20 МБ, для SVG 2 МБ.";
+    if (c === "unsupported_type") return "Цей формат не підходить. Оберіть PNG, JPG, WebP, GIF або SVG.";
+    return "Не вдалося зберегти. Спробуйте ще раз.";
+  };
+  const showErr = (id, e) => { const m = $(id); if (m) m.textContent = failText(e); };
+
+  /* ================= small renderers ================= */
+  function pixelFace(seed) {
+    let h = 7; for (const ch of String(seed)) h = (Math.imul(h, 131) + ch.charCodeAt(0)) >>> 0;
+    const r = (n) => { h = (Math.imul(h, 1103515245) + 12345) >>> 0; return (h >>> 8) % n; };
+    const BG = ["#4b3f8f", "#3d4f8f", "#5a3e7a", "#2f5f6f", "#47457e"], SK = ["#f1c9a5", "#e0ac7d", "#c68a5c", "#9c6644", "#f5d6c0"];
+    const HR = ["#2b1d14", "#5a3a1e", "#c99a3c", "#e8d27a", "#7a2e1c", "#3a3a3a", "#b8b2a8"], CL = ["#2f3b52", "#6b2f2f", "#2f5a3b", "#5a4a2f", "#3d3d3d", "#7a6a9a"];
+    const bg = BG[r(BG.length)], sk = SK[r(SK.length)], hr = HR[r(HR.length)], cl = CL[r(CL.length)];
+    const longHair = r(2) === 0, bangs = r(2) === 0, glasses = r(4) === 0;
+    const px = []; const P = (x, y, c) => px.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="${c}"/>`);
+    if (longHair) for (let y = 3; y <= 12; y++) { P(2, y, hr); P(9, y, hr); if (y >= 5) { P(1, y, hr); P(10, y, hr); } }
+    for (let x = 1; x <= 10; x++) { P(x, 12, cl); P(x, 13, cl); }
+    for (const x of [2, 3, 4, 7, 8, 9]) P(x, 11, cl);
+    P(5, 11, sk); P(6, 11, sk);
+    for (let y = 4; y <= 9; y++) for (let x = 3; x <= 8; x++) P(x, y, sk);
+    for (let x = 4; x <= 7; x++) { P(x, 10, sk); P(x, 1, hr); }
+    for (let x = 3; x <= 8; x++) { P(x, 2, hr); P(x, 3, hr); }
+    P(2, 3, hr); P(9, 3, hr); P(2, 4, hr); P(9, 4, hr);
+    if (bangs) { for (let x = 3; x <= 7; x++) P(x, 4, hr); } else { P(4, 5, hr); P(7, 5, hr); }
+    P(4, 6, "#1b1b22"); P(7, 6, "#1b1b22");
+    if (glasses) for (const x of [3, 5, 6, 8]) P(x, 6, "#22222a");
+    P(5, 9, "#9b4a4a"); P(6, 9, "#9b4a4a");
+    return `<svg viewBox="0 0 12 14" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges" aria-hidden="true"><rect width="12" height="14" fill="${bg}"/>${px.join("")}</svg>`;
+  }
+  const labelHtml = (x, size = "") => {
+    const c = " c" + ((Number(x && x.color) || 0) % COLORS);
+    if (x && x.iconData) return `<span class="label ${size} has-img${c}"><img src="${esc(x.iconData)}" alt="" onerror="this.remove()"></span>`;
+    return `<span class="label ${size}${c}">${esc(initials(x && x.name))}</span>`;
+  };
+  const faceHtml = (p) => (p && p.photoData ? `<img src="${esc(p.photoData)}" alt="">` : pixelFace(p ? p.id : ""));
+  /* Images are stored as small data URLs inside the document: no file storage needed. */
+  async function toImageData(file, W, H) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej({ code: "unsupported_type" }); i.src = url; });
+      const c = document.createElement("canvas"); c.width = W; c.height = H;
+      const k = Math.max(W / (img.naturalWidth || W), H / (img.naturalHeight || H)), w = (img.naturalWidth || W) * k, h = (img.naturalHeight || H) * k;
+      c.getContext("2d").drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+      let out = c.toDataURL("image/webp", 0.86);
+      if (!out.startsWith("data:image/webp")) out = c.toDataURL("image/jpeg", 0.86);
+      return out;
+    } finally { URL.revokeObjectURL(url); }
+  }
+  /* groups by position */
+  const roleKey = (r) => String(r || "").trim().toLowerCase();
+  function roleGroups() {
+    const m = new Map();
+    for (const p of S.people) { const k = roleKey(p.role); const g = m.get(k) || { key: k, label: String(p.role || "").trim() || "Без посади", n: 0 }; g.n++; m.set(k, g); }
+    return [...m.values()].sort((a, b) => (a.key === "" ? 1 : b.key === "" ? -1 : a.label.localeCompare(b.label, "uk")));
+  }
+  try { S.group = localStorage.getItem("pf-group") || ""; } catch { S.group = ""; }
+  const swatchesHtml = (current, act) => Array.from({ length: COLORS }, (_, i) =>
+    `<button type="button" class="swatch c${i}" ${act ? `data-act="${act}" ` : ""}data-c="${i}" aria-pressed="${current === i}" aria-label="Колір ${i + 1}"></button>`).join("");
+
+  /* ================= tabs ================= */
+  function setTab(tab) {
+    if (S.tab !== tab) S.animate.view = true;
+    S.tab = tab;
+    $("tab-people").setAttribute("aria-selected", tab === "people");
+    $("tab-projects").setAttribute("aria-selected", tab === "projects");
+    $("view-people").hidden = tab !== "people";
+    $("view-projects").hidden = tab !== "projects";
+    $("addBtn").textContent = tab === "people" ? "+ Додати людину" : "+ Додати проєкт";
+    $("addPersonForm").hidden = true; $("addProjectForm").hidden = true;
+    try { history.replaceState(null, "", tab === "projects" ? "#projects" : "#people"); } catch {}
+    render();
+  }
+
+  /* ================= roster ================= */
+  function renderPeople() {
+    const ul = $("people");
+    $("cnt-people").textContent = S.loaded && S.db ? S.people.length : "";
+    if (!S.loaded) { ul.innerHTML = '<li class="empty">Завантажуємо команду…</li>'; return; }
+    if (S.denied) { ul.innerHTML = `<li class="empty">Акаунт ${esc(S.user && S.user.email)} не має доступу до бази. Увійдіть іншим акаунтом або перевірте пошту в правилах Firestore.</li>`; return; }
+    if (!S.db) { ul.innerHTML = '<li class="empty">Увійдіть, щоб відкрити архів.</li>'; return; }
+    if (!S.people.length) { ul.innerHTML = '<li class="empty">Ще нікого немає. Натисніть «Додати людину», щоб створити першу справу.</li>'; return; }
+    const groups = roleGroups();
+    if (S.group && !groups.some((g) => g.key === S.group)) S.group = "";
+    const opts = `<option value="">Усі посади · ${S.people.length}</option>` + groups.map((g) => `<option value="${esc(g.key)}">${esc(g.label)} · ${g.n}</option>`).join("");
+    const gs = $("groupSel"); if (gs.dataset.opts !== opts) { gs.innerHTML = opts; gs.dataset.opts = opts; } gs.value = S.group;
+    const roleOpts = groups.filter((g) => g.key).map((g) => `<option value="${esc(g.label)}"></option>`).join("");
+    if ($("roleList").innerHTML !== roleOpts) $("roleList").innerHTML = roleOpts;
+    const q = S.q.trim().toLowerCase();
+    const list = S.people.filter((p) => (!S.group || roleKey(p.role) === S.group) && (!q || (p.name + " " + (p.role || "")).toLowerCase().includes(q)));
+    if (!list.length) { ul.innerHTML = '<li class="empty">Нікого не знайдено.</li>'; return; }
+    const card = (p) => {
+      const rs = reviewState(p);
+      return `<li><button class="person-btn" type="button" data-id="${esc(p.id)}" aria-current="${p.id === S.selected}">
+        <span class="avatar">${faceHtml(p)}</span>
+        <span class="p-name">${esc(p.name)}</span>
+        <span class="p-role">${esc(p.role || "—")}</span>
+        <span class="p-rate">${num(p.rate)} ${esc(p.currency || "PLN")}${rs && rs.cls ? `<span class="p-due">перегляд ${esc(rs.text)}</span>` : ""}</span>
+      </button></li>`;
+    };
+    if (S.group || groups.length < 2) { ul.innerHTML = list.map(card).join(""); return; }
+    ul.innerHTML = groups.map((g) => {
+      const members = list.filter((p) => roleKey(p.role) === g.key); if (!members.length) return "";
+      return `<li class="grp" aria-hidden="true"><span>${esc(g.label)}</span><span>${members.length}</span></li>` + members.map(card).join("");
+    }).join("");
+  }
+
+  /* ================= person sections ================= */
+  function workPanel(p) {
+    const pid = S.ui.work; const x = pid && projById(pid);
+    if (!x || !linkedIds(p).includes(pid)) return "";
+    const w = workOf(p, pid);
+    if (S.ui.editWork) return `<form class="work" id="workForm">
+        <span class="work-kicker">Довідка про участь у проєкті</span>
+        <div class="work-title">${labelHtml(x)}<h4>${esc(x.name)}</h4></div>
+        <div class="grid2">
+          <label>Роль на проєкті<input id="wk-role" data-draft maxlength="80" placeholder="Напр. Тімлід фронтенду" value="${esc(dv("wk-role", w.role || ""))}"></label>
+          <label>Період<input id="wk-period" data-draft maxlength="40" placeholder="03.2025 – зараз" value="${esc(dv("wk-period", w.period || ""))}"></label>
+        </div>
+        <label>Що саме робив(ла)<textarea id="wk-text" data-draft maxlength="6000" placeholder="Задачі, за які відповідав(ла), що зробив(ла), результати. Кожен пункт можна писати з нового рядка.">${esc(dv("wk-text", w.text || ""))}</textarea></label>
+        <div class="row"><span class="err" id="wk-err"></span><button class="btn" type="button" data-act="cancel-work">Скасувати</button><button class="btn primary" type="submit">Зберегти</button></div>
+      </form>`;
+    const meta = [w.role, w.period].filter(Boolean).join(" · ");
+    return `<div class="work" id="workPanel">
+      <span class="work-kicker">Довідка про участь у проєкті</span>
+      <div class="work-head">
+        <div class="work-title">${labelHtml(x)}<div style="min-width:0"><h4>${esc(x.name)}</h4>${meta ? `<div class="m">${esc(meta)}</div>` : ""}</div></div>
+        <div class="row">
+          ${S.canWrite ? `<button class="btn" type="button" data-act="edit-work">${w.text || w.role ? "Редагувати" : "Описати"}</button>` : ""}
+          <button type="button" class="x" data-act="close-work" aria-label="Закрити">✕</button>
+        </div>
+      </div>
+      ${w.text ? `<div class="work-text">${esc(w.text)}</div>` : `<p class="notice" style="margin:0">Ще не описано, що ${esc(String(p.name).split(" ")[0])} робив(ла) на цьому проєкті.</p>`}
+      ${w.updatedAt ? `<span class="notice">Оновлено ${esc(fmtDate(w.updatedAt))}</span>` : ""}
+    </div>`;
+  }
+
+  function secProjects(p) {
+    const ui = S.ui; const linked = linkedIds(p).map(projById);
+    let picker = "";
+    if (ui.linking) {
+      const q = S.linkQ.trim().toLowerCase();
+      const avail = S.projects.filter((x) => !linkedIds(p).includes(x.id) && (!q || x.name.toLowerCase().includes(q)));
+      picker = `<div class="picker">
+        <div class="picker-head">
+          <input id="link-q" type="search" placeholder="Знайти проєкт у базі" value="${esc(S.linkQ)}" aria-label="Знайти проєкт у базі">
+          <button class="btn" type="button" data-act="close-link">Готово</button>
+        </div>
+        ${!S.projects.length ? `<p class="notice">У базі ще немає проєктів. <button type="button" class="link" data-act="go-projects">Додати проєкт у базу</button></p>`
+          : avail.length ? `<div class="pgrid">${avail.map((x) => `
+            <button type="button" class="tile" data-act="link" data-id="${esc(x.id)}">${labelHtml(x)}<span class="name">${esc(x.name)}</span><span class="meta">+ підв’язати</span></button>`).join("")}</div>`
+          : `<p class="notice">${q ? "Нічого не знайдено." : "Усі проєкти з бази вже підв’язані до цієї людини."}</p>`}
+      </div>`;
+    }
+    return `<section>
+      <h3>Проєкти ${S.canWrite && !ui.linking ? `<button class="btn ghost" type="button" data-act="open-link">+ Підв’язати з бази</button>` : ""}</h3>
+      <span class="err" id="link-err"></span>
+      ${picker}
+      <div class="cork">
+        ${linked.length ? `<div class="pgrid">${linked.map((x) => { const w = workOf(p, x.id); return `
+          <div class="tile-wrap" style="--rot:${rotFor(x.id).toFixed(2)}deg">
+            <span class="pin"></span>
+            <button type="button" class="tile" data-act="open-work" data-id="${esc(x.id)}" aria-current="${ui.work === x.id}" title="Що робив(ла) на проєкті">
+              ${labelHtml(x)}<span class="name">${esc(x.name)}</span>
+              ${w.role ? `<span class="meta">${esc(w.role)}</span>` : w.text ? "" : `<span class="meta missing">не описано</span>`}
+            </button>
+            ${S.canWrite ? `<button type="button" class="x" data-act="unlink" data-id="${esc(x.id)}" aria-label="Відв’язати ${esc(x.name)}" title="Відв’язати">✕</button>` : ""}
+          </div>`; }).join("")}</div>`
+          : `<p class="cork-empty">До цієї людини ще не підв’язано жодного проєкту.</p>`}
+        <span class="cork-legend">Дошка справи</span>
+      </div>
+      ${workPanel(p)}
+    </section>`;
+  }
+
+  function raiseForm(p, fromReview) {
+    const cur = p.currency || "PLN"; const active = reviewOf(p); const target = p.nextReview && p.nextReview.target;
+    return `<form class="inline-form" id="raiseForm" novalidate>
+      <div class="grid3">
+        <label>Нова ЗП на місяць<input id="ra-rate" data-draft type="text" inputmode="decimal" autocomplete="off" required value="${esc(dv("ra-rate", target || p.rate))}"></label>
+        <label>Валюта<select id="ra-cur" data-draft>${CURS.map((c) => `<option ${c === dv("ra-cur", cur) ? "selected" : ""}>${c}</option>`).join("")}</select></label>
+        <label>З якого місяця<input id="ra-date" data-draft type="month" required placeholder="2026-10" value="${esc(dv("ra-date", thisMonth()))}"></label>
+      </div>
+      <label>Причина (необов’язково)<input id="ra-note" data-draft maxlength="200" placeholder="Напр. річний перегляд, тімлід на новому проєкті" value="${esc(dv("ra-note", ""))}"></label>
+      ${active.length ? `<label class="check"><input id="ra-attach" data-draft type="checkbox" ${dv("ra-attach", fromReview) ? "checked" : ""}> Закрити поточний перегляд і зберегти його аргументи (${active.length}) разом із цим записом</label>` : ""}
+      <div class="row"><span class="err" id="ra-err"></span><button class="btn" type="button" data-act="cancel-raise">Скасувати</button><button class="btn primary" type="submit">Зберегти ЗП</button></div>
+    </form>`;
+  }
+
+  function argsHtml(args) {
+    return `<div class="args-grid">${KINDS.map((k) => { const its = args.filter((a) => a.kind === k.k);
+      return `<div><b>${k.t}</b>${its.length ? `<ul>${its.map((a) => `<li>${esc(a.text)}${a.kind === "fix" ? (a.done ? " ✓" : " (не виправлено)") : ""}</li>`).join("")}</ul>` : `<div class="notice">—</div>`}</div>`; }).join("")}</div>`;
+  }
+
+  function secSalary(p) {
+    const h = historyOf(p); const cur = p.currency || "PLN"; const ui = S.ui;
+    const changeOf = (x, prev) => {
+      if (!prev) return { cls: "start", text: "Початкова ЗП" };
+      if ((prev.currency || "PLN") !== (x.currency || "PLN")) return { cls: "", text: "Зміна валюти" };
+      const d = Number(x.rate) - Number(prev.rate); const pc = Number(prev.rate) ? (d / Number(prev.rate)) * 100 : 0;
+      if (!d) return { cls: "", text: "Без змін" };
+      return { cls: d > 0 ? "up" : "down", text: `${d > 0 ? "Підвищення" : "Зниження"} на ${num(Math.abs(d))} ${x.currency || "PLN"} (${sign(d)}${pct(Math.abs(pc))}%)` };
+    };
+    const first = h[0], last = h[h.length - 1];
+    let summary = `<div class="sal-sum"><div><span class="k">Зараз</span><span class="v">${num(p.rate)} <small>${esc(cur)}</small></span><span class="n">на місяць</span></div>`;
+    if (h.length > 1 && (first.currency || "PLN") === (last.currency || "PLN")) {
+      const d = Number(last.rate) - Number(first.rate); const g = Number(first.rate) ? (d / Number(first.rate)) * 100 : 0;
+      const months = Math.max(0, (mIndex(last.date) || 0) - (mIndex(first.date) || 0));
+      const raises = h.filter((x, i) => i > 0 && Number(x.rate) > Number(h[i - 1].rate)).length;
+      summary += `<div><span class="k">Початкова</span><span class="v">${num(first.rate)} <small>${esc(first.currency || "PLN")}</small></span><span class="n">${esc(fmtMonth(first.date))}</span></div>
+        <div><span class="k">Ріст за весь час</span><span class="v ${d > 0 ? "up" : d < 0 ? "down" : ""}">${sign(d)}${num(Math.abs(d))} <small>${esc(last.currency || "PLN")}</small></span><span class="n">${sign(g)}${pct(Math.abs(g))}% за ${esc(span(months))} · ${raises} ${plural(raises, "підвищення", "підвищення", "підвищень")}</span></div>`;
+    }
+    summary += `</div>`;
+    let bars = "";
+    if (h.length > 1) {
+      const max = Math.max(...h.map((x) => Number(x.rate) || 0)) || 1;
+      bars = `<div class="bars" role="img" aria-label="Зарплата після кожної зміни">${h.map((x, i) => `
+        <div class="bar ${i === h.length - 1 ? "now" : ""}">
+          <div class="track"><span class="bv">${num(x.rate)}</span><span class="bb" style="height:${Math.max(10, Math.round((Number(x.rate) || 0) / max * 130))}px"></span></div>
+          <span class="bd">${esc(fmtShort(x.date))}</span>
+        </div>`).join("")}</div>`;
+    }
+    const events = h.map((x, i) => ({ x, prev: h[i - 1] })).reverse().map(({ x, prev }) => {
+      const ch = changeOf(x, prev); const args = S.reviews.filter((r) => r.raiseId === x.id); const open = ui.openRaise === x.id;
+      const showNote = x.note && !/^Початкова (ЗП|ставка)$/.test(x.note);
+      return `<li class="ev">
+        <div class="ev-date">${esc(fmtMonth(x.date))}</div>
+        <div class="ev-body">
+          <div class="ev-top"><span class="ev-amt">${num(x.rate)} ${esc(x.currency || "PLN")}</span><span class="chg ${ch.cls}">${esc(ch.text)}</span></div>
+          ${showNote ? `<div>${esc(x.note)}</div>` : ""}
+          ${args.length ? `<button type="button" class="link" data-act="toggle-args" data-id="${esc(x.id)}">${open ? "Сховати аргументи" : `Аргументи з перегляду (${args.length})`}</button>` : ""}
+          ${open ? argsHtml(args) : ""}
+        </div>
+        ${S.canWrite ? `<button type="button" class="x ${ui.confirmRate === x.id ? "danger" : ""}" data-act="del-rate" data-id="${esc(x.id)}" aria-label="Видалити запис">${ui.confirmRate === x.id ? "Видалити?" : "✕"}</button>` : ""}
+      </li>`;
+    }).join("");
+    return `<section>
+      <h3>Зарплата ${S.canWrite && !ui.raise ? `<button class="btn primary" type="button" data-act="open-raise">+ Записати нову ЗП</button>` : ""}</h3>
+      ${ui.raise ? raiseForm(p, false) : ""}
+      ${summary}
+      ${bars}
+      <h3>Усі зміни <span class="notice">від найновішої</span></h3>
+      ${h.length ? `<ol class="timeline">${events}</ol>` : `<p class="notice">Історії ще немає. Поточна ЗП ${num(p.rate)} ${esc(cur)} стане першим записом, коли ви додасте нову.</p>`}
+      <span class="err" id="hist-err"></span>
+    </section>`;
+  }
+
+  function secReview(p) {
+    const items = reviewOf(p); const ui = S.ui; const cur = p.currency || "PLN"; const nr = p.nextReview || {};
+    const fixes = items.filter((x) => x.kind === "fix"); const fixed = fixes.filter((x) => x.done).length;
+    const plus = items.filter((x) => x.kind === "plus").length, minus = items.filter((x) => x.kind === "minus").length;
+    const target = Number(nr.target) || 0;
+    const tDelta = target && Number(p.rate) ? ((target - Number(p.rate)) / Number(p.rate)) * 100 : null;
+    const rs = reviewState(p);
+    const closed = new Set(S.reviews.filter((r) => r.personId === p.id && r.raiseId).map((r) => r.raiseId)).size;
+    const dis = S.canWrite ? "" : "disabled";
+    return `<section>
+      <h3>Перегляд ЗП ${rs ? `<span class="badge ${rs.cls || "plain"}">${esc(rs.text)}</span>` : ""}</h3>
+      <p class="notice" style="margin:0">Збирайте тут аргументи до наступної розмови про зарплату. Коли піднімете зарплату, перегляд закриється і збережеться в історії поруч із новою сумою${closed ? ` (уже закрито: ${closed})` : ""}.</p>
+      <form class="review-meta" id="reviewMeta">
+        <label>Наступний перегляд<input id="rv-next" data-draft type="month" placeholder="2027-01" value="${esc(dv("rv-next", nr.date || ""))}" ${dis}></label>
+        <label>Цільова ЗП, ${esc(cur)} на місяць<input id="rv-target" data-draft type="text" inputmode="decimal" autocomplete="off" placeholder="${esc(p.rate)}" value="${esc(dv("rv-target", target || ""))}" ${dis}></label>
+        <div class="sum">
+          <span><b>${plus}</b> ${plural(plus, "плюс", "плюси", "плюсів")} · <b>${minus}</b> ${plural(minus, "мінус", "мінуси", "мінусів")}</span>
+          <span>Виправлено <b>${fixed}</b> з <b>${fixes.length}</b></span>
+          ${tDelta != null ? `<span>Ціль: ${sign(tDelta)}${pct(Math.abs(tDelta))}% до поточної</span>` : ""}
+        </div>
+      </form>
+      <span class="err" id="rv-err"></span>
+      <div class="cork board3">${KINDS.map((k) => {
+        const its = items.filter((x) => x.kind === k.k);
+        return `<div class="sticky ${k.k}">
+          <span class="pin"></span>
+          <div class="sticky-head">${k.t}<span class="n">${k.k === "fix" ? `${fixed}/${its.length}` : its.length}</span></div>
+          <ul class="items">${its.length ? its.map((x) => `
+            <li class="item ${x.done ? "done" : ""}">
+              ${k.k === "fix" ? `<input type="checkbox" data-act="toggle-fix" data-id="${esc(x.id)}" ${x.done ? "checked" : ""} ${dis} aria-label="Виправлено">` : ""}
+              <span class="t">${esc(x.text)}<span class="d">${esc(fmtDay(x.createdAt))}</span></span>
+              ${S.canWrite ? `<button type="button" class="x" data-act="del-item" data-id="${esc(x.id)}" aria-label="Видалити">✕</button>` : ""}
+            </li>`).join("") : `<li class="none">Поки порожньо.</li>`}</ul>
+          ${S.canWrite ? `<form data-kind="${k.k}" class="add-item"><input id="rv-add-${k.k}" data-draft maxlength="300" placeholder="${esc(k.ph)}" value="${esc(dv("rv-add-" + k.k, ""))}" aria-label="${esc(k.t)}: новий пункт"><button class="btn" type="submit" aria-label="Додати">+</button></form>` : ""}
+        </div>`;
+      }).join("")}</div>
+      ${S.canWrite ? (ui.raiseFromReview ? raiseForm(p, true) : `<div class="row start"><button class="btn primary" type="button" data-act="open-raise-review">Підвищити ЗП за цим переглядом</button></div>`) : ""}
+    </section>`;
+  }
+
+  function secNotes(p) {
+    const notes = notesOf(p); const ui = S.ui;
+    return `<section>
+      <h3>Мої коментарі</h3>
+      ${S.canWrite ? `<form class="inline-form" id="noteForm">
+        <label for="note-text">Новий коментар</label>
+        <textarea id="note-text" data-draft maxlength="4000" placeholder="Що варто запам’ятати про роботу цієї людини?">${esc(dv("note-text", ""))}</textarea>
+        <div class="row"><span class="err" id="note-err"></span><button class="btn primary" type="submit">Залишити коментар</button></div>
+      </form>` : ""}
+      <div class="cork notes">${notes.length ? notes.map((c) => `
+        <article class="note" style="--rot:${rotFor(c.id, 1.2).toFixed(2)}deg">
+          <span class="pin"></span>
+          <div class="when"><span>${esc(fmtDate(c.createdAt))}</span>
+            ${S.canWrite ? `<button type="button" class="x ${ui.confirmNote === c.id ? "danger" : ""}" data-act="del-note" data-id="${esc(c.id)}">${ui.confirmNote === c.id ? "Видалити?" : "✕"}</button>` : ""}</div>
+          <div class="text">${esc(c.text)}</div>
+        </article>`).join("") : `<p class="cork-empty">Коментарів ще немає.</p>`}</div>
+    </section>`;
+  }
+
+  function profileForm(p) {
+    const ph = S.ui.photo; const shown = ph === undefined ? p : { id: p.id, photoData: ph };
+    const hasPhoto = ph === undefined ? !!p.photoData : !!ph;
+    return `<form class="inline-form profile-form" id="profileForm" novalidate>
+      <span class="work-kicker">Редагування особової справи</span>
+      <div class="pf-grid">
+        <div class="pf-photo">
+          <div class="photo" aria-hidden="true">${faceHtml(shown)}</div>
+          <label class="filebtn"><span>${hasPhoto ? "Інше фото" : "Завантажити фото"}</span><input id="pf-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label>
+          ${hasPhoto ? `<button class="btn ghost" type="button" data-act="drop-photo">Прибрати фото</button>` : ""}
+        </div>
+        <div class="grid2">
+          <label>Прізвище, ім’я<input id="pf-name" data-draft maxlength="80" value="${esc(dv("pf-name", p.name))}"></label>
+          <label>Посада<input id="pf-role" data-draft maxlength="80" list="roleList" value="${esc(dv("pf-role", p.role || ""))}"></label>
+          <label>У фірмі з (рік-місяць)<input id="pf-since" data-draft type="month" placeholder="2025-03" value="${esc(dv("pf-since", p.since || ""))}"></label>
+        </div>
+      </div>
+      <div class="row"><span class="err" id="pf-err"></span><button class="btn" type="button" data-act="cancel-profile">Скасувати</button><button class="btn primary" type="submit">Зберегти</button></div>
+    </form>`;
+  }
+
+  function renderDetail() {
+    const el = $("detail"); const p = person();
+    if (!p) {
+      $("ptabs").innerHTML = "";
+      el.innerHTML = `<div class="page"><p class="empty">${!S.loaded ? "Завантажуємо справу…" : S.people.length ? "Оберіть людину зі списку, щоб відкрити її справу." : "Тут з’явиться особова справа."}</p></div>`;
+      return;
+    }
+    const cur = p.currency || "PLN"; const ui = S.ui;
+    const counts = { projects: linkedIds(p).length, salary: historyOf(p).length, review: reviewOf(p).length, notes: notesOf(p).length };
+    $("ptabs").innerHTML = PTABS.map(([k, t]) => `<button type="button" role="tab" class="pt-${k}" data-tab="${k}" aria-selected="${S.ptab === k}">${t}${counts[k] ? `<span class="count">${counts[k]}</span>` : ""}</button>`).join("");
+    const body = S.ptab === "salary" ? secSalary(p) : S.ptab === "review" ? secReview(p) : S.ptab === "notes" ? secNotes(p) : secProjects(p);
+    const rs = reviewState(p);
+    el.innerHTML = `<div class="page">
+      <div class="case">
+        <span class="case-no"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="5" r="3"/><path d="M2 15c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/></svg>Особова справа № <b>${caseNo(p.id)}</b></span>
+        ${S.canWrite && !ui.editProfile ? `<span class="row"><button type="button" class="btn ghost" data-act="edit-profile">Редагувати</button><button type="button" class="btn ${ui.confirmDel ? "danger" : "ghost"}" data-act="del-person">${ui.confirmDel ? "Точно знищити справу?" : "Видалити"}</button></span>` : ""}
+      </div>
+      ${ui.editProfile ? profileForm(p) : `<div class="dossier">
+        <div class="photo" aria-hidden="true">${faceHtml(p)}</div>
+        <dl class="fields">
+          <dt>Прізвище, ім’я</dt><dd><h2>${esc(p.name)}</h2></dd>
+          <dt>Посада</dt><dd>${esc(p.role || "—")}</dd>
+          <dt>У фірмі з</dt><dd>${p.since ? `${esc(fmtMonth(p.since))} <span class="notice">(${esc(tenure(p.since))})</span>` : "—"}</dd>
+          <dt>ЗП на місяць</dt><dd class="money">${num(p.rate)} <small>${esc(cur)}</small></dd>
+        </dl>
+        <div class="stamps">
+          ${p.isExample ? `<span class="stamp blue">Зразок</span>` : ""}
+          ${rs && rs.cls ? `<span class="stamp">Перегляд ЗП</span>` : ""}
+        </div>
+      </div>`}
+      <div class="body${S.animate.body ? " enter" : ""}">${body}</div>
+    </div>`;
+  }
+
+  /* ================= projects view ================= */
+  function projCard(sel) {
+    const team = peopleOn(sel.id); const pui = S.pui;
+    return `<div class="proj-card">
+      ${labelHtml(sel, "lg")}
+      <div class="body">
+        ${pui.rename ? `<form id="renameForm" style="display:flex;gap:8px;flex-wrap:wrap">
+            <input id="rn-name" data-draft required maxlength="100" value="${esc(dv("rn-name", sel.name))}" style="flex:1 1 200px;width:auto" aria-label="Назва проєкту">
+            <button class="btn primary" type="submit">Зберегти</button><button class="btn" type="button" data-act="cancel-rename">Скасувати</button>
+          </form>`
+          : `<h2>${esc(sel.name)} ${sel.isExample ? '<span class="badge example">зразок</span>' : ""}${sel.archived ? ' <span class="badge archived">у смітнику</span>' : ""}</h2>`}
+        <div>
+          <div class="notice" style="margin-bottom:6px">${team.length ? "Працюють над проєктом:" : "До проєкту ще ніхто не підв’язаний."}</div>
+          ${team.length ? `<div class="team">${team.map((p) => { const w = workOf(p, sel.id); return `<button type="button" class="team-row" data-act="open-person" data-id="${esc(p.id)}" data-proj="${esc(sel.id)}">
+            <span class="avatar">${faceHtml(p)}</span>
+            <span style="min-width:0"><span class="nm">${esc(p.name)}</span> <span class="rl">${esc([w.role, w.period].filter(Boolean).join(" · ") || p.role || "")}</span>
+            <div class="tx">${w.text ? esc(w.text) : `<span class="notice">Що робив(ла) — ще не описано</span>`}</div></span>
+          </button>`; }).join("")}</div>` : ""}
+        </div>
+        ${S.canWrite ? `<div style="display:grid;gap:8px">
+          <div class="swatches" aria-label="Колір ярлика">${swatchesHtml((Number(sel.color) || 0) % COLORS, "recolor")}</div>
+          <div class="row start">
+            ${true ? `<label class="filebtn"><span>${sel.iconData ? "Замінити картинку" : "Додати картинку"}</span><input id="re-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" hidden></label>` : ""}
+            ${sel.iconData ? `<button class="btn" type="button" data-act="drop-icon">Прибрати картинку</button>` : ""}
+            ${!pui.rename ? `<button class="btn" type="button" data-act="rename">Перейменувати</button>` : ""}
+            <button type="button" class="btn ${pui.confirmDel ? "danger" : "ghost"}" data-act="del-project">${pui.confirmDel ? (team.length ? `Видалити й відв’язати від ${team.length}?` : "Точно видалити?") : "Видалити з бази"}</button>
+          </div>
+          <span class="err" id="pc-err"></span>
+        </div>` : ""}
+      </div>
+      <button type="button" class="x" data-act="close-project" aria-label="Закрити картку проєкту" style="align-self:start">✕</button>
+    </div>`;
+  }
+
+  function boardLayout(list, width) {
+    const cols = Math.max(1, Math.floor((width - PAD * 2 + GAP_X) / (CARD_W + GAP_X)));
+    const slot = new Map(S.projects.filter((x) => !x.archived).map((x, i) => [x.id, i])); /* stable home slot: other cards never jump when one is moved */
+    let maxY = 0, maxX = 0;
+    const out = list.map((x) => {
+      const saved = S.localPos[x.id] || x.pos;
+      let px, py, z = 0;
+      if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) { px = saved.x; py = saved.y; z = saved.z || 0; }
+      else { const i = slot.get(x.id) || 0; px = PAD + (i % cols) * (CARD_W + GAP_X); py = PAD + Math.floor(i / cols) * (CARD_H + GAP_Y); }
+      maxY = Math.max(maxY, py + CARD_H); maxX = Math.max(maxX, px + CARD_W);
+      return { x, px, py, z };
+    });
+    return { cards: out, h: maxY + PAD + 20, w: maxX + PAD };
+  }
+
+  function renderProjects() {
+    const el = $("view-projects");
+    $("cnt-projects").textContent = S.loaded && S.db ? S.projects.length : "";
+    if (!S.loaded) { el.innerHTML = '<p class="empty">Завантажуємо проєкти…</p>'; return; }
+    if (!S.db) { el.innerHTML = '<p class="empty">Сховище недоступне в цьому перегляді.</p>'; return; }
+    const q = S.pq.trim().toLowerCase();
+    const matches = S.projects.filter((x) => !q || x.name.toLowerCase().includes(q));
+    const list = matches.filter((x) => !x.archived), trashed = matches.filter((x) => x.archived);
+    const trashCount = S.projects.filter((x) => x.archived).length;
+    const sel = projById(S.selProject);
+    const prevWrap = el.querySelector(".board-wrap"); const prevScroll = prevWrap ? [prevWrap.scrollLeft, prevWrap.scrollTop] : null;
+    const width = (prevWrap ? prevWrap.clientWidth : el.clientWidth) || 900;
+    const L = boardLayout(list, width);
+    el.innerHTML = `
+      <div class="base-head">
+        <input id="pq" type="search" placeholder="Пошук проєкту" value="${esc(S.pq)}" aria-label="Пошук проєкту">
+        <span class="notice">${S.projects.length - trashCount} на дошці${trashCount ? ` · ${trashCount} у смітнику` : ""}${S.canWrite ? " · картки можна перетягувати, непотрібні — у смітник" : ""}</span>
+      </div>
+      ${sel ? projCard(sel) : ""}
+      <div class="board-area" id="boardArea">
+      <div class="cork board-wrap" id="boardWrap">
+        ${S.projects.length ? `<div class="board" id="board" style="height:${L.h}px;min-width:${L.w}px">
+          ${L.cards.map(({ x, px, py, z }) => { const n = peopleOn(x.id).length; return `
+            <button type="button" class="bcard${S.canWrite ? "" : " locked"}" data-id="${esc(x.id)}" aria-current="${x.id === S.selProject}"
+              style="left:${px}px;top:${py}px;z-index:${z};--rot:${rotFor(x.id).toFixed(2)}deg">
+              <span class="pin"></span>${labelHtml(x)}<span class="name">${esc(x.name)}</span>
+              <span class="meta">${n ? n + " " + plural(n, "людина", "людини", "людей") : "без людей"}</span>
+            </button>`; }).join("")}
+        </div>${q && !list.length ? '<p class="cork-empty" style="padding:24px">На дошці нічого не знайдено.</p>' : ""}`
+        : `<p class="cork-empty" style="padding:24px">База проєктів порожня. Натисніть «+ Додати проєкт» угорі, щоб створити перший.</p>`}
+        <span class="cork-legend">Дошка проєктів</span>
+      </div>
+      ${S.trashOpen ? `<aside class="trash" id="trash" aria-label="Смітник">
+        <div class="trash-head"><span>Смітник · ${trashCount}</span><button type="button" class="x" data-act="toggle-trash" aria-label="Закрити смітник">✕</button></div>
+        <p class="notice" style="margin:0">${trashCount ? "Перетягніть картку на дошку, щоб повернути проєкт." : "Порожньо. Перетягніть сюди проєкт з дошки, щоб прибрати його."}</p>
+        <div class="tlist">${trashed.map((x) => `
+          <div class="tcard" data-id="${esc(x.id)}" style="--rot:${rotFor(x.id, 2).toFixed(2)}deg">
+            ${labelHtml(x)}<div style="min-width:0"><div class="name">${esc(x.name)}</div>${S.canWrite ? `<button type="button" class="link" data-act="restore" data-id="${esc(x.id)}">Повернути</button>` : ""}</div>
+          </div>`).join("")}</div>
+      </aside>` : ""}
+      <button type="button" class="bin${S.trashOpen ? " open" : ""}" id="bin" data-act="toggle-trash" title="Смітник: перетягніть сюди проєкт, щоб прибрати його з дошки" aria-label="Смітник, проєктів: ${trashCount}">
+        <svg viewBox="0 0 64 78" aria-hidden="true">
+          <path d="M10 24 L54 24 L49 74 Q48.6 77 45.5 77 L18.5 77 Q15.4 77 15 74 Z" fill="#8f9396" stroke="#4d5154" stroke-width="2"/>
+          <g stroke="#5f6366" stroke-width="2"><line x1="20" y1="30" x2="22" y2="71"/><line x1="27" y1="30" x2="28" y2="71"/><line x1="32" y1="30" x2="32" y2="71"/><line x1="37" y1="30" x2="36" y2="71"/><line x1="44" y1="30" x2="42" y2="71"/></g>
+          <g class="lid"><rect x="6" y="14" width="52" height="8" rx="2" fill="#a7abae" stroke="#4d5154" stroke-width="2"/><rect x="25" y="8" width="14" height="7" rx="2" fill="none" stroke="#4d5154" stroke-width="2.5"/></g>
+        </svg>
+        ${trashCount ? `<span class="count">${trashCount}</span>` : ""}
+        <span class="bin-label">Смітник</span>
+      </button>
+      </div>`;
+    if (prevScroll) { const w = $("boardWrap"); if (w) { w.scrollLeft = prevScroll[0]; w.scrollTop = prevScroll[1]; } }
+  }
+
+  /* ================= render orchestration ================= */
+  function render() {
+    if (S.drag) { S.renderPending = true; return; }
+    const a = document.activeElement; let f = null;
+    if (a && a.id && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest && a.closest("#detail, #view-projects")) {
+      f = { id: a.id }; try { f.s = a.selectionStart; f.e = a.selectionEnd; } catch {}
+    }
+    const detailScroll = $("detail").scrollTop;
+    renderPeople(); renderDetail(); renderProjects();
+    $("detail").scrollTop = detailScroll;
+    if (S.animate.view) { const v = $(S.tab === "projects" ? "view-projects" : "view-people"); v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
+    S.animate.view = false; S.animate.body = false;
+    if (f) { const el = $(f.id); if (el && el !== document.activeElement) { el.focus({ preventScroll: true }); try { if (f.s != null) el.setSelectionRange(f.s, f.e); } catch {} } }
+  }
+  function select(id) {
+    if (S.selected !== id) { S.drafts = {}; S.ui = {}; S.animate.body = true; }
+    S.selected = id; S.linkQ = "";
+    render();
+    $("detail").scrollTop = 0;
+    if (window.matchMedia("(max-width: 860px)").matches) $("detail").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function setPtab(tab) { if (S.ptab !== tab) S.animate.body = true; S.ptab = tab; S.ui = {}; render(); $("detail").scrollTop = 0; }
+
+  /* ================= add forms ================= */
+  function renderNewProjectPreview() {
+    $("npr-swatches").innerHTML = swatchesHtml(S.newColor);
+    const prev = $("npr-preview");
+    prev.className = "label lg c" + S.newColor + (S.newFileUrl ? " has-img" : "");
+    prev.innerHTML = S.newFileUrl ? `<img src="${S.newFileUrl}" alt="">` : esc(initials($("npr-name").value || "?"));
+  }
+  function resetProjectForm() {
+    $("addProjectForm").reset(); S.newColor = 0; S.newFile = null;
+    if (S.newFileUrl) { URL.revokeObjectURL(S.newFileUrl); S.newFileUrl = null; }
+    $("npr-err").textContent = ""; renderNewProjectPreview();
+  }
+  function openAddProject() {
+    if (S.tab !== "projects") setTab("projects");
+    resetProjectForm();
+    $("addProjectForm").hidden = false; $("npr-name").focus();
+  }
+
+  $("tab-people").addEventListener("click", () => setTab("people"));
+  $("tab-projects").addEventListener("click", () => setTab("projects"));
+  $("addBtn").addEventListener("click", () => {
+    if (S.tab === "people") { $("addPersonForm").hidden = false; $("np-name").focus(); } else openAddProject();
+  });
+  $("np-cancel").addEventListener("click", () => { $("addPersonForm").hidden = true; $("addPersonForm").reset(); });
+  $("addPersonForm").addEventListener("submit", async (e) => {
+    e.preventDefault(); if (!S.db) return;
+    const name = $("np-name").value.trim();
+    const rateRaw = $("np-rate").value.trim().replace(/\s/g, "").replace(",", ".");
+    if (!name) { $("np-err").textContent = "Вкажіть ім’я та прізвище."; $("np-name").focus(); return; }
+    if (rateRaw === "" || !Number.isFinite(Number(rateRaw)) || Number(rateRaw) < 0) { $("np-err").textContent = "Вкажіть ЗП на місяць числом, наприклад 15250."; $("np-rate").focus(); return; }
+    $("np-err").textContent = "";
+    const rate = Number(rateRaw), currency = $("np-cur").value, since = $("np-since").value || "";
+    const data = { name, role: $("np-role").value.trim(), rate, currency, since, projectIds: [],
+      rateHistory: [{ id: uid(), date: since || thisMonth(), rate, currency, note: "Початкова ЗП" }], createdAt: new Date().toISOString() };
+    try {
+      const ref = await S.db.collection("people").add(data);
+      $("addPersonForm").reset(); $("addPersonForm").hidden = true; $("np-err").textContent = "";
+      S.ptab = "projects"; select(ref.id);
+    } catch (err) { $("np-err").textContent = failText(err); }
+  });
+  $("npr-name").addEventListener("input", renderNewProjectPreview);
+  $("npr-swatches").addEventListener("click", (e) => { const b = e.target.closest(".swatch"); if (!b) return; S.newColor = Number(b.dataset.c); renderNewProjectPreview(); });
+  $("npr-file").addEventListener("change", (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (S.newFileUrl) URL.revokeObjectURL(S.newFileUrl);
+    S.newFile = f || null; S.newFileUrl = f ? URL.createObjectURL(f) : null; renderNewProjectPreview();
+  });
+  $("npr-cancel").addEventListener("click", () => { resetProjectForm(); $("addProjectForm").hidden = true; });
+  $("addProjectForm").addEventListener("submit", async (e) => {
+    e.preventDefault(); if (!S.db) return;
+    const name = $("npr-name").value.trim();
+    if (!name) { $("npr-err").textContent = "Вкажіть назву проєкту."; $("npr-name").focus(); return; }
+    const btn = $("npr-submit"); btn.disabled = true; $("npr-err").textContent = "";
+    try {
+      const data = { name, color: S.newColor, createdAt: new Date().toISOString() };
+      if (S.newFile) data.iconData = await toImageData(S.newFile, 160, 160);
+      const ref = await S.db.collection("projects").add(data);
+      S.selProject = ref.id; S.pui = {};
+      resetProjectForm(); $("addProjectForm").hidden = true; render();
+    } catch (err) { $("npr-err").textContent = failText(err); }
+    finally { btn.disabled = false; }
+  });
+
+  /* ================= roster & bookmarks events ================= */
+  $("search").addEventListener("input", (e) => { S.q = e.target.value; renderPeople(); });
+  $("groupSel").addEventListener("change", (e) => { S.group = e.target.value; try { localStorage.setItem("pf-group", S.group); } catch {} renderPeople(); });
+  $("people").addEventListener("click", (e) => { const b = e.target.closest(".person-btn"); if (b) select(b.dataset.id); });
+  $("ptabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) setPtab(b.dataset.tab); });
+
+  /* ================= person writes ================= */
+  async function saveRate(p, entry, attachReview) {
+    let h = historyOf(p);
+    if (!h.length) h = [{ id: uid(), date: p.since || (p.createdAt ? String(p.createdAt).slice(0, 7) : thisMonth()), rate: Number(p.rate) || 0, currency: p.currency || "PLN", note: "Початкова ЗП" }];
+    h = h.filter((x) => x.date !== entry.date || x.id === entry.id).concat(entry).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    const latest = h[h.length - 1];
+    const patch = { rateHistory: h, rate: latest.rate, currency: latest.currency };
+    if (attachReview) patch.nextReview = { date: "", target: 0 };
+    await S.db.doc("people/" + p.id).update(patch);
+    if (attachReview) for (const r of reviewOf(p)) await S.db.doc("reviews/" + r.id).update({ raiseId: entry.id });
+  }
+  const RAISE_FIELDS = ["ra-rate", "ra-cur", "ra-date", "ra-note", "ra-attach"];
+
+  const detailActions = {
+    "edit-profile": () => { clearDrafts("pf-name", "pf-role", "pf-since"); S.ui = { editProfile: true }; render(); const i = $("pf-name"); if (i) i.focus(); },
+    "cancel-profile": () => { S.ui = {}; render(); },
+    "drop-photo": () => { S.ui.photo = null; render(); },
+    "open-link": () => { S.ui = { linking: true }; S.linkQ = ""; render(); const i = $("link-q"); if (i) i.focus(); },
+    "close-link": () => { S.ui = {}; render(); },
+    "go-projects": () => openAddProject(),
+    "open-work": (b) => { const id = b.dataset.id; S.ui = S.ui.work === id && !S.ui.editWork ? {} : { work: id }; render(); const w = $("workPanel"); if (w) w.scrollIntoView({ behavior: "smooth", block: "nearest" }); },
+    "close-work": () => { S.ui = {}; render(); },
+    "edit-work": () => { clearDrafts("wk-role", "wk-period", "wk-text"); S.ui = { work: S.ui.work, editWork: true }; render(); const t = $("wk-text"); if (t) t.focus(); },
+    "cancel-work": () => { S.ui = { work: S.ui.work }; render(); },
+    "open-raise": () => { clearDrafts(...RAISE_FIELDS); S.ui = { raise: true }; render(); const i = $("ra-rate"); if (i) i.focus(); },
+    "open-raise-review": () => { clearDrafts(...RAISE_FIELDS); S.ui = { raiseFromReview: true }; render(); const i = $("ra-rate"); if (i) i.focus(); },
+    "cancel-raise": () => { S.ui = {}; render(); },
+    "toggle-args": (b) => { S.ui = { openRaise: S.ui.openRaise === b.dataset.id ? null : b.dataset.id }; render(); },
+    "link": async (b, p) => { try { await S.db.doc("people/" + p.id).update({ projectIds: [...linkedIds(p), b.dataset.id] }); } catch (err) { showErr("link-err", err); } },
+    "unlink": async (b, p) => { try { await S.db.doc("people/" + p.id).update({ projectIds: linkedIds(p).filter((x) => x !== b.dataset.id) }); } catch (err) { showErr("link-err", err); } },
+    "toggle-fix": async (b) => { try { await S.db.doc("reviews/" + b.dataset.id).update({ done: b.checked }); } catch (err) { b.checked = !b.checked; showErr("rv-err", err); } },
+    "del-item": async (b) => { try { await S.db.doc("reviews/" + b.dataset.id).delete(); } catch (err) { showErr("rv-err", err); } },
+    "del-rate": async (b, p) => {
+      const id = b.dataset.id;
+      if (S.ui.confirmRate !== id) { S.ui = { confirmRate: id }; render(); return; }
+      const h = historyOf(p).filter((x) => x.id !== id); const patch = { rateHistory: h };
+      if (h.length) { patch.rate = h[h.length - 1].rate; patch.currency = h[h.length - 1].currency; }
+      try {
+        await S.db.doc("people/" + p.id).update(patch);
+        for (const r of S.reviews.filter((r) => r.raiseId === id)) await S.db.doc("reviews/" + r.id).update({ raiseId: null });
+        S.ui = {}; render();
+      } catch (err) { showErr("hist-err", err); }
+    },
+    "del-person": async (b, p) => {
+      if (!S.ui.confirmDel) { S.ui = { confirmDel: true }; render(); return; }
+      try {
+        for (const c of notesOf(p)) await S.db.doc("comments/" + c.id).delete();
+        for (const r of S.reviews.filter((r) => r.personId === p.id)) await S.db.doc("reviews/" + r.id).delete();
+        await S.db.doc("people/" + p.id).delete(); S.selected = null; S.ui = {}; render();
+      } catch (err) { b.textContent = failText(err); }
+    },
+    "del-note": async (b) => {
+      const id = b.dataset.id;
+      if (S.ui.confirmNote !== id) { S.ui = { confirmNote: id }; render(); return; }
+      try { await S.db.doc("comments/" + id).delete(); S.ui = {}; } catch (err) { b.textContent = failText(err); }
+    },
+  };
+  $("detail").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act]"); if (!b) return; const p = person(); if (!p) return;
+    const fn = detailActions[b.dataset.act]; if (fn) fn(b, p);
+  });
+  $("detail").addEventListener("input", (e) => { if (e.target.id === "link-q") { S.linkQ = e.target.value; render(); } });
+  $("detail").addEventListener("change", async (e) => {
+    const t = e.target; const p = person(); if (!p || !S.db) return;
+    if (t.id === "pf-file") {
+      const f = t.files && t.files[0]; if (!f) return;
+      try { S.ui.photo = await toImageData(f, 240, 300); render(); } catch (err) { showErr("pf-err", err); }
+      return;
+    }
+    if (t.id !== "rv-next" && t.id !== "rv-target") return;
+    const nr = Object.assign({ date: "", target: 0 }, p.nextReview || {});
+    if (t.id === "rv-next") nr.date = t.value || ""; else nr.target = Number(String(t.value).replace(/\s/g, "").replace(",", ".")) || 0;
+    try { await S.db.doc("people/" + p.id).update({ nextReview: nr }); } catch (err) { showErr("rv-err", err); }
+  });
+  $("detail").addEventListener("submit", async (e) => {
+    e.preventDefault(); const p = person(); if (!p || !S.db) return;
+    const f = e.target;
+    if (f.id === "profileForm") {
+      const name = $("pf-name").value.trim();
+      if (!name) { $("pf-err").textContent = "Вкажіть ім’я та прізвище."; $("pf-name").focus(); return; }
+      const patch = { name, role: $("pf-role").value.trim(), since: $("pf-since").value || "" };
+      if (S.ui.photo !== undefined) patch.photoData = S.ui.photo;
+      const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
+      try { await S.db.doc("people/" + p.id).update(patch); clearDrafts("pf-name", "pf-role", "pf-since"); S.ui = {}; render(); }
+      catch (err) { showErr("pf-err", err); btn.disabled = false; }
+      return;
+    }
+    if (f.id === "raiseForm") {
+      const date = $("ra-date").value; if (mIndex(date) == null) { $("ra-err").textContent = "Вкажіть місяць у форматі РРРР-ММ."; return; }
+      const rateRaw = $("ra-rate").value.trim().replace(/\s/g, "").replace(",", ".");
+      if (rateRaw === "" || !Number.isFinite(Number(rateRaw)) || Number(rateRaw) < 0) { $("ra-err").textContent = "Вкажіть ЗП на місяць числом."; return; }
+      const entry = { id: uid(), date, rate: Number(rateRaw), currency: $("ra-cur").value, note: $("ra-note").value.trim() };
+      const attach = !!($("ra-attach") && $("ra-attach").checked);
+      const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
+      try {
+        await saveRate(p, entry, attach); clearDrafts(...RAISE_FIELDS);
+        S.ui = attach ? { openRaise: entry.id } : {}; if (attach) { S.ptab = "salary"; S.animate.body = true; } render();
+      } catch (err) { showErr("ra-err", err); btn.disabled = false; }
+    } else if (f.classList.contains("add-item")) {
+      const kind = f.dataset.kind; const input = $("rv-add-" + kind); const text = input.value.trim(); if (!text) return;
+      try {
+        await S.db.collection("reviews").add({ personId: p.id, kind, text, done: false, createdAt: new Date().toISOString() });
+        clearDrafts("rv-add-" + kind); input.value = ""; render(); const i = $("rv-add-" + kind); if (i) i.focus();
+      } catch (err) { showErr("rv-err", err); }
+    } else if (f.id === "workForm") {
+      const pid = S.ui.work; if (!pid) return;
+      const entry = { role: $("wk-role").value.trim(), period: $("wk-period").value.trim(), text: $("wk-text").value.trim(), updatedAt: new Date().toISOString() };
+      const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
+      try { await S.db.doc("people/" + p.id).update({ work: { [pid]: entry } }); clearDrafts("wk-role", "wk-period", "wk-text"); S.ui = { work: pid }; render(); }
+      catch (err) { showErr("wk-err", err); btn.disabled = false; }
+    } else if (f.id === "noteForm") {
+      const text = $("note-text").value.trim(); if (!text) return;
+      const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
+      try { await S.db.collection("comments").add({ personId: p.id, text, createdAt: new Date().toISOString() }); clearDrafts("note-text"); render(); }
+      catch (err) { showErr("note-err", err); btn.disabled = false; }
+    }
+  });
+
+  /* ================= projects view events ================= */
+  const projectActions = {
+    "open-person": (b) => { setTab("people"); S.ptab = "projects"; select(b.dataset.id); if (b.dataset.proj) { S.ui = { work: b.dataset.proj }; render(); const w = $("workPanel"); if (w) w.scrollIntoView({ behavior: "smooth", block: "nearest" }); } },
+    "close-project": () => { S.selProject = null; S.pui = {}; render(); },
+    "toggle-trash": () => { S.trashOpen = !S.trashOpen; render(); },
+    "restore": (b) => setArchived(b.dataset.id, false),
+    "rename": () => { clearDrafts("rn-name"); S.pui = { rename: true }; render(); const i = $("rn-name"); if (i) i.focus(); },
+    "cancel-rename": () => { S.pui = {}; render(); },
+    "recolor": async (b, sel) => { try { await S.db.doc("projects/" + sel.id).update({ color: Number(b.dataset.c) }); } catch (err) { showErr("pc-err", err); } },
+    "drop-icon": async (b, sel) => { try { await S.db.doc("projects/" + sel.id).update({ iconId: null, iconData: null }); } catch (err) { showErr("pc-err", err); } },
+    "del-project": async (b, sel) => {
+      if (!S.pui.confirmDel) { S.pui = { confirmDel: true }; render(); return; }
+      try {
+        for (const p of peopleOn(sel.id)) await S.db.doc("people/" + p.id).update({ projectIds: (p.projectIds || []).filter((x) => x !== sel.id) });
+        await S.db.doc("projects/" + sel.id).delete();
+        S.selProject = null; S.pui = {}; render();
+      } catch (err) { showErr("pc-err", err); }
+    },
+  };
+  $("view-projects").addEventListener("click", (e) => {
+    if (S.justDragged) return;
+    const card = e.target.closest(".bcard");
+    if (card) { S.selProject = S.selProject === card.dataset.id ? null : card.dataset.id; S.pui = {}; render(); return; }
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const fn = projectActions[b.dataset.act]; if (!fn) return;
+    const sel = projById(S.selProject);
+    if (["open-person", "close-project", "toggle-trash", "restore"].includes(b.dataset.act) || sel) fn(b, sel);
+  });
+  $("view-projects").addEventListener("input", (e) => { if (e.target.id === "pq") { S.pq = e.target.value; render(); } });
+  $("view-projects").addEventListener("change", async (e) => {
+    if (e.target.id !== "re-file") return;
+    const sel = projById(S.selProject); const f = e.target.files && e.target.files[0];
+    if (!sel || !f) return;
+    try { await S.db.doc("projects/" + sel.id).update({ iconData: await toImageData(f, 160, 160), iconId: null }); } catch (err) { showErr("pc-err", err); }
+  });
+  $("view-projects").addEventListener("submit", async (e) => {
+    e.preventDefault(); const sel = projById(S.selProject); if (!sel || e.target.id !== "renameForm") return;
+    const name = $("rn-name").value.trim(); if (!name) return;
+    try { await S.db.doc("projects/" + sel.id).update({ name }); clearDrafts("rn-name"); S.pui = {}; render(); } catch (err) { showErr("pc-err", err); }
+  });
+
+  /* ================= drag cards: move, throw into the bin, pull back out ================= */
+  const topZ = () => Math.max(0, ...S.projects.map((x) => (S.localPos[x.id] || x.pos || {}).z || 0));
+  async function savePos(id, pos) {
+    S.localPos[id] = pos;
+    try { await S.db.doc("projects/" + id).update({ pos }); } catch (err) { /* keep local position for this visit */ }
+  }
+  async function setArchived(id, archived, pos) {
+    const x = projById(id); if (!x) return;
+    const patch = { archived }; if (pos) { patch.pos = pos; S.localPos[id] = pos; }
+    S.projects = S.projects.map((y) => (y.id === id ? { ...y, ...patch } : y)); /* optimistic, the snapshot confirms */
+    if (archived && S.selProject === id) { S.selProject = null; S.pui = {}; }
+    render();
+    try { await S.db.doc("projects/" + id).update(patch); } catch (err) { /* the snapshot restores the real state */ }
+  }
+  const inRect = (el, x, y) => { if (!el) return false; const r = el.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; };
+  $("view-projects").addEventListener("pointerdown", (e) => {
+    if (!S.canWrite || !S.db || e.button !== 0) return;
+    if (e.target.closest("button.link, .x")) return;
+    const card = e.target.closest(".bcard, .tcard"); if (!card) return;
+    const r = card.getBoundingClientRect();
+    S.drag = { kind: card.classList.contains("tcard") ? "trash" : "board", id: card.dataset.id, el: card, sx: e.clientX, sy: e.clientY,
+      ox: card.offsetLeft, oy: card.offsetTop, gx: e.clientX - r.left, gy: e.clientY - r.top, moved: false, pointer: e.pointerId };
+  });
+  window.addEventListener("pointermove", (e) => {
+    const d = S.drag; if (!d || e.pointerId !== d.pointer) return;
+    const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
+    if (!d.moved) {
+      if (Math.hypot(dx, dy) < 5) return;
+      d.moved = true;
+      try { d.el.setPointerCapture(d.pointer); } catch {}
+      if (d.kind === "board") d.el.classList.add("dragging");
+      else {
+        d.ghost = d.el.cloneNode(true); d.ghost.classList.add("drag-ghost"); d.ghost.style.width = d.el.offsetWidth + "px";
+        document.body.appendChild(d.ghost); d.el.classList.add("lifted");
+      }
+    }
+    e.preventDefault();
+    const bin = $("bin"), trash = $("trash"), wrap = $("boardWrap");
+    if (d.kind === "board") {
+      d.x = Math.max(0, d.ox + dx); d.y = Math.max(0, d.oy + dy);
+      d.el.style.left = d.x + "px"; d.el.style.top = d.y + "px";
+      d.overTrash = inRect(bin, e.clientX, e.clientY) || inRect(trash, e.clientX, e.clientY);
+      d.el.classList.toggle("to-trash", d.overTrash);
+      if (bin) bin.classList.toggle("hot", d.overTrash);
+      if (trash) trash.classList.toggle("hot", d.overTrash);
+      const board = $("board");
+      if (board && !d.overTrash) {
+        const needH = d.y + CARD_H + PAD + 20, needW = d.x + CARD_W + PAD;
+        if (needH > board.offsetHeight) board.style.height = needH + "px";
+        if (needW > board.offsetWidth) board.style.minWidth = needW + "px";
+      }
+    } else {
+      d.ghost.style.left = (e.clientX - d.gx) + "px"; d.ghost.style.top = (e.clientY - d.gy) + "px";
+      d.overBoard = inRect(wrap, e.clientX, e.clientY) && !inRect(trash, e.clientX, e.clientY) && !inRect(bin, e.clientX, e.clientY);
+      d.lastX = e.clientX; d.lastY = e.clientY;
+      if (wrap) wrap.classList.toggle("drop-ok", d.overBoard);
+    }
+  }, { passive: false });
+  const endDrag = (e) => {
+    const d = S.drag; if (!d || (e && e.pointerId !== d.pointer)) return;
+    S.drag = null;
+    const bin = $("bin"), trash = $("trash"), wrap = $("boardWrap"), board = $("board");
+    if (bin) bin.classList.remove("hot"); if (trash) trash.classList.remove("hot"); if (wrap) wrap.classList.remove("drop-ok");
+    if (d.ghost) d.ghost.remove();
+    if (d.moved) {
+      S.justDragged = true; setTimeout(() => { S.justDragged = false; }, 0);
+      if (d.kind === "board") {
+        d.el.classList.remove("dragging");
+        if (d.overTrash) { S.renderPending = false; setArchived(d.id, true); return; }
+        const pos = { x: Math.round(d.x), y: Math.round(d.y), z: topZ() + 1 };
+        d.el.style.zIndex = pos.z;
+        savePos(d.id, pos);
+      } else {
+        d.el.classList.remove("lifted");
+        if (d.overBoard && board) {
+          const r = board.getBoundingClientRect();
+          const pos = { x: Math.max(0, Math.round(d.lastX - r.left - d.gx)), y: Math.max(0, Math.round(d.lastY - r.top - d.gy)), z: topZ() + 1 };
+          S.renderPending = false; setArchived(d.id, false, pos); return;
+        }
+      }
+    }
+    if (S.renderPending) { S.renderPending = false; render(); }
+  };
+  window.addEventListener("pointerup", endDrag);
+  window.addEventListener("pointercancel", endDrag);
+  $("view-projects").addEventListener("keydown", (e) => {
+    const card = e.target.closest && e.target.closest(".bcard"); if (!card || !S.canWrite) return;
+    const step = e.shiftKey ? 40 : 10; const dirs = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+    const mv = dirs[e.key]; if (!mv) return; e.preventDefault();
+    const pos = { x: Math.max(0, card.offsetLeft + mv[0]), y: Math.max(0, card.offsetTop + mv[1]), z: topZ() + 1 };
+    card.style.left = pos.x + "px"; card.style.top = pos.y + "px"; card.style.zIndex = pos.z;
+    clearTimeout(S.keyMoveT); S.localPos[card.dataset.id] = pos;
+    S.keyMoveT = setTimeout(() => savePos(card.dataset.id, pos), 400);
+  });
+  window.addEventListener("resize", () => { if (S.tab === "projects") { clearTimeout(S.resizeT); S.resizeT = setTimeout(render, 150); } });
+
+  /* ================= data (Firebase) ================= */
+  S.unsubs = [];
+  function stopData() { S.unsubs.forEach((u) => { try { u(); } catch {} }); S.unsubs = []; }
+  function startData() {
+    const got = { people: false, projects: false };
+    const mark = (k) => { got[k] = true; if (got.people && got.projects) S.loaded = true; };
+    const onErr = (k) => (e) => { if (e && e.denied) S.denied = true; if (k) mark(k); render(); };
+    S.unsubs.push(S.db.collection("people").orderBy("name").onSnapshot((snap) => {
+      S.people = snap.docs.map((d) => ({ id: d.id, ...d.data() })); mark("people");
+      if (!S.selected && S.people.length && !window.matchMedia("(max-width: 860px)").matches) S.selected = S.people[0].id;
+      if (S.selected && !S.people.some((p) => p.id === S.selected)) S.selected = null;
+      render();
+    }, onErr("people")));
+    S.unsubs.push(S.db.collection("projects").orderBy("name").onSnapshot((snap) => {
+      S.projects = snap.docs.map((d) => ({ id: d.id, ...d.data() })); mark("projects");
+      for (const x of S.projects) { const l = S.localPos[x.id]; if (l && x.pos && x.pos.x === l.x && x.pos.y === l.y) delete S.localPos[x.id]; }
+      if (S.selProject && !projById(S.selProject)) S.selProject = null;
+      render();
+    }, onErr("projects")));
+    S.unsubs.push(S.db.collection("comments").orderBy("createdAt", "desc").limit(1000).onSnapshot((snap) => { S.comments = snap.docs.map((d) => ({ id: d.id, ...d.data() })); render(); }, onErr()));
+    S.unsubs.push(S.db.collection("reviews").orderBy("createdAt").limit(1000).onSnapshot((snap) => { S.reviews = snap.docs.map((d) => ({ id: d.id, ...d.data() })); render(); }, onErr()));
+  }
+  function showLogin(on) {
+    $("login").hidden = !on;
+    document.querySelector(".tabs").style.visibility = on ? "hidden" : "visible";
+    $("acct").hidden = on; $("addBtn").hidden = on;
+    if (on) { $("view-people").hidden = true; $("view-projects").hidden = true; $("addPersonForm").hidden = true; $("addProjectForm").hidden = true; }
+    else setTab(S.tab);
+  }
+  const toast = (t) => { $("toast").textContent = t; clearTimeout(S.toastT); S.toastT = setTimeout(() => { $("toast").textContent = ""; }, 4000); };
+
+  $("loginBtn").addEventListener("click", async () => {
+    $("login-err").textContent = "";
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+    catch (e) {
+      const c = e && e.code;
+      $("login-err").textContent =
+        c === "auth/unauthorized-domain" ? `Домен ${location.hostname} не додано у Firebase → Authentication → Settings → Authorized domains.` :
+        c === "auth/popup-blocked" ? "Браузер заблокував вікно входу. Дозвольте спливаючі вікна для цього сайту." :
+        c === "auth/popup-closed-by-user" || c === "auth/cancelled-popup-request" ? "Вхід скасовано." :
+        c === "auth/operation-not-allowed" ? "Вхід через Google не увімкнено у Firebase → Authentication → Sign-in method." :
+        location.protocol === "file:" ? "Вхід не працює з файлу на диску. Відкрийте сайт через GitHub Pages." :
+        "Не вдалося увійти: " + ((e && e.message) || c || "невідома помилка");
+    }
+  });
+  $("logoutBtn").addEventListener("click", () => signOut(auth));
+
+  $("exportBtn").addEventListener("click", () => {
+    const strip = (arr) => arr.map((x) => ({ ...x }));
+    const data = { exportedAt: new Date().toISOString(), app: "Портфоліо команди",
+      collections: { people: strip(S.people), projects: strip(S.projects), comments: strip(S.comments), reviews: strip(S.reviews) } };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = "portfolio-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast("Експортовано");
+  });
+  $("importFile").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+    try {
+      const json = JSON.parse(await f.text()); const cols = json.collections || json;
+      const ops = [];
+      for (const name of ["people", "projects", "comments", "reviews"]) for (const item of (cols[name] || [])) {
+        if (!item || !item.id) continue; const { id, ...rest } = item; delete rest.iconId; ops.push([name + "/" + id, rest]);
+      }
+      if (!ops.length) { toast("У файлі немає записів"); return; }
+      for (let k = 0; k < ops.length; k += 400) {
+        const b = writeBatch(fdb);
+        for (const [p, d] of ops.slice(k, k + 400)) b.set(doc(fdb, p), d);
+        await b.commit();
+      }
+      toast(`Імпортовано записів: ${ops.length}`);
+    } catch (err) { toast(err && err.code === "permission-denied" ? "Немає прав на запис" : "Не вдалося імпортувати файл"); }
+  });
+
+  onAuthStateChanged(auth, (u) => {
+    stopData();
+    Object.assign(S, { user: u, people: [], projects: [], comments: [], reviews: [], selected: null, selProject: null, loaded: false, denied: false, ui: {}, pui: {}, drafts: {} });
+    if (!u) { S.db = null; showLogin(true); return; }
+    $("acct-email").textContent = u.email || "";
+    S.db = FB; S.assets = {}; S.canWrite = true;
+    showLogin(false);
+    startData();
+    render();
+  });
+
+  renderNewProjectPreview();
+  if (location.hash === "#projects") S.tab = "projects";
+})();
+</script>
+</body>
+</html>
