@@ -1,0 +1,324 @@
+{
+  "exportedAt": "2026-10-20",
+  "app": "Портфоліо команди",
+  "appVersion": 18,
+  "collections": {
+    "people": [
+      {
+        "id": "example-1",
+        "createdAt": "2026-10-20T10:00:00Z",
+        "currency": "PLN",
+        "isExample": true,
+        "name": "Олена Коваль",
+        "nextReview": {
+          "date": "2027-01",
+          "target": 27000
+        },
+        "projectIds": [
+          "example-p1",
+          "example-p2"
+        ],
+        "rate": 23500,
+        "rateHistory": [
+          {
+            "currency": "PLN",
+            "date": "2023-04",
+            "id": "ex1a",
+            "note": "Початкова ЗП",
+            "rate": 16000
+          },
+          {
+            "currency": "PLN",
+            "date": "2024-01",
+            "id": "ex1b",
+            "note": "Кінець випробувального терміну",
+            "rate": 18500
+          },
+          {
+            "currency": "PLN",
+            "date": "2025-01",
+            "id": "ex1c",
+            "note": "Річний перегляд",
+            "rate": 21000
+          },
+          {
+            "currency": "PLN",
+            "date": "2026-05",
+            "id": "ex1d",
+            "note": "Тімлід на проєкті TransLog",
+            "rate": 23500
+          }
+        ],
+        "role": "Frontend-розробниця",
+        "since": "2023-04",
+        "work": {
+          "example-p1": {
+            "period": "05.2026 – зараз",
+            "role": "Тімлід фронтенду",
+            "text": "Приклад опису:\n— спроєктувала архітектуру кабінету на React\n— керує командою з 3 розробників, проводить код-рев’ю\n— зробила відстеження вантажів на карті\n— вивела реліз на 2 тижні раніше плану",
+            "updatedAt": "2026-10-20T10:30:00Z"
+          },
+          "example-p2": {
+            "period": "09.2025 – 03.2026",
+            "role": "Розробниця",
+            "text": "Приклад опису:\n— переробила каталог і картку товару\n— зменшила час завантаження сторінок вдвічі",
+            "updatedAt": "2026-10-20T10:30:00Z"
+          }
+        }
+      },
+      {
+        "id": "example-2",
+        "createdAt": "2026-10-20T10:00:00Z",
+        "currency": "PLN",
+        "isExample": true,
+        "name": "Андрій Мельник",
+        "nextReview": {
+          "date": "",
+          "target": 0
+        },
+        "projectIds": [
+          "example-p3",
+          "example-p4",
+          "example-p5"
+        ],
+        "rate": 29000,
+        "rateHistory": [
+          {
+            "currency": "PLN",
+            "date": "2022-09",
+            "id": "ex2a",
+            "note": "Початкова ЗП",
+            "rate": 20000
+          },
+          {
+            "currency": "PLN",
+            "date": "2023-09",
+            "id": "ex2b",
+            "note": "Річний перегляд",
+            "rate": 22500
+          },
+          {
+            "currency": "PLN",
+            "date": "2025-03",
+            "id": "ex2c",
+            "note": "Архітектор на FinBridge",
+            "rate": 26000
+          },
+          {
+            "currency": "PLN",
+            "date": "2026-10",
+            "id": "rmvgjgmvre6th",
+            "note": "",
+            "rate": 29000
+          }
+        ],
+        "role": "Backend-розробник",
+        "since": "2022-09",
+        "work": {
+          "example-p3": {
+            "period": "01.2026 – зараз",
+            "role": "Архітектор",
+            "text": "Приклад опису:\n— спроєктував API для мобільного застосунку\n— налаштував авторизацію та аудит операцій",
+            "updatedAt": "2026-10-20T10:30:00Z"
+          }
+        }
+      },
+      {
+        "id": "example-3",
+        "createdAt": "2026-10-20T10:00:00Z",
+        "currency": "EUR",
+        "isExample": true,
+        "name": "Марія Шевчук",
+        "nextReview": {
+          "date": "",
+          "target": 0
+        },
+        "projectIds": [
+          "example-p6",
+          "example-p3"
+        ],
+        "rate": 5000,
+        "rateHistory": [
+          {
+            "currency": "EUR",
+            "date": "2025-02",
+            "id": "ex3a",
+            "note": "Початкова ЗП",
+            "rate": 4200
+          },
+          {
+            "currency": "EUR",
+            "date": "2026-02",
+            "id": "ex3b",
+            "note": "Дизайн-система FinBridge",
+            "rate": 5000
+          }
+        ],
+        "role": "UI/UX-дизайнерка",
+        "since": "2025-02",
+        "work": {
+          "example-p6": {
+            "period": "02.2026 – зараз",
+            "role": "Провідна дизайнерка",
+            "text": "Приклад опису:\n— створила бібліотеку компонентів у Figma\n— провела 5 інтерв’ю з користувачами",
+            "updatedAt": "2026-10-20T10:30:00Z"
+          }
+        }
+      }
+    ],
+    "projects": [
+      {
+        "id": "example-p1",
+        "color": 0,
+        "createdAt": "2026-10-20T10:00:00Z",
+        "isExample": true,
+        "name": "Кабінет клієнта TransLog"
+      },
+      {
+        "id": "example-p2",
+        "color": 2,
+        "createdAt": "2026-10-20T10:00:00Z",
+        "isExample": true,
+        "name": "Редизайн магазину DomTekstyl"
+      },
+      {
+        "id": "example-p3",
+        "color": 1,
+        "createdAt": "2026-10-20T10:00:00Z",
+        "isExample": true,
+        "name": "Мобільний банкінг FinBridge"
+      },
+      {
+        "id": "example-p4",
+        "color": 5,
+        "createdAt": "2026-10-20T10:00:00Z",
+        "isExample": true,
+        "name": "Міграція бази MedLine"
+      },
+      {
+        "id": "example-p5",
+        "color": 3,
+        "createdAt": "2026-10-20T10:00:00Z",
+        "isExample": true,
+        "name": "Платежі DomTekstyl"
+      },
+      {
+        "id": "example-p6",
+        "color": 4,
+        "createdAt": "2026-10-20T10:00:00Z",
+        "isExample": true,
+        "name": "Дизайн-система FinBridge"
+      }
+    ],
+    "comments": [
+      {
+        "id": "example-c1",
+        "createdAt": "2026-10-14T09:30:00Z",
+        "personId": "example-1",
+        "text": "Приклад коментаря: дуже добре тримає дедлайни, клієнт TransLog окремо її хвалив. Варто обговорити підвищення ставки в січні."
+      },
+      {
+        "id": "example-c2",
+        "createdAt": "2026-10-02T15:10:00Z",
+        "personId": "example-2",
+        "text": "Приклад коментаря: сильний у складних інтеграціях, але треба частіше звітувати про статус."
+      }
+    ],
+    "reviews": [
+      {
+        "id": "ex-rv1",
+        "createdAt": "2026-08-12T09:00:00Z",
+        "done": false,
+        "kind": "plus",
+        "personId": "example-1",
+        "text": "Приклад: вивела TransLog у реліз на 2 тижні раніше"
+      },
+      {
+        "id": "ex-rv2",
+        "createdAt": "2026-09-03T09:00:00Z",
+        "done": false,
+        "kind": "plus",
+        "personId": "example-1",
+        "text": "Приклад: менторить двох джуніорів"
+      },
+      {
+        "id": "ex-rv3",
+        "createdAt": "2026-09-03T09:05:00Z",
+        "done": false,
+        "kind": "minus",
+        "personId": "example-1",
+        "text": "Приклад: рідко пише технічну документацію"
+      },
+      {
+        "id": "ex-rv4",
+        "createdAt": "2026-09-03T09:10:00Z",
+        "done": true,
+        "kind": "fix",
+        "personId": "example-1",
+        "text": "Приклад: описати архітектуру фронтенду TransLog"
+      },
+      {
+        "id": "ex-rv5",
+        "createdAt": "2026-09-20T09:10:00Z",
+        "done": false,
+        "kind": "fix",
+        "personId": "example-1",
+        "text": "Приклад: покрити тестами модуль оплат"
+      },
+      {
+        "id": "ex-rv6",
+        "createdAt": "2026-03-10T09:00:00Z",
+        "done": false,
+        "kind": "plus",
+        "personId": "example-1",
+        "raiseId": "ex1d",
+        "text": "Приклад: взяла на себе тімлідство"
+      },
+      {
+        "id": "ex-rv7",
+        "createdAt": "2026-03-10T09:05:00Z",
+        "done": true,
+        "kind": "fix",
+        "personId": "example-1",
+        "raiseId": "ex1d",
+        "text": "Приклад: навчитися оцінювати задачі в годинах"
+      },
+      {
+        "id": "ex-rv8",
+        "createdAt": "2026-09-15T09:00:00Z",
+        "done": true,
+        "kind": "fix",
+        "personId": "example-2",
+        "raiseId": "rmvgjgmvre6th",
+        "text": "Приклад: щотижневий звіт про статус клієнту"
+      },
+      {
+        "id": "hkph33ih4wrd03mfp8pl",
+        "createdAt": "2026-10-20T10:26:33.219Z",
+        "done": true,
+        "kind": "fix",
+        "personId": "example-2",
+        "raiseId": "rmvgjgmvre6th",
+        "text": "3"
+      },
+      {
+        "id": "v7ko069voe76e8514ckv",
+        "createdAt": "2026-10-20T10:26:25.716Z",
+        "done": false,
+        "kind": "plus",
+        "personId": "example-2",
+        "raiseId": "rmvgjgmvre6th",
+        "text": "1"
+      },
+      {
+        "id": "xkohdbi2tj0izgm0vms4",
+        "createdAt": "2026-10-20T10:26:27.939Z",
+        "done": false,
+        "kind": "minus",
+        "personId": "example-2",
+        "raiseId": "rmvgjgmvre6th",
+        "text": "2"
+      }
+    ]
+  }
+}
