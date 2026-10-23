@@ -474,6 +474,7 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .proj-card { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 20px; padding: 18px 20px; border-top: 3px solid #e2a59b; background: var(--noise), var(--paper); box-shadow: 0 4px 12px rgba(60, 40, 10, .22); max-height: 46%; overflow: auto; }
 .proj-card h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; margin: 0; text-wrap: balance; overflow-wrap: anywhere; }
 .proj-card .body { display: grid; gap: 12px; min-width: 0; align-content: start; }
+.proj-head { display: flex; gap: 12px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
 .team { display: grid; border-top: 1px solid var(--rule); }
 .team-row { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; padding: 8px 4px; border: 0; border-bottom: 1px solid var(--rule); background: transparent; text-align: left; width: 100%; transition: background-color var(--t-fast) ease-out; }
 .team-row:hover { background: var(--paper-2); }
@@ -1296,11 +1297,22 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     return `<div class="proj-card">
       ${labelHtml(sel, "lg")}
       <div class="body">
-        ${pui.rename ? `<form id="renameForm" style="display:flex;gap:8px;flex-wrap:wrap">
-            <input id="rn-name" data-draft required maxlength="100" value="${esc(dv("rn-name", sel.name))}" style="flex:1 1 200px;width:auto" aria-label="Назва проєкту">
-            <button class="btn primary" type="submit">Зберегти</button><button class="btn" type="button" data-act="cancel-rename">Скасувати</button>
+        ${pui.edit && S.canWrite ? `<form id="renameForm" class="inline-form">
+            <span class="work-kicker">Редагування проєкту</span>
+            <label>Назва проєкту<input id="rn-name" data-draft required maxlength="100" value="${esc(dv("rn-name", sel.name))}"></label>
+            <div class="row start">
+              <label class="filebtn"><span>${sel.iconData ? "Замінити картинку" : "Додати картинку"}</span><input id="re-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" hidden></label>
+              ${sel.iconData ? `<button class="btn" type="button" data-act="drop-icon">Прибрати картинку</button>` : ""}
+            </div>
+            <div class="row">
+              <button type="button" class="btn ${pui.confirmDel ? "danger" : "ghost"}" data-act="del-project" style="margin-right:auto">${pui.confirmDel ? (team.length ? `Видалити й відв’язати від ${team.length}?` : "Точно видалити?") : "Видалити з бази"}</button>
+              <span class="err" id="pc-err"></span>
+              <button class="btn" type="button" data-act="cancel-rename">Скасувати</button>
+              <button class="btn primary" type="submit">Зберегти</button>
+            </div>
           </form>`
-          : `<h2>${esc(sel.name)} ${sel.isExample ? '<span class="badge example">зразок</span>' : ""}${sel.archived ? ' <span class="badge archived">у смітнику</span>' : ""}</h2>`}
+          : `<div class="proj-head"><h2>${esc(sel.name)} ${sel.isExample ? '<span class="badge example">зразок</span>' : ""}${sel.archived ? ' <span class="badge archived">у смітнику</span>' : ""}</h2>
+            ${S.canWrite ? `<button type="button" class="btn ghost" data-act="rename">Редагувати</button>` : ""}</div>`}
         <div style="display:grid;gap:12px">
           ${!team.length ? `<div class="notice">До проєкту ще ніхто не підв’язаний.</div>` : [["Зараз на проєкті:", team.filter((p) => activeOf(p) === sel.id)], ["Раніше працювали:", team.filter((p) => activeOf(p) !== sel.id)]]
             .filter(([, list]) => list.length).map(([title, list]) => `<div>
@@ -1312,15 +1324,6 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
             </button>`; }).join("")}</div>
           </div>`).join("")}
         </div>
-        ${S.canWrite ? `<div style="display:grid;gap:8px">
-          <div class="row start">
-            ${true ? `<label class="filebtn"><span>${sel.iconData ? "Замінити картинку" : "Додати картинку"}</span><input id="re-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" hidden></label>` : ""}
-            ${sel.iconData ? `<button class="btn" type="button" data-act="drop-icon">Прибрати картинку</button>` : ""}
-            ${!pui.rename ? `<button class="btn" type="button" data-act="rename">Перейменувати</button>` : ""}
-            <button type="button" class="btn ${pui.confirmDel ? "danger" : "ghost"}" data-act="del-project">${pui.confirmDel ? (team.length ? `Видалити й відв’язати від ${team.length}?` : "Точно видалити?") : "Видалити з бази"}</button>
-          </div>
-          <span class="err" id="pc-err"></span>
-        </div>` : ""}
       </div>
       <button type="button" class="x" data-act="close-project" aria-label="Закрити картку проєкту" style="align-self:start">✕</button>
     </div>`;
@@ -1724,11 +1727,11 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     "close-project": () => { S.selProject = null; S.pui = {}; render(); },
     "toggle-trash": () => { S.trashOpen = !S.trashOpen; render(); },
     "restore": (b) => setArchived(b.dataset.id, false),
-    "rename": () => { clearDrafts("rn-name"); S.pui = { rename: true }; render(); const i = $("rn-name"); if (i) i.focus(); },
+    "rename": () => { clearDrafts("rn-name"); S.pui = { edit: true }; render(); const i = $("rn-name"); if (i) i.focus(); },
     "cancel-rename": () => { S.pui = {}; render(); },
     "drop-icon": async (b, sel) => { try { await S.db.doc("projects/" + sel.id).update({ iconId: null, iconData: null, color: Math.floor(Math.random() * COLORS) }); } catch (err) { showErr("pc-err", err); } },
     "del-project": async (b, sel) => {
-      if (!S.pui.confirmDel) { S.pui = { confirmDel: true }; render(); return; }
+      if (!S.pui.confirmDel) { S.pui = { ...S.pui, confirmDel: true }; render(); return; }
       try {
         for (const p of peopleOn(sel.id)) await S.db.doc("people/" + p.id).update({ projectIds: (p.projectIds || []).filter((x) => x !== sel.id), ...(p.activeProject === sel.id ? { activeProject: null } : {}) });
         await S.db.doc("projects/" + sel.id).delete();
