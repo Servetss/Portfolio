@@ -537,7 +537,7 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .bin.open .bin-label { color: var(--ink-2); }
 .bin-label { position: absolute; bottom: -18px; font-family: var(--font-type); font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(255, 240, 215, .85); white-space: nowrap; }
 .trash {
-  position: absolute; top: 0; right: 0; bottom: 0; width: 250px; z-index: 20; display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 120px;
+  position: absolute; top: 0; right: 0; bottom: 0; width: 250px; z-index: 1000; /* above every resting card (ranked 1..N), below a dragged one */ display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 120px;
   background: var(--noise), var(--paper-3); border-left: 2px dashed var(--ink-3); box-shadow: -10px 0 22px rgba(20, 10, 0, .35); overflow: auto;
   animation: trash-in var(--t-med) var(--ease) both;
 }
@@ -1356,6 +1356,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const prevWrap = el.querySelector(".board-wrap"); const prevScroll = prevWrap ? [prevWrap.scrollLeft, prevWrap.scrollTop] : null;
     const width = (prevWrap ? prevWrap.clientWidth : el.clientWidth) || 900;
     const L = boardLayout(list, width);
+    /* saved z only grows with every move; render it as rank 1..N so cards keep their stacking order but stay under the trash panel */
+    [...L.cards].sort((a, b) => a.z - b.z).forEach((c, i) => { c.z = i + 1; });
     setHtml(el, `
       <div class="base-head">
         <input id="pq" type="search" placeholder="Пошук проєкту" value="${esc(S.pq)}" aria-label="Пошук проєкту">
