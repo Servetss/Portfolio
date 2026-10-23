@@ -181,7 +181,7 @@ button { font: inherit; cursor: pointer; color: inherit; }
 .layout { display: grid; grid-template-columns: 280px minmax(0, 1fr) 56px; height: 100%; }
 
 /* roster: index cards */
-.roster { min-height: 0; overflow: auto; display: grid; gap: 8px; align-content: start; padding: 2px 18px 12px 2px; margin-right: 6px; }
+.roster { min-height: 0; overflow: auto; contain: layout paint; display: grid; gap: 8px; align-content: start; padding: 2px 18px 12px 2px; margin-right: 6px; }
 .roster > input { position: sticky; top: 0; z-index: 3; background: var(--noise), var(--paper); border: 0; padding: 10px 12px; box-shadow: 0 2px 6px rgba(60, 40, 10, .18); margin-bottom: 4px; }
 .people { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .person-btn {
@@ -221,7 +221,7 @@ button { font: inherit; cursor: pointer; color: inherit; }
 .under { position: absolute; inset: 0; background: var(--noise), #efe6cf; box-shadow: 0 1px 3px rgba(60, 40, 10, .25); }
 .under.u1 { transform: translate(5px, 5px) rotate(.5deg); }
 .under.u2 { transform: translate(9px, 9px) rotate(-.4deg); background: var(--noise), #e6d9b9; }
-.detail { position: relative; height: 100%; overflow: auto; overscroll-behavior: contain; box-shadow: 0 1px 3px rgba(40, 25, 5, .3); }
+.detail { position: relative; height: 100%; overflow: auto; overscroll-behavior: contain; contain: layout paint; box-shadow: 0 1px 3px rgba(40, 25, 5, .3); }
 .page {
   min-height: 100%; padding: 30px 34px 44px; display: grid; gap: 22px; align-content: start; position: relative;
   background:
@@ -513,7 +513,7 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
   .wrap, .layout, .base { height: auto; }
   .folder { flex: none; }
   .layout { grid-template-columns: minmax(0, 1fr); }
-  .roster { overflow: visible; margin: 0 0 18px; padding-right: 2px; order: 1; }
+  .roster { overflow: visible; contain: none; margin: 0 0 18px; padding-right: 2px; order: 1; }
   .roster > input, .group-sel { position: static; }
   .ptabs { order: 2; flex-direction: row; flex-wrap: wrap; margin: 0; padding: 0 0 0 10px; gap: 4px; align-items: flex-end; }
   .ptabs button { writing-mode: horizontal-tb; width: auto; padding: 8px 12px; line-height: 1.4; border-radius: 9px 9px 0 0; }
@@ -522,7 +522,7 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
   .ptabs .count { margin: 0 0 0 6px; }
   .sheet-card { order: 3; height: auto; }
   .paper-stack, .detail { height: auto; }
-  .detail { overflow: visible; }
+  .detail { overflow: visible; contain: none; }
   .board-wrap { min-height: 420px; max-height: 70vh; }
   .proj-card { max-height: none; }
 }
@@ -779,15 +779,22 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   };
   const showErr = (id, e) => { const m = $(id); if (m) m.textContent = failText(e); };
 
+  /* Writes markup only when it differs from what this element last got, so unchanged parts keep their DOM. */
+  const lastHtml = new WeakMap();
+  const setHtml = (el, html) => { if (lastHtml.get(el) !== html) { el.innerHTML = html; lastHtml.set(el, html); } };
+
   /* ================= small renderers ================= */
+  /* Faces are cached as one <img> per seed: a 12×14 grid merged into one path per colour instead of ~120 <rect> nodes. */
+  const faceCache = new Map();
   function pixelFace(seed) {
-    let h = 7; for (const ch of String(seed)) h = (Math.imul(h, 131) + ch.charCodeAt(0)) >>> 0;
+    const key = String(seed); const hit = faceCache.get(key); if (hit) return hit;
+    let h = 7; for (const ch of key) h = (Math.imul(h, 131) + ch.charCodeAt(0)) >>> 0;
     const r = (n) => { h = (Math.imul(h, 1103515245) + 12345) >>> 0; return (h >>> 8) % n; };
     const BG = ["#4b3f8f", "#3d4f8f", "#5a3e7a", "#2f5f6f", "#47457e"], SK = ["#f1c9a5", "#e0ac7d", "#c68a5c", "#9c6644", "#f5d6c0"];
     const HR = ["#2b1d14", "#5a3a1e", "#c99a3c", "#e8d27a", "#7a2e1c", "#3a3a3a", "#b8b2a8"], CL = ["#2f3b52", "#6b2f2f", "#2f5a3b", "#5a4a2f", "#3d3d3d", "#7a6a9a"];
     const bg = BG[r(BG.length)], sk = SK[r(SK.length)], hr = HR[r(HR.length)], cl = CL[r(CL.length)];
     const longHair = r(2) === 0, bangs = r(2) === 0, glasses = r(4) === 0;
-    const px = []; const P = (x, y, c) => px.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="${c}"/>`);
+    const grid = new Map(); const P = (x, y, c) => grid.set(x + "," + y, c); /* last write wins, as with stacked rects */
     if (longHair) for (let y = 3; y <= 12; y++) { P(2, y, hr); P(9, y, hr); if (y >= 5) { P(1, y, hr); P(10, y, hr); } }
     for (let x = 1; x <= 10; x++) { P(x, 12, cl); P(x, 13, cl); }
     for (const x of [2, 3, 4, 7, 8, 9]) P(x, 11, cl);
@@ -800,7 +807,12 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     P(4, 6, "#1b1b22"); P(7, 6, "#1b1b22");
     if (glasses) for (const x of [3, 5, 6, 8]) P(x, 6, "#22222a");
     P(5, 9, "#9b4a4a"); P(6, 9, "#9b4a4a");
-    return `<svg viewBox="0 0 12 14" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges" aria-hidden="true"><rect width="12" height="14" fill="${bg}"/>${px.join("")}</svg>`;
+    const paths = new Map();
+    for (const [xy, c] of grid) { const [x, y] = xy.split(","); paths.set(c, (paths.get(c) || "") + `M${x} ${y}h1v1h-1z`); }
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 14" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges"><rect width="12" height="14" fill="${bg}"/>${[...paths].map(([c, d]) => `<path fill="${c}" d="${d}"/>`).join("")}</svg>`;
+    const html = `<img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="">`;
+    faceCache.set(key, html);
+    return html;
   }
   const labelHtml = (x, size = "") => {
     const c = " c" + ((Number(x && x.color) || 0) % COLORS);
@@ -849,11 +861,10 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   /* ================= roster ================= */
   function renderPeople() {
     const ul = $("people");
-    $("cnt-people").textContent = S.loaded && S.db ? S.people.length : "";
-    if (!S.loaded) { ul.innerHTML = '<li class="empty">Завантажуємо команду…</li>'; return; }
-    if (S.denied) { ul.innerHTML = `<li class="empty">Акаунт ${esc(S.user && S.user.email)} не має доступу до бази. Увійдіть іншим акаунтом або перевірте пошту в правилах Firestore.</li>`; return; }
-    if (!S.db) { ul.innerHTML = '<li class="empty">Увійдіть, щоб відкрити архів.</li>'; return; }
-    if (!S.people.length) { ul.innerHTML = '<li class="empty">Ще нікого немає. Натисніть «Додати людину», щоб створити першу справу.</li>'; return; }
+    if (!S.loaded) { setHtml(ul, '<li class="empty">Завантажуємо команду…</li>'); return; }
+    if (S.denied) { setHtml(ul, `<li class="empty">Акаунт ${esc(S.user && S.user.email)} не має доступу до бази. Увійдіть іншим акаунтом або перевірте пошту в правилах Firestore.</li>`); return; }
+    if (!S.db) { setHtml(ul, '<li class="empty">Увійдіть, щоб відкрити архів.</li>'); return; }
+    if (!S.people.length) { setHtml(ul, '<li class="empty">Ще нікого немає. Натисніть «Додати людину», щоб створити першу справу.</li>'); return; }
     const groups = roleGroups();
     if (S.group && !groups.some((g) => g.key === S.group)) S.group = "";
     const opts = `<option value="">Усі посади · ${S.people.length}</option>` + groups.map((g) => `<option value="${esc(g.key)}">${esc(g.label)} · ${g.n}</option>`).join("");
@@ -862,21 +873,26 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     if ($("roleList").innerHTML !== roleOpts) $("roleList").innerHTML = roleOpts;
     const q = S.q.trim().toLowerCase();
     const list = S.people.filter((p) => (!S.group || roleKey(p.role) === S.group) && (!q || (p.name + " " + (p.role || "")).toLowerCase().includes(q)));
-    if (!list.length) { ul.innerHTML = '<li class="empty">Нікого не знайдено.</li>'; return; }
+    if (!list.length) { setHtml(ul, '<li class="empty">Нікого не знайдено.</li>'); return; }
     const card = (p) => {
       const rs = reviewState(p);
-      return `<li><button class="person-btn" type="button" data-id="${esc(p.id)}" aria-current="${p.id === S.selected}">
+      return `<li><button class="person-btn" type="button" data-id="${esc(p.id)}" aria-current="false">
         <span class="avatar">${faceHtml(p)}</span>
         <span class="p-name">${esc(p.name)}</span>
         <span class="p-role">${esc(p.role || "—")}</span>
         <span class="p-rate">${num(p.rate)} ${esc(p.currency || "PLN")}${rs && rs.cls ? `<span class="p-due">перегляд ${esc(rs.text)}</span>` : ""}</span>
       </button></li>`;
     };
-    if (S.group || groups.length < 2) { ul.innerHTML = list.map(card).join(""); return; }
-    ul.innerHTML = groups.map((g) => {
+    setHtml(ul, S.group || groups.length < 2 ? list.map(card).join("") : groups.map((g) => {
       const members = list.filter((p) => roleKey(p.role) === g.key); if (!members.length) return "";
       return `<li class="grp" aria-hidden="true"><span>${esc(g.label)}</span><span>${members.length}</span></li>` + members.map(card).join("");
-    }).join("");
+    }).join(""));
+    markSelected();
+  }
+  function markSelected() {
+    for (const b of $("people").querySelectorAll(".person-btn")) {
+      const on = String(b.dataset.id === S.selected); if (b.getAttribute("aria-current") !== on) b.setAttribute("aria-current", on);
+    }
   }
 
   /* ================= person sections ================= */
@@ -1102,16 +1118,16 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   function renderDetail() {
     const el = $("detail"); const p = person();
     if (!p) {
-      $("ptabs").innerHTML = "";
-      el.innerHTML = `<div class="page"><p class="empty">${!S.loaded ? "Завантажуємо справу…" : S.people.length ? "Оберіть людину зі списку, щоб відкрити її справу." : "Тут з’явиться особова справа."}</p></div>`;
+      setHtml($("ptabs"), "");
+      setHtml(el, `<div class="page"><p class="empty">${!S.loaded ? "Завантажуємо справу…" : S.people.length ? "Оберіть людину зі списку, щоб відкрити її справу." : "Тут з’явиться особова справа."}</p></div>`);
       return;
     }
     const cur = p.currency || "PLN"; const ui = S.ui;
     const counts = { projects: linkedIds(p).length, salary: historyOf(p).length, review: reviewOf(p).length, notes: notesOf(p).length };
-    $("ptabs").innerHTML = PTABS.map(([k, t]) => `<button type="button" role="tab" class="pt-${k}" data-tab="${k}" aria-selected="${S.ptab === k}">${t}${counts[k] ? `<span class="count">${counts[k]}</span>` : ""}</button>`).join("");
+    setHtml($("ptabs"), PTABS.map(([k, t]) => `<button type="button" role="tab" class="pt-${k}" data-tab="${k}" aria-selected="${S.ptab === k}">${t}${counts[k] ? `<span class="count">${counts[k]}</span>` : ""}</button>`).join(""));
     const body = S.ptab === "salary" ? secSalary(p) : S.ptab === "review" ? secReview(p) : S.ptab === "notes" ? secNotes(p) : secProjects(p);
     const rs = reviewState(p);
-    el.innerHTML = `<div class="page">
+    setHtml(el, `<div class="page">
       <div class="case">
         <span class="case-no"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="5" r="3"/><path d="M2 15c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/></svg>Особова справа № <b>${caseNo(p.id)}</b></span>
         ${S.canWrite && !ui.editProfile ? `<span class="row"><button type="button" class="btn ghost" data-act="edit-profile">Редагувати</button><button type="button" class="btn ${ui.confirmDel ? "danger" : "ghost"}" data-act="del-person">${ui.confirmDel ? "Точно знищити справу?" : "Видалити"}</button></span>` : ""}
@@ -1130,7 +1146,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
         </div>
       </div>`}
       <div class="body${S.animate.body ? " enter" : ""}">${body}</div>
-    </div>`;
+    </div>`);
   }
 
   /* ================= projects view ================= */
@@ -1184,9 +1200,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
 
   function renderProjects() {
     const el = $("view-projects");
-    $("cnt-projects").textContent = S.loaded && S.db ? S.projects.length : "";
-    if (!S.loaded) { el.innerHTML = '<p class="empty">Завантажуємо проєкти…</p>'; return; }
-    if (!S.db) { el.innerHTML = '<p class="empty">Сховище недоступне в цьому перегляді.</p>'; return; }
+    if (!S.loaded) { setHtml(el, '<p class="empty">Завантажуємо проєкти…</p>'); return; }
+    if (!S.db) { setHtml(el, '<p class="empty">Сховище недоступне в цьому перегляді.</p>'); return; }
     const q = S.pq.trim().toLowerCase();
     const matches = S.projects.filter((x) => !q || x.name.toLowerCase().includes(q));
     const list = matches.filter((x) => !x.archived), trashed = matches.filter((x) => x.archived);
@@ -1195,7 +1210,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const prevWrap = el.querySelector(".board-wrap"); const prevScroll = prevWrap ? [prevWrap.scrollLeft, prevWrap.scrollTop] : null;
     const width = (prevWrap ? prevWrap.clientWidth : el.clientWidth) || 900;
     const L = boardLayout(list, width);
-    el.innerHTML = `
+    setHtml(el, `
       <div class="base-head">
         <input id="pq" type="search" placeholder="Пошук проєкту" value="${esc(S.pq)}" aria-label="Пошук проєкту">
         <span class="notice">${S.projects.length - trashCount} на дошці${trashCount ? ` · ${trashCount} у смітнику` : ""}${S.canWrite ? " · картки можна перетягувати, непотрібні — у смітник" : ""}</span>
@@ -1231,7 +1246,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
         ${trashCount ? `<span class="count">${trashCount}</span>` : ""}
         <span class="bin-label">Смітник</span>
       </button>
-      </div>`;
+      </div>`);
     if (prevScroll) { const w = $("boardWrap"); if (w) { w.scrollLeft = prevScroll[0]; w.scrollTop = prevScroll[1]; } }
   }
 
@@ -1242,12 +1257,20 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     if (a && a.id && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest && a.closest("#detail, #view-projects")) {
       f = { id: a.id }; try { f.s = a.selectionStart; f.e = a.selectionEnd; } catch {}
     }
-    const detailScroll = $("detail").scrollTop;
-    renderPeople(); renderDetail(); renderProjects();
-    $("detail").scrollTop = detailScroll;
+    $("cnt-people").textContent = S.loaded && S.db ? S.people.length : "";
+    $("cnt-projects").textContent = S.loaded && S.db ? S.projects.length : "";
+    /* only the visible tab is built; setTab renders the other one when it is opened */
+    if (S.tab === "projects") renderProjects();
+    else { const detailScroll = $("detail").scrollTop; renderPeople(); renderDetail(); $("detail").scrollTop = detailScroll; }
     if (S.animate.view) { const v = $(S.tab === "projects" ? "view-projects" : "view-people"); v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
     S.animate.view = false; S.animate.body = false;
     if (f) { const el = $(f.id); if (el && el !== document.activeElement) { el.focus({ preventScroll: true }); try { if (f.s != null) el.setSelectionRange(f.s, f.e); } catch {} } }
+  }
+  /* Snapshot bursts (four collections at sign-in, batch writes) collapse into one render per frame. */
+  function scheduleRender() {
+    if (S.renderQueued) return;
+    S.renderQueued = true;
+    requestAnimationFrame(() => { S.renderQueued = false; render(); });
   }
   function select(id) {
     if (S.selected !== id) { S.drafts = {}; S.ui = {}; S.animate.body = true; }
@@ -1588,21 +1611,21 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   function startData() {
     const got = { people: false, projects: false };
     const mark = (k) => { got[k] = true; if (got.people && got.projects) S.loaded = true; };
-    const onErr = (k) => (e) => { if (e && e.denied) S.denied = true; if (k) mark(k); render(); };
+    const onErr = (k) => (e) => { if (e && e.denied) S.denied = true; if (k) mark(k); scheduleRender(); };
     S.unsubs.push(S.db.collection("people").orderBy("name").onSnapshot((snap) => {
       S.people = snap.docs.map((d) => ({ id: d.id, ...d.data() })); mark("people");
       if (!S.selected && S.people.length && !window.matchMedia("(max-width: 860px)").matches) S.selected = S.people[0].id;
       if (S.selected && !S.people.some((p) => p.id === S.selected)) S.selected = null;
-      render();
+      scheduleRender();
     }, onErr("people")));
     S.unsubs.push(S.db.collection("projects").orderBy("name").onSnapshot((snap) => {
       S.projects = snap.docs.map((d) => ({ id: d.id, ...d.data() })); mark("projects");
       for (const x of S.projects) { const l = S.localPos[x.id]; if (l && x.pos && x.pos.x === l.x && x.pos.y === l.y) delete S.localPos[x.id]; }
       if (S.selProject && !projById(S.selProject)) S.selProject = null;
-      render();
+      scheduleRender();
     }, onErr("projects")));
-    S.unsubs.push(S.db.collection("comments").orderBy("createdAt", "desc").limit(1000).onSnapshot((snap) => { S.comments = snap.docs.map((d) => ({ id: d.id, ...d.data() })); render(); }, onErr()));
-    S.unsubs.push(S.db.collection("reviews").orderBy("createdAt").limit(1000).onSnapshot((snap) => { S.reviews = snap.docs.map((d) => ({ id: d.id, ...d.data() })); render(); }, onErr()));
+    S.unsubs.push(S.db.collection("comments").orderBy("createdAt", "desc").limit(1000).onSnapshot((snap) => { S.comments = snap.docs.map((d) => ({ id: d.id, ...d.data() })); scheduleRender(); }, onErr()));
+    S.unsubs.push(S.db.collection("reviews").orderBy("createdAt").limit(1000).onSnapshot((snap) => { S.reviews = snap.docs.map((d) => ({ id: d.id, ...d.data() })); scheduleRender(); }, onErr()));
   }
   function showLogin(on) {
     $("login").hidden = !on;
