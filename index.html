@@ -442,7 +442,9 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .label-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 
 /* free-form board (drag like stickies) */
-.board-wrap { flex: 1 1 auto; min-height: 260px; padding: 0; overflow: auto; }
+.board-wrap { flex: 1 1 auto; min-height: 260px; padding: 0; overflow: auto; scrollbar-width: none; } /* still scrolls by wheel/touch, no bar */
+.board-wrap::-webkit-scrollbar { display: none; }
+.board-wrap > .cork-legend { right: auto; left: 12px; } /* the bin and its label sit in the right corner */
 .board { position: relative; min-height: 100%; }
 .bcard {
   position: absolute; width: 168px; display: grid; justify-items: center; gap: 8px; padding: 26px 10px 14px; text-align: center;
@@ -1303,6 +1305,12 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
         <span class="bin-label">Смітник</span>
       </button>
       </div>`);
+    /* the layout estimates card height; trim the board to the real cards so it does not overflow by that slack */
+    const board = $("board");
+    if (board) {
+      let bottom = 0; for (const c of board.children) if (c.classList.contains("bcard")) bottom = Math.max(bottom, c.offsetTop + c.offsetHeight);
+      const h = Math.round(bottom + PAD) + "px"; if (board.style.height !== h) board.style.height = h;
+    }
     if (prevScroll) { const w = $("boardWrap"); if (w) { w.scrollLeft = prevScroll[0]; w.scrollTop = prevScroll[1]; } }
   }
 
