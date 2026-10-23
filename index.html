@@ -202,6 +202,12 @@ button { font: inherit; cursor: pointer; color: inherit; }
 .p-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .p-role { color: var(--ink-2); font-size: .85rem; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .p-rate { font-family: var(--font-type); font-size: .8rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+/* the person's active project, at the card's right edge */
+.person-btn { position: relative; }
+.person-btn.has-proj { padding-right: 52px; }
+.p-proj { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); }
+.label.sm { width: 30px; height: 30px; font-size: .62rem; border-width: 2px; border-radius: 3px; }
+.roster-opt { padding: 0 4px; font-size: .82rem; color: #3d3220; cursor: pointer; }
 .p-due { margin-left: 6px; font-family: var(--font-stamp); text-transform: uppercase; letter-spacing: .08em; font-size: .66rem; color: var(--red); }
 .avatar { width: 40px; height: 48px; display: block; overflow: hidden; border: 2px solid #f4f1e8; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); background: #4b3f8f; }
 .avatar svg, .photo svg { width: 100%; height: 100%; display: block; }
@@ -338,10 +344,10 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .dcard.past .meta, .dcard.past .meta.missing { color: var(--ink-3); }
 .dcard.past .pin { filter: grayscale(1); }
 /* entering the active frame: the card flashes white, then settles into colour */
-.dcard.lit::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: #fff; animation: card-flash .175s ease-out both; }
+.dcard.lit::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: #fff; animation: card-flash .35s ease-out both; }
 @keyframes card-flash { 0% { opacity: 0; } 40% { opacity: .9; } 100% { opacity: 0; } }
-.dcard.lit { animation: dcard-lit .175s ease-out both; }
-.dcard.lit .label, .dcard.lit .pin { animation: colour-in .175s ease-out both; }
+.dcard.lit { animation: dcard-lit .35s ease-out both; }
+.dcard.lit .label, .dcard.lit .pin { animation: colour-in .35s ease-out both; }
 @keyframes dcard-lit { from { background-color: #d9d5cc; } to { background-color: var(--paper); } }
 @keyframes colour-in { from { filter: grayscale(1); opacity: .7; } to { filter: grayscale(0); opacity: 1; } }
 /* leaving it: the colour simply fades to grey */
@@ -705,6 +711,7 @@ img { max-width: 100%; }
       <aside class="roster">
         <input id="search" type="search" placeholder="Пошук за ім’ям чи посадою" aria-label="Пошук людей">
         <select id="groupSel" class="group-sel" aria-label="Група за посадою"><option value="">Усі посади</option></select>
+        <label class="check roster-opt"><input type="checkbox" id="sortProj"> Сортувати за проєктом</label>
         <ul class="people" id="people"><li class="empty">Завантажуємо команду…</li></ul>
       </aside>
       <div class="sheet-card">
@@ -930,6 +937,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     return [...m.values()].sort((a, b) => (a.key === "" ? 1 : b.key === "" ? -1 : a.label.localeCompare(b.label, "uk")));
   }
   try { S.group = localStorage.getItem("pf-group") || ""; } catch { S.group = ""; }
+  try { S.byProject = localStorage.getItem("pf-sort-project") !== "0"; } catch { S.byProject = true; }
+  $("sortProj").checked = S.byProject;
 
   /* ================= tabs ================= */
   function setTab(tab) {
@@ -964,13 +973,20 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const q = S.q.trim().toLowerCase();
     const list = S.people.filter((p) => (!S.group || roleKey(p.role) === S.group) && (!q || (p.name + " " + (p.role || "")).toLowerCase().includes(q)));
     if (!list.length) { setHtml(ul, '<li class="empty">Нікого не знайдено.</li>'); return; }
+    const activeProj = (p) => { const id = activeOf(p); return id ? projById(id) : null; };
+    /* within a role group: by active project name, people without one last; the sort is stable, so names stay in order */
+    if (S.byProject) list.sort((a, b) => {
+      const pa = activeProj(a), pb = activeProj(b);
+      return pa && pb ? pa.name.localeCompare(pb.name, "uk") : pa ? -1 : pb ? 1 : 0;
+    });
     const card = (p) => {
-      const rs = reviewState(p);
-      return `<li><button class="person-btn" type="button" data-id="${esc(p.id)}" aria-current="false">
+      const rs = reviewState(p), x = activeProj(p);
+      return `<li><button class="person-btn${x ? " has-proj" : ""}" type="button" data-id="${esc(p.id)}" aria-current="false">
         <span class="avatar">${faceHtml(p)}</span>
         <span class="p-name">${esc(p.name)}</span>
         <span class="p-role">${esc(p.role || "—")}</span>
         <span class="p-rate">${num(p.rate)} ${esc(p.currency || "PLN")}${rs && rs.cls ? `<span class="p-due">перегляд ${esc(rs.text)}</span>` : ""}</span>
+        ${x ? `<span class="p-proj" title="Зараз на проєкті: ${esc(x.name)}">${labelHtml(x, "sm")}</span>` : ""}
       </button></li>`;
     };
     setHtml(ul, S.group || groups.length < 2 ? list.map(card).join("") : groups.map((g) => {
@@ -1575,6 +1591,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   /* ================= roster & bookmarks events ================= */
   $("search").addEventListener("input", (e) => { S.q = e.target.value; renderPeople(); });
   $("groupSel").addEventListener("change", (e) => { S.group = e.target.value; try { localStorage.setItem("pf-group", S.group); } catch {} renderPeople(); });
+  $("sortProj").addEventListener("change", (e) => { S.byProject = e.target.checked; try { localStorage.setItem("pf-sort-project", S.byProject ? "1" : "0"); } catch {} renderPeople(); });
   $("people").addEventListener("click", (e) => { const b = e.target.closest(".person-btn"); if (b) select(b.dataset.id); });
   $("ptabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) setPtab(b.dataset.tab); });
 
