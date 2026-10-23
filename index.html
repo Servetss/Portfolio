@@ -1250,9 +1250,49 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     if (prevScroll) { const w = $("boardWrap"); if (w) { w.scrollLeft = prevScroll[0]; w.scrollTop = prevScroll[1]; } }
   }
 
+  /* ================= drag physics: a held card hangs from the grab point like a joint ================= */
+  const calmMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const settling = new Set(); /* cards swinging back after a drop; renders wait so the DOM is not swapped mid-swing */
+  function hang(el, d, rest) {
+    if (calmMotion.matches) return;
+    const w = el.offsetWidth, h = el.offsetHeight;
+    const ph = el._ph || { a: rest, av: 0, s: 1, sv: 0 };
+    settling.delete(el);
+    Object.assign(ph, { d, rest, held: true, px: d.gx - w / 2, py: d.gy - h / 2,
+      lever: Math.min(1.3, Math.max(0.35, (h * 0.65 - d.gy) / (h * 0.5))), /* grabbed high = long pendulum, more swing */
+      lean: Math.max(-1, Math.min(1, (w / 2 - d.gx) / (w / 2))) * 6 }); /* held off-centre, the free side sags */
+    el._ph = ph; el.style.transition = "none";
+    if (!ph.raf) { ph.t = performance.now(); ph.raf = requestAnimationFrame((t) => swing(el, t)); }
+  }
+  function swing(el, now) {
+    const ph = el._ph; if (!ph) return;
+    const dt = Math.min(0.032, Math.max(0.001, (now - ph.t) / 1000)); ph.t = now;
+    const d = ph.d;
+    if (ph.held && now - d.vt > 40) d.vx *= 0.8; /* pointer stopped: the swing dies out */
+    const angle = ph.held ? Math.max(-14, Math.min(14, ph.lean + d.vx * 10 * ph.lever)) + (d.overTrash ? -6 : 0) : ph.rest;
+    const scale = ph.held ? (d.overTrash ? 0.9 : 1.04) : 1;
+    /* underdamped springs: overshoot a little, then settle */
+    ph.av += (180 * (angle - ph.a) - 12 * ph.av) * dt; ph.a += ph.av * dt;
+    ph.sv += (400 * (scale - ph.s) - 30 * ph.sv) * dt; ph.s += ph.sv * dt;
+    if (!ph.held && Math.abs(ph.a - ph.rest) < 0.05 && Math.abs(ph.av) < 1 && Math.abs(ph.s - 1) < 0.002 && Math.abs(ph.sv) < 0.01) {
+      el.style.transform = ""; el.style.transition = ""; el._ph = null; settling.delete(el);
+      if (!settling.size && !S.drag && S.renderPending) { S.renderPending = false; render(); }
+      return;
+    }
+    /* rest tilt about the centre (as in CSS), swing about the grab point on top of it */
+    el.style.transform = `translate(${ph.px}px, ${ph.py}px) rotate(${(ph.a - ph.rest).toFixed(2)}deg) translate(${-ph.px}px, ${-ph.py}px) rotate(${ph.rest}deg) scale(${ph.s.toFixed(4)})`;
+    ph.raf = requestAnimationFrame((t) => swing(el, t));
+  }
+  function letGo(el, settle) {
+    const ph = el && el._ph; if (!ph) return;
+    ph.held = false;
+    if (settle) { settling.add(el); return; }
+    cancelAnimationFrame(ph.raf); el.style.transform = ""; el.style.transition = ""; el._ph = null;
+  }
+
   /* ================= render orchestration ================= */
   function render() {
-    if (S.drag) { S.renderPending = true; return; }
+    if (S.drag || settling.size) { S.renderPending = true; return; }
     const a = document.activeElement; let f = null;
     if (a && a.id && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest && a.closest("#detail, #view-projects")) {
       f = { id: a.id }; try { f.s = a.selectionStart; f.e = a.selectionEnd; } catch {}
@@ -1530,7 +1570,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const card = e.target.closest(".bcard, .tcard"); if (!card) return;
     const r = card.getBoundingClientRect();
     S.drag = { kind: card.classList.contains("tcard") ? "trash" : "board", id: card.dataset.id, el: card, sx: e.clientX, sy: e.clientY,
-      ox: card.offsetLeft, oy: card.offsetTop, gx: e.clientX - r.left, gy: e.clientY - r.top, moved: false, pointer: e.pointerId };
+      ox: card.offsetLeft, oy: card.offsetTop, gx: e.clientX - r.left, gy: e.clientY - r.top, moved: false, pointer: e.pointerId,
+      vx: 0, lx: e.clientX, vt: performance.now() };
   });
   window.addEventListener("pointermove", (e) => {
     const d = S.drag; if (!d || e.pointerId !== d.pointer) return;
@@ -1539,13 +1580,15 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       if (Math.hypot(dx, dy) < 5) return;
       d.moved = true;
       try { d.el.setPointerCapture(d.pointer); } catch {}
-      if (d.kind === "board") d.el.classList.add("dragging");
+      if (d.kind === "board") { d.el.classList.add("dragging"); hang(d.el, d, parseFloat(d.el.style.getPropertyValue("--rot")) || 0); }
       else {
         d.ghost = d.el.cloneNode(true); d.ghost.classList.add("drag-ghost"); d.ghost.style.width = d.el.offsetWidth + "px";
-        document.body.appendChild(d.ghost); d.el.classList.add("lifted");
+        document.body.appendChild(d.ghost); d.el.classList.add("lifted"); hang(d.ghost, d, 3);
       }
     }
     e.preventDefault();
+    const now = performance.now();
+    d.vx = d.vx * 0.6 + (e.clientX - d.lx) / Math.max(1, now - d.vt) * 0.4; d.lx = e.clientX; d.vt = now;
     const bin = $("bin"), trash = $("trash"), wrap = $("boardWrap");
     if (d.kind === "board") {
       d.x = Math.max(0, d.ox + dx); d.y = Math.max(0, d.oy + dy);
@@ -1572,11 +1615,12 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     S.drag = null;
     const bin = $("bin"), trash = $("trash"), wrap = $("boardWrap"), board = $("board");
     if (bin) bin.classList.remove("hot"); if (trash) trash.classList.remove("hot"); if (wrap) wrap.classList.remove("drop-ok");
-    if (d.ghost) d.ghost.remove();
+    if (d.ghost) { letGo(d.ghost, false); d.ghost.remove(); }
     if (d.moved) {
       S.justDragged = true; setTimeout(() => { S.justDragged = false; }, 0);
       if (d.kind === "board") {
         d.el.classList.remove("dragging");
+        letGo(d.el, !d.overTrash);
         if (d.overTrash) { S.renderPending = false; setArchived(d.id, true); return; }
         const pos = { x: Math.round(d.x), y: Math.round(d.y), z: topZ() + 1 };
         d.el.style.zIndex = pos.z;
