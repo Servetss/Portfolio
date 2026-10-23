@@ -325,7 +325,7 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 }
 .dcard:hover { transform: rotate(0deg) translateY(-2px); }
 .dcard.dragging { cursor: grabbing; z-index: 9999 !important; transition: none; }
-.dcard.snap { transition: left .22s var(--ease), top .22s var(--ease); }
+.dcard.snap { transition: left .32s var(--ease), top .32s var(--ease), transform var(--t-med) var(--ease); }
 .dcard.open { box-shadow: 0 0 0 2px var(--ink), 3px 8px 14px rgba(30, 15, 0, .45); }
 .dcard > .x { position: absolute; top: 2px; right: 2px; z-index: 3; }
 .dcard-open { display: grid; justify-items: center; gap: 6px; border: 0; padding: 0; background: transparent; color: inherit; cursor: inherit; text-align: center; }
@@ -337,6 +337,34 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .dcard.past .label { filter: grayscale(1); opacity: .7; }
 .dcard.past .meta, .dcard.past .meta.missing { color: var(--ink-3); }
 .dcard.past .pin { filter: grayscale(1); }
+/* becoming active: a radial burst with turning rays in the frame, a sheen across the card, colour returns */
+.dframe::before, .dframe::after { content: ""; position: absolute; pointer-events: none; opacity: 0; }
+.dframe::before {
+  inset: -70%; background: repeating-conic-gradient(rgba(255, 238, 180, .55) 0deg 5deg, transparent 5deg 22deg);
+  -webkit-mask: radial-gradient(circle, #000 12%, transparent 58%); mask: radial-gradient(circle, #000 12%, transparent 58%);
+}
+.dframe::after { inset: -45%; border-radius: 50%; background: radial-gradient(circle, rgba(255, 248, 222, .95) 0%, rgba(255, 220, 140, .5) 28%, transparent 64%); }
+.dframe.shine::before { animation: frame-rays 1.2s ease-out; }
+.dframe.shine::after { animation: frame-burst .9s ease-out; }
+@keyframes frame-rays { 0% { opacity: 0; transform: rotate(0deg) scale(.35); } 25% { opacity: 1; } 100% { opacity: 0; transform: rotate(70deg) scale(1.15); } }
+@keyframes frame-burst { 0% { opacity: 0; transform: scale(.2); } 20% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5); } }
+.dcard.lit { animation: dcard-lit .7s ease-out both; }
+.dcard.lit .label, .dcard.lit .pin { animation: colour-in .7s ease-out both; }
+.dcard.lit::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, .7) 50%, transparent 65%) no-repeat; background-size: 260% 100%;
+  animation: card-sheen .8s ease-out .08s both;
+}
+@keyframes dcard-lit { from { background-color: #d9d5cc; } to { background-color: var(--paper); } }
+@keyframes colour-in { from { filter: grayscale(1); opacity: .7; } to { filter: grayscale(0); opacity: 1; } }
+@keyframes card-sheen { from { background-position: 100% 0; opacity: 1; } to { background-position: -60% 0; opacity: 0; } }
+/* leaving the frame: colour drains to grey */
+.dcard.dim { animation: dcard-dim .7s ease-out both; }
+.dcard.dim .label { animation: label-dim .7s ease-out both; }
+.dcard.dim .pin { animation: pin-dim .7s ease-out both; }
+@keyframes dcard-dim { from { background-color: var(--paper); } to { background-color: #d9d5cc; } }
+@keyframes label-dim { from { filter: grayscale(0); opacity: 1; } to { filter: grayscale(1); opacity: .7; } }
+@keyframes pin-dim { from { filter: grayscale(0); } to { filter: grayscale(1); } }
 .tile {
   width: 100%; min-width: 0; display: grid; justify-items: center; align-content: start; gap: 8px; padding: 26px 10px 14px;
   text-align: center; border: 0; border-radius: 1px; color: var(--ink); background: var(--noise), var(--paper);
@@ -1762,6 +1790,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       ox: card.offsetLeft, oy: card.offsetTop, gx: e.clientX - r.left, gy: e.clientY - r.top, moved: false, pointer: e.pointerId,
       vx: 0, lx: e.clientX, vt: performance.now() };
   });
+  /* restart a one-shot CSS animation class */
+  const replay = (el, cls, off) => { if (off) el.classList.remove(off); el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
   function dropOnDossier(d) {
     const p = S.people.find((x) => x.id === d.person), f = document.querySelector("#dboard .dframe");
     d.el.classList.remove("dragging"); if (f) f.classList.remove("hot");
@@ -1770,13 +1800,23 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     if (d.overFrame) {
       const s = frameSlot(); rest = 0;
       d.el.classList.add("snap"); d.el.style.left = s.x + "px"; d.el.style.top = s.y + "px";
-      d.el.classList.replace("past", "active");
-      if (activeOf(p) !== d.id) patch.activeProject = d.id; /* the previous active card goes back to its own spot in the history */
+      if (!d.el.classList.contains("active")) {
+        d.el.classList.replace("past", "active"); replay(d.el, "lit", "dim"); if (f) replay(f, "shine");
+        /* the previous active card fades to grey and slides back to its own spot in the history */
+        const prev = [...document.querySelectorAll("#dboard .dcard.active")].find((c) => c !== d.el);
+        if (prev) {
+          const spot = dossierLayout({ ...p, activeProject: d.id }, $("dboard").clientWidth).cards.find((c) => c.x.id === prev.dataset.id);
+          prev.classList.replace("active", "past"); replay(prev, "dim", "lit"); prev.classList.add("snap");
+          if (spot) { prev.style.left = spot.pos.x + "px"; prev.style.top = spot.pos.y + "px"; prev.style.zIndex = spot.pos.z; }
+          prev.style.setProperty("--rot", rotFor(prev.dataset.id).toFixed(2) + "deg");
+        }
+      }
+      if (activeOf(p) !== d.id) patch.activeProject = d.id;
     } else {
       const pos = { x: Math.round(d.x), y: Math.round(d.y), z: topCardZ(p) + 1 }; rest = rotFor(d.id);
       d.el.style.zIndex = pos.z; patch.cardPos = { [d.id]: pos };
       /* the card on screen is the truth: it may have been snapped in before the snapshot caught up */
-      if (activeOf(p) === d.id || d.el.classList.contains("active")) { patch.activeProject = null; d.el.classList.replace("active", "past"); }
+      if (activeOf(p) === d.id || d.el.classList.contains("active")) { patch.activeProject = null; d.el.classList.replace("active", "past"); replay(d.el, "dim", "lit"); }
     }
     d.el.style.setProperty("--rot", rest.toFixed(2) + "deg"); if (d.el._ph) d.el._ph.rest = rest;
     letGo(d.el, true);
