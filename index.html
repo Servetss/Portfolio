@@ -328,6 +328,8 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .label.lg { width: 84px; height: 84px; font-size: 1.5rem; }
 .label.has-img { border: 1px solid var(--rule); box-shadow: none; }
 .label img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Icons on draggable cards must not start the browser's own image drag: the whole card is the handle. */
+.bcard img, .tcard img { pointer-events: none; -webkit-user-drag: none; user-select: none; }
 .c0 { background: var(--l0-bg); color: var(--l0-fg); }
 .c1 { background: var(--l1-bg); color: var(--l1-fg); }
 .c2 { background: var(--l2-bg); color: var(--l2-fg); }
@@ -1675,6 +1677,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     try { await S.db.doc("projects/" + id).update(patch); } catch (err) { /* the snapshot restores the real state */ }
   }
   const inRect = (el, x, y) => { if (!el) return false; const r = el.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; };
+  $("view-projects").addEventListener("dragstart", (e) => e.preventDefault()); /* no native image/text drag over our own */
   $("view-projects").addEventListener("pointerdown", (e) => {
     if (!S.canWrite || !S.db || e.button !== 0) return;
     if (e.target.closest("button.link, .x")) return;
