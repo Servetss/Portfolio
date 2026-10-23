@@ -310,8 +310,33 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .tile-wrap { position: relative; min-width: 0; display: grid; transform: rotate(var(--rot, 0deg)); transition: transform var(--t-med) var(--ease); }
 .tile-wrap:hover { transform: rotate(0deg) translateY(-2px); }
 .tile-wrap > .x { position: absolute; top: 2px; right: 2px; z-index: 3; }
-.tile-act { justify-self: center; margin-top: 8px; border: 0; padding: 2px 6px; background: transparent; font-family: var(--font-type); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: #fff2dc; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
-.tile-act:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* dossier board: free cards + the active-project frame */
+.dboard-wrap { padding: 0; overflow-x: auto; scrollbar-width: none; }
+.dboard-wrap::-webkit-scrollbar { display: none; }
+.dboard { position: relative; min-width: 100%; }
+.dframe { position: absolute; border: 2px dashed rgba(255, 240, 215, .7); border-radius: 6px; background: rgba(255, 240, 215, .07); transition: background-color var(--t-fast) ease-out, border-color var(--t-fast) ease-out; }
+.dframe.hot { border-style: solid; border-color: #fff2dc; background: rgba(255, 240, 215, .22); }
+.dframe-label { position: absolute; left: 0; right: 0; bottom: 100%; padding-bottom: 4px; text-align: center; font-family: var(--font-type); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(255, 240, 215, .9); white-space: nowrap; }
+.dframe-hint { position: absolute; inset: 0; display: grid; place-items: center; padding: 14px; text-align: center; font-size: .85rem; font-style: italic; color: #fff2dc; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+.dcard {
+  position: absolute; width: 132px; display: grid; padding: 24px 10px 12px; color: var(--ink);
+  background: var(--noise), var(--paper); box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 3px 8px 14px rgba(30, 15, 0, .45);
+  transform: rotate(var(--rot, 0deg)); touch-action: none; user-select: none; cursor: grab; transition: transform var(--t-med) var(--ease);
+}
+.dcard:hover { transform: rotate(0deg) translateY(-2px); }
+.dcard.dragging { cursor: grabbing; z-index: 9999 !important; transition: none; }
+.dcard.snap { transition: left .22s var(--ease), top .22s var(--ease); }
+.dcard.open { box-shadow: 0 0 0 2px var(--ink), 3px 8px 14px rgba(30, 15, 0, .45); }
+.dcard > .x { position: absolute; top: 2px; right: 2px; z-index: 3; }
+.dcard-open { display: grid; justify-items: center; gap: 6px; border: 0; padding: 0; background: transparent; color: inherit; cursor: inherit; text-align: center; }
+.dcard .name { font-weight: 700; font-size: .88rem; line-height: 1.3; overflow-wrap: anywhere; }
+.dcard .meta { font-size: .76rem; color: var(--ink-2); font-style: italic; overflow-wrap: anywhere; }
+.dcard .meta.missing { color: var(--amber); }
+/* history: grey card, grey icon */
+.dcard.past { background: var(--noise), #d9d5cc; color: var(--ink-3); box-shadow: 0 2px 0 rgba(0, 0, 0, .06), 2px 5px 9px rgba(30, 15, 0, .35); }
+.dcard.past .label { filter: grayscale(1); opacity: .7; }
+.dcard.past .meta, .dcard.past .meta.missing { color: var(--ink-3); }
+.dcard.past .pin { filter: grayscale(1); }
 .tile {
   width: 100%; min-width: 0; display: grid; justify-items: center; align-content: start; gap: 8px; padding: 26px 10px 14px;
   text-align: center; border: 0; border-radius: 1px; color: var(--ink); background: var(--noise), var(--paper);
@@ -331,7 +356,7 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .label.has-img { border: 1px solid var(--rule); box-shadow: none; }
 .label img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* Icons on draggable cards must not start the browser's own image drag: the whole card is the handle. */
-.bcard img, .tcard img { pointer-events: none; -webkit-user-drag: none; user-select: none; }
+.bcard img, .tcard img, .dcard img { pointer-events: none; -webkit-user-drag: none; user-select: none; }
 .c0 { background: var(--l0-bg); color: var(--l0-fg); }
 .c1 { background: var(--l1-bg); color: var(--l1-fg); }
 .c2 { background: var(--l2-bg); color: var(--l2-fg); }
@@ -979,49 +1004,71 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   /* A person has at most one active project (p.activeProject); every other linked project is history. */
   const activeOf = (p) => (linkedIds(p).includes(p.activeProject) ? p.activeProject : null);
 
+  /* Dossier board: cards move freely (positions per person in p.cardPos); the card dropped into the frame is the active project. */
+  const DC = { w: 132, h: 156, pad: 20, top: 34, gap: 18, inset: 14 };
+  const frameBox = () => ({ x: DC.pad, y: DC.top, w: DC.w + DC.inset * 2, h: DC.h + DC.inset * 2 });
+  const frameSlot = () => ({ x: DC.pad + DC.inset, y: DC.top + DC.inset });
+  const topCardZ = (p) => Math.max(0, ...Object.values(p.cardPos || {}).map((q) => (q && q.z) || 0));
+  function dossierLayout(p, width) {
+    const f = frameBox(); const activeId = activeOf(p);
+    const beside = width >= f.x + f.w + DC.gap * 2 + DC.w + DC.pad; /* narrow screens stack the history under the frame */
+    const x0 = beside ? f.x + f.w + DC.gap * 2 : DC.pad, y0 = beside ? f.y : f.y + f.h + DC.gap;
+    const cols = Math.max(1, Math.floor((width - x0 - DC.pad + DC.gap) / (DC.w + DC.gap)));
+    let free = 0, bottom = f.y + f.h;
+    const cards = linkedIds(p).map((id) => {
+      const x = projById(id), saved = (p.cardPos || {})[id];
+      let pos;
+      if (id === activeId) pos = { ...frameSlot(), z: 0 };
+      else if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) pos = { x: saved.x, y: saved.y, z: saved.z || 0 };
+      else { const i = free++; pos = { x: x0 + (i % cols) * (DC.w + DC.gap), y: y0 + Math.floor(i / cols) * (DC.h + DC.gap), z: 0 }; }
+      bottom = Math.max(bottom, pos.y + DC.h);
+      return { x, pos, active: id === activeId };
+    });
+    return { cards, h: bottom + DC.pad };
+  }
+
   function secProjects(p) {
-    const ui = S.ui; const activeId = activeOf(p);
-    const active = activeId && projById(activeId); const past = linkedIds(p).filter((id) => id !== activeId).map(projById);
+    const ui = S.ui;
     let picker = "";
     if (ui.linking) {
       const q = S.linkQ.trim().toLowerCase();
-      /* the active picker may also promote a project from the history */
-      const avail = S.projects.filter((x) => (ui.linking === "active" ? x.id !== activeId : !linkedIds(p).includes(x.id)) && (!q || x.name.toLowerCase().includes(q)));
+      const avail = S.projects.filter((x) => !linkedIds(p).includes(x.id) && (!q || x.name.toLowerCase().includes(q)));
       picker = `<div class="picker">
         <div class="picker-head">
           <input id="link-q" type="search" placeholder="Знайти проєкт у базі" value="${esc(S.linkQ)}" aria-label="Знайти проєкт у базі">
-          <button class="btn" type="button" data-act="close-link">${ui.linking === "active" ? "Скасувати" : "Готово"}</button>
+          <button class="btn" type="button" data-act="close-link">Готово</button>
         </div>
         ${!S.projects.length ? `<p class="notice">У базі ще немає проєктів. <button type="button" class="link" data-act="go-projects">Додати проєкт у базу</button></p>`
           : avail.length ? `<div class="pgrid">${avail.map((x) => `
-            <button type="button" class="tile" data-act="link" data-id="${esc(x.id)}">${labelHtml(x)}<span class="name">${esc(x.name)}</span><span class="meta">${ui.linking === "active" ? "зробити активним" : "+ в історію"}</span></button>`).join("")}</div>`
+            <button type="button" class="tile" data-act="link" data-id="${esc(x.id)}">${labelHtml(x)}<span class="name">${esc(x.name)}</span><span class="meta">+ підв’язати</span></button>`).join("")}</div>`
           : `<p class="notice">${q ? "Нічого не знайдено." : "Усі проєкти з бази вже підв’язані до цієї людини."}</p>`}
       </div>`;
     }
-    const tile = (x, isActive) => { const w = workOf(p, x.id); return `
-      <div class="tile-wrap" style="--rot:${rotFor(x.id).toFixed(2)}deg">
+    const width = Math.max(300, (($("detail") && $("detail").clientWidth) || 760) - 88);
+    const L = dossierLayout(p, width), f = frameBox(), hasActive = L.cards.some((c) => c.active);
+    const card = ({ x, pos, active }) => { const w = workOf(p, x.id); return `
+      <div class="dcard ${active ? "active" : "past"}${ui.work === x.id ? " open" : ""}" data-id="${esc(x.id)}"
+        style="left:${pos.x}px;top:${pos.y}px;z-index:${pos.z};--rot:${active ? 0 : rotFor(x.id).toFixed(2)}deg">
         <span class="pin"></span>
-        <button type="button" class="tile" data-act="open-work" data-id="${esc(x.id)}" aria-current="${ui.work === x.id}" title="Що робив(ла) на проєкті">
+        <button type="button" class="dcard-open" data-act="open-work" data-id="${esc(x.id)}" title="Що робив(ла) на проєкті">
           ${labelHtml(x)}<span class="name">${esc(x.name)}</span>
           ${w.role ? `<span class="meta">${esc(w.role)}</span>` : w.text ? "" : `<span class="meta missing">не описано</span>`}
         </button>
-        ${S.canWrite ? `<button type="button" class="x" data-act="unlink" data-id="${esc(x.id)}" aria-label="Відв’язати ${esc(x.name)}" title="Відв’язати зовсім">✕</button>
-          <button type="button" class="tile-act" data-act="${isActive ? "set-past" : "set-active"}" data-id="${esc(x.id)}">${isActive ? "→ в історію" : "↑ зробити активним"}</button>` : ""}
+        ${S.canWrite ? `<button type="button" class="x" data-act="unlink" data-id="${esc(x.id)}" aria-label="Відв’язати ${esc(x.name)}" title="Відв’язати">✕</button>` : ""}
       </div>`; };
-    const openBtn = (mode, text) => (S.canWrite && !ui.linking ? `<button class="btn ghost" type="button" data-act="open-link" data-mode="${mode}">${text}</button>` : "");
     return `<section>
-      <h3>Активний проєкт ${openBtn("active", active ? "Змінити" : "+ Призначити")}</h3>
+      <h3>Проєкти ${S.canWrite && !ui.linking ? `<button class="btn ghost" type="button" data-act="open-link">+ Підв’язати з бази</button>` : ""}</h3>
       <span class="err" id="link-err"></span>
-      ${ui.linking === "active" ? picker : ""}
-      <div class="cork">
-        ${active ? `<div class="pgrid">${tile(active, true)}</div>` : `<p class="cork-empty">Зараз людина не закріплена за жодним проєктом.</p>`}
-        <span class="cork-legend">Зараз працює</span>
-      </div>
-      <h3>Історія проєктів ${openBtn("history", "+ Додати з бази")}</h3>
-      ${ui.linking === "history" ? picker : ""}
-      <div class="cork">
-        ${past.length ? `<div class="pgrid">${past.map((x) => tile(x, false)).join("")}</div>` : `<p class="cork-empty">Попередніх проєктів ще немає.</p>`}
-        <span class="cork-legend">Працював(ла) раніше</span>
+      ${picker}
+      <div class="cork dboard-wrap">
+        <div class="dboard" id="dboard" style="height:${L.h}px">
+          <div class="dframe" style="left:${f.x}px;top:${f.y}px;width:${f.w}px;height:${f.h}px">
+            <span class="dframe-label">Активний проєкт</span>
+            ${hasActive ? "" : `<span class="dframe-hint">${L.cards.length ? "Перетягніть сюди картку проєкту, на якому людина зараз" : "Підв’яжіть проєкт з бази"}</span>`}
+          </div>
+          ${L.cards.map(card).join("")}
+        </div>
+        <span class="cork-legend">${L.cards.length ? "У рамці — зараз · сірі — історія" : "Дошка справи"}</span>
       </div>
       ${workPanel(p)}
     </section>`;
@@ -1534,7 +1581,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     "edit-profile": () => { clearDrafts("pf-name", "pf-role", "pf-since"); S.ui = { editProfile: true }; render(); const i = $("pf-name"); if (i) i.focus(); },
     "cancel-profile": () => { S.ui = {}; render(); },
     "drop-photo": () => { S.ui.photo = null; render(); },
-    "open-link": (b) => { S.ui = { linking: b.dataset.mode === "active" ? "active" : "history" }; S.linkQ = ""; render(); const i = $("link-q"); if (i) i.focus(); },
+    "open-link": () => { S.ui = { linking: true }; S.linkQ = ""; render(); const i = $("link-q"); if (i) i.focus(); },
     "close-link": () => { S.ui = {}; render(); },
     "go-projects": () => openAddProject(),
     "open-work": (b) => { const id = b.dataset.id; S.ui = S.ui.work === id && !S.ui.editWork ? {} : { work: id }; render(); const w = $("workPanel"); if (w) w.scrollIntoView({ behavior: "smooth", block: "nearest" }); },
@@ -1545,19 +1592,12 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     "open-raise-review": () => { clearDrafts(...RAISE_FIELDS); S.ui = { raiseFromReview: true }; render(); const i = $("ra-rate"); if (i) i.focus(); },
     "cancel-raise": () => { S.ui = {}; render(); },
     "toggle-args": (b) => { S.ui = { openRaise: S.ui.openRaise === b.dataset.id ? null : b.dataset.id }; render(); },
-    "link": async (b, p) => {
-      const id = b.dataset.id, toActive = S.ui.linking === "active"; /* a previous active project stays linked, so it lands in the history */
-      const patch = { projectIds: linkedIds(p).includes(id) ? linkedIds(p) : [...linkedIds(p), id] };
-      if (toActive) patch.activeProject = id;
-      try { await S.db.doc("people/" + p.id).update(patch); if (toActive) { S.ui = {}; render(); } } catch (err) { showErr("link-err", err); }
-    },
+    "link": async (b, p) => { try { await S.db.doc("people/" + p.id).update({ projectIds: [...linkedIds(p), b.dataset.id] }); } catch (err) { showErr("link-err", err); } },
     "unlink": async (b, p) => {
       const patch = { projectIds: linkedIds(p).filter((x) => x !== b.dataset.id) };
       if (p.activeProject === b.dataset.id) patch.activeProject = null;
       try { await S.db.doc("people/" + p.id).update(patch); } catch (err) { showErr("link-err", err); }
     },
-    "set-active": async (b, p) => { try { await S.db.doc("people/" + p.id).update({ activeProject: b.dataset.id }); } catch (err) { showErr("link-err", err); } },
-    "set-past": async (b, p) => { try { await S.db.doc("people/" + p.id).update({ activeProject: null }); } catch (err) { showErr("link-err", err); } },
     "toggle-fix": async (b) => { try { await S.db.doc("reviews/" + b.dataset.id).update({ done: b.checked }); } catch (err) { b.checked = !b.checked; showErr("rv-err", err); } },
     "del-item": async (b) => { try { await S.db.doc("reviews/" + b.dataset.id).delete(); } catch (err) { showErr("rv-err", err); } },
     "del-rate": async (b, p) => {
@@ -1586,6 +1626,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     },
   };
   $("detail").addEventListener("click", (e) => {
+    if (S.justDragged) return; /* the click that ends a card drag is not "open" */
     const b = e.target.closest("[data-act]"); if (!b) return; const p = person(); if (!p) return;
     const fn = detailActions[b.dataset.act]; if (fn) fn(b, p);
   });
@@ -1711,6 +1752,36 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       ox: card.offsetLeft, oy: card.offsetTop, gx: e.clientX - r.left, gy: e.clientY - r.top, moved: false, pointer: e.pointerId,
       vx: 0, lx: e.clientX, vt: performance.now() };
   });
+  /* dossier cards: same drag as the board; the frame decides active vs history */
+  $("detail").addEventListener("dragstart", (e) => { if (e.target.closest && e.target.closest(".dboard")) e.preventDefault(); });
+  $("detail").addEventListener("pointerdown", (e) => {
+    if (!S.canWrite || !S.db || e.button !== 0 || e.target.closest(".x")) return;
+    const card = e.target.closest(".dcard"); if (!card) return;
+    const r = card.getBoundingClientRect();
+    S.drag = { kind: "dossier", person: S.selected, id: card.dataset.id, el: card, sx: e.clientX, sy: e.clientY,
+      ox: card.offsetLeft, oy: card.offsetTop, gx: e.clientX - r.left, gy: e.clientY - r.top, moved: false, pointer: e.pointerId,
+      vx: 0, lx: e.clientX, vt: performance.now() };
+  });
+  function dropOnDossier(d) {
+    const p = S.people.find((x) => x.id === d.person), f = document.querySelector("#dboard .dframe");
+    d.el.classList.remove("dragging"); if (f) f.classList.remove("hot");
+    if (!p) { letGo(d.el, false); return; }
+    const patch = {}; let rest;
+    if (d.overFrame) {
+      const s = frameSlot(); rest = 0;
+      d.el.classList.add("snap"); d.el.style.left = s.x + "px"; d.el.style.top = s.y + "px";
+      d.el.classList.replace("past", "active");
+      if (activeOf(p) !== d.id) patch.activeProject = d.id; /* the previous active card goes back to its own spot in the history */
+    } else {
+      const pos = { x: Math.round(d.x), y: Math.round(d.y), z: topCardZ(p) + 1 }; rest = rotFor(d.id);
+      d.el.style.zIndex = pos.z; patch.cardPos = { [d.id]: pos };
+      /* the card on screen is the truth: it may have been snapped in before the snapshot caught up */
+      if (activeOf(p) === d.id || d.el.classList.contains("active")) { patch.activeProject = null; d.el.classList.replace("active", "past"); }
+    }
+    d.el.style.setProperty("--rot", rest.toFixed(2) + "deg"); if (d.el._ph) d.el._ph.rest = rest;
+    letGo(d.el, true);
+    if (Object.keys(patch).length) S.db.doc("people/" + p.id).update(patch).catch((err) => showErr("link-err", err));
+  }
   window.addEventListener("pointermove", (e) => {
     const d = S.drag; if (!d || e.pointerId !== d.pointer) return;
     const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
@@ -1718,7 +1789,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       if (Math.hypot(dx, dy) < 5) return;
       d.moved = true;
       try { d.el.setPointerCapture(d.pointer); } catch {}
-      if (d.kind === "board") { d.el.classList.add("dragging"); hang(d.el, d, parseFloat(d.el.style.getPropertyValue("--rot")) || 0); }
+      if (d.kind === "board" || d.kind === "dossier") { d.el.classList.remove("snap"); d.el.classList.add("dragging"); hang(d.el, d, parseFloat(d.el.style.getPropertyValue("--rot")) || 0); }
       else {
         d.ghost = d.el.cloneNode(true); d.ghost.classList.add("drag-ghost"); d.ghost.style.width = d.el.offsetWidth + "px";
         document.body.appendChild(d.ghost); d.el.classList.add("lifted"); hang(d.ghost, d, 3);
@@ -1728,7 +1799,15 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const now = performance.now();
     d.vx = d.vx * 0.6 + (e.clientX - d.lx) / Math.max(1, now - d.vt) * 0.4; d.lx = e.clientX; d.vt = now;
     const bin = $("bin"), trash = $("trash"), wrap = $("boardWrap");
-    if (d.kind === "board") {
+    if (d.kind === "dossier") {
+      d.x = Math.max(0, d.ox + dx); d.y = Math.max(0, d.oy + dy);
+      d.el.style.left = d.x + "px"; d.el.style.top = d.y + "px";
+      const board = $("dboard"), f = board && board.querySelector(".dframe");
+      /* the card's centre decides: inside the frame means "this is the current project" */
+      d.overFrame = !!f && inRect(f, e.clientX - d.gx + d.el.offsetWidth / 2, e.clientY - d.gy + d.el.offsetHeight / 2);
+      if (f) f.classList.toggle("hot", d.overFrame);
+      if (board) { const needH = d.y + d.el.offsetHeight + DC.pad; if (needH > board.offsetHeight) board.style.height = needH + "px"; }
+    } else if (d.kind === "board") {
       d.x = Math.max(0, d.ox + dx); d.y = Math.max(0, d.oy + dy);
       d.el.style.left = d.x + "px"; d.el.style.top = d.y + "px";
       d.overTrash = inRect(bin, e.clientX, e.clientY) || inRect(trash, e.clientX, e.clientY);
@@ -1756,6 +1835,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     if (d.ghost) { letGo(d.ghost, false); d.ghost.remove(); }
     if (d.moved) {
       S.justDragged = true; setTimeout(() => { S.justDragged = false; }, 0);
+      if (d.kind === "dossier") { dropOnDossier(d); return; }
       if (d.kind === "board") {
         d.el.classList.remove("dragging");
         letGo(d.el, !d.overTrash);
