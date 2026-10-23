@@ -310,6 +310,8 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .tile-wrap { position: relative; min-width: 0; display: grid; transform: rotate(var(--rot, 0deg)); transition: transform var(--t-med) var(--ease); }
 .tile-wrap:hover { transform: rotate(0deg) translateY(-2px); }
 .tile-wrap > .x { position: absolute; top: 2px; right: 2px; z-index: 3; }
+.tile-act { justify-self: center; margin-top: 8px; border: 0; padding: 2px 6px; background: transparent; font-family: var(--font-type); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: #fff2dc; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+.tile-act:hover { text-decoration: underline; text-underline-offset: 3px; }
 .tile {
   width: 100%; min-width: 0; display: grid; justify-items: center; align-content: start; gap: 8px; padding: 26px 10px 14px;
   text-align: center; border: 0; border-radius: 1px; color: var(--ink); background: var(--noise), var(--paper);
@@ -974,39 +976,52 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     </div>`;
   }
 
+  /* A person has at most one active project (p.activeProject); every other linked project is history. */
+  const activeOf = (p) => (linkedIds(p).includes(p.activeProject) ? p.activeProject : null);
+
   function secProjects(p) {
-    const ui = S.ui; const linked = linkedIds(p).map(projById);
+    const ui = S.ui; const activeId = activeOf(p);
+    const active = activeId && projById(activeId); const past = linkedIds(p).filter((id) => id !== activeId).map(projById);
     let picker = "";
     if (ui.linking) {
       const q = S.linkQ.trim().toLowerCase();
-      const avail = S.projects.filter((x) => !linkedIds(p).includes(x.id) && (!q || x.name.toLowerCase().includes(q)));
+      /* the active picker may also promote a project from the history */
+      const avail = S.projects.filter((x) => (ui.linking === "active" ? x.id !== activeId : !linkedIds(p).includes(x.id)) && (!q || x.name.toLowerCase().includes(q)));
       picker = `<div class="picker">
         <div class="picker-head">
           <input id="link-q" type="search" placeholder="Знайти проєкт у базі" value="${esc(S.linkQ)}" aria-label="Знайти проєкт у базі">
-          <button class="btn" type="button" data-act="close-link">Готово</button>
+          <button class="btn" type="button" data-act="close-link">${ui.linking === "active" ? "Скасувати" : "Готово"}</button>
         </div>
         ${!S.projects.length ? `<p class="notice">У базі ще немає проєктів. <button type="button" class="link" data-act="go-projects">Додати проєкт у базу</button></p>`
           : avail.length ? `<div class="pgrid">${avail.map((x) => `
-            <button type="button" class="tile" data-act="link" data-id="${esc(x.id)}">${labelHtml(x)}<span class="name">${esc(x.name)}</span><span class="meta">+ підв’язати</span></button>`).join("")}</div>`
+            <button type="button" class="tile" data-act="link" data-id="${esc(x.id)}">${labelHtml(x)}<span class="name">${esc(x.name)}</span><span class="meta">${ui.linking === "active" ? "зробити активним" : "+ в історію"}</span></button>`).join("")}</div>`
           : `<p class="notice">${q ? "Нічого не знайдено." : "Усі проєкти з бази вже підв’язані до цієї людини."}</p>`}
       </div>`;
     }
+    const tile = (x, isActive) => { const w = workOf(p, x.id); return `
+      <div class="tile-wrap" style="--rot:${rotFor(x.id).toFixed(2)}deg">
+        <span class="pin"></span>
+        <button type="button" class="tile" data-act="open-work" data-id="${esc(x.id)}" aria-current="${ui.work === x.id}" title="Що робив(ла) на проєкті">
+          ${labelHtml(x)}<span class="name">${esc(x.name)}</span>
+          ${w.role ? `<span class="meta">${esc(w.role)}</span>` : w.text ? "" : `<span class="meta missing">не описано</span>`}
+        </button>
+        ${S.canWrite ? `<button type="button" class="x" data-act="unlink" data-id="${esc(x.id)}" aria-label="Відв’язати ${esc(x.name)}" title="Відв’язати зовсім">✕</button>
+          <button type="button" class="tile-act" data-act="${isActive ? "set-past" : "set-active"}" data-id="${esc(x.id)}">${isActive ? "→ в історію" : "↑ зробити активним"}</button>` : ""}
+      </div>`; };
+    const openBtn = (mode, text) => (S.canWrite && !ui.linking ? `<button class="btn ghost" type="button" data-act="open-link" data-mode="${mode}">${text}</button>` : "");
     return `<section>
-      <h3>Проєкти ${S.canWrite && !ui.linking ? `<button class="btn ghost" type="button" data-act="open-link">+ Підв’язати з бази</button>` : ""}</h3>
+      <h3>Активний проєкт ${openBtn("active", active ? "Змінити" : "+ Призначити")}</h3>
       <span class="err" id="link-err"></span>
-      ${picker}
+      ${ui.linking === "active" ? picker : ""}
       <div class="cork">
-        ${linked.length ? `<div class="pgrid">${linked.map((x) => { const w = workOf(p, x.id); return `
-          <div class="tile-wrap" style="--rot:${rotFor(x.id).toFixed(2)}deg">
-            <span class="pin"></span>
-            <button type="button" class="tile" data-act="open-work" data-id="${esc(x.id)}" aria-current="${ui.work === x.id}" title="Що робив(ла) на проєкті">
-              ${labelHtml(x)}<span class="name">${esc(x.name)}</span>
-              ${w.role ? `<span class="meta">${esc(w.role)}</span>` : w.text ? "" : `<span class="meta missing">не описано</span>`}
-            </button>
-            ${S.canWrite ? `<button type="button" class="x" data-act="unlink" data-id="${esc(x.id)}" aria-label="Відв’язати ${esc(x.name)}" title="Відв’язати">✕</button>` : ""}
-          </div>`; }).join("")}</div>`
-          : `<p class="cork-empty">До цієї людини ще не підв’язано жодного проєкту.</p>`}
-        <span class="cork-legend">Дошка справи</span>
+        ${active ? `<div class="pgrid">${tile(active, true)}</div>` : `<p class="cork-empty">Зараз людина не закріплена за жодним проєктом.</p>`}
+        <span class="cork-legend">Зараз працює</span>
+      </div>
+      <h3>Історія проєктів ${openBtn("history", "+ Додати з бази")}</h3>
+      ${ui.linking === "history" ? picker : ""}
+      <div class="cork">
+        ${past.length ? `<div class="pgrid">${past.map((x) => tile(x, false)).join("")}</div>` : `<p class="cork-empty">Попередніх проєктів ще немає.</p>`}
+        <span class="cork-legend">Працював(ла) раніше</span>
       </div>
       ${workPanel(p)}
     </section>`;
@@ -1209,13 +1224,16 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
             <button class="btn primary" type="submit">Зберегти</button><button class="btn" type="button" data-act="cancel-rename">Скасувати</button>
           </form>`
           : `<h2>${esc(sel.name)} ${sel.isExample ? '<span class="badge example">зразок</span>' : ""}${sel.archived ? ' <span class="badge archived">у смітнику</span>' : ""}</h2>`}
-        <div>
-          <div class="notice" style="margin-bottom:6px">${team.length ? "Працюють над проєктом:" : "До проєкту ще ніхто не підв’язаний."}</div>
-          ${team.length ? `<div class="team">${team.map((p) => { const w = workOf(p, sel.id); return `<button type="button" class="team-row" data-act="open-person" data-id="${esc(p.id)}" data-proj="${esc(sel.id)}">
-            <span class="avatar">${faceHtml(p)}</span>
-            <span style="min-width:0"><span class="nm">${esc(p.name)}</span> <span class="rl">${esc([w.role, w.period].filter(Boolean).join(" · ") || p.role || "")}</span>
-            <div class="tx">${w.text ? esc(w.text) : `<span class="notice">Що робив(ла) — ще не описано</span>`}</div></span>
-          </button>`; }).join("")}</div>` : ""}
+        <div style="display:grid;gap:12px">
+          ${!team.length ? `<div class="notice">До проєкту ще ніхто не підв’язаний.</div>` : [["Зараз на проєкті:", team.filter((p) => activeOf(p) === sel.id)], ["Раніше працювали:", team.filter((p) => activeOf(p) !== sel.id)]]
+            .filter(([, list]) => list.length).map(([title, list]) => `<div>
+            <div class="notice" style="margin-bottom:6px">${title}</div>
+            <div class="team">${list.map((p) => { const w = workOf(p, sel.id); return `<button type="button" class="team-row" data-act="open-person" data-id="${esc(p.id)}" data-proj="${esc(sel.id)}">
+              <span class="avatar">${faceHtml(p)}</span>
+              <span style="min-width:0"><span class="nm">${esc(p.name)}</span> <span class="rl">${esc([w.role, w.period].filter(Boolean).join(" · ") || p.role || "")}</span>
+              <div class="tx">${w.text ? esc(w.text) : `<span class="notice">Що робив(ла) — ще не описано</span>`}</div></span>
+            </button>`; }).join("")}</div>
+          </div>`).join("")}
         </div>
         ${S.canWrite ? `<div style="display:grid;gap:8px">
           <div class="row start">
@@ -1267,11 +1285,11 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       <div class="board-area" id="boardArea">
       <div class="cork board-wrap" id="boardWrap">
         ${S.projects.length ? `<div class="board" id="board" style="height:${L.h}px;min-width:${L.w}px">
-          ${L.cards.map(({ x, px, py, z }) => { const n = peopleOn(x.id).length; return `
+          ${L.cards.map(({ x, px, py, z }) => { const team = peopleOn(x.id), now = team.filter((p) => activeOf(p) === x.id).length, before = team.length - now; return `
             <button type="button" class="bcard${S.canWrite ? "" : " locked"}" data-id="${esc(x.id)}" aria-current="${x.id === S.selProject}"
               style="left:${px}px;top:${py}px;z-index:${z};--rot:${rotFor(x.id).toFixed(2)}deg">
               <span class="pin"></span>${labelHtml(x)}<span class="name">${esc(x.name)}</span>
-              <span class="meta">${n ? n + " " + plural(n, "людина", "людини", "людей") : "без людей"}</span>
+              <span class="meta">${!team.length ? "без людей" : `${now ? `${now} ${plural(now, "людина", "людини", "людей")} зараз` : "зараз нікого"}${before ? ` · ${before} раніше` : ""}`}</span>
             </button>`; }).join("")}
         </div>${q && !list.length ? '<p class="cork-empty" style="padding:24px">На дошці нічого не знайдено.</p>' : ""}`
         : `<p class="cork-empty" style="padding:24px">База проєктів порожня. Натисніть «+ Додати проєкт» угорі, щоб створити перший.</p>`}
@@ -1516,7 +1534,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     "edit-profile": () => { clearDrafts("pf-name", "pf-role", "pf-since"); S.ui = { editProfile: true }; render(); const i = $("pf-name"); if (i) i.focus(); },
     "cancel-profile": () => { S.ui = {}; render(); },
     "drop-photo": () => { S.ui.photo = null; render(); },
-    "open-link": () => { S.ui = { linking: true }; S.linkQ = ""; render(); const i = $("link-q"); if (i) i.focus(); },
+    "open-link": (b) => { S.ui = { linking: b.dataset.mode === "active" ? "active" : "history" }; S.linkQ = ""; render(); const i = $("link-q"); if (i) i.focus(); },
     "close-link": () => { S.ui = {}; render(); },
     "go-projects": () => openAddProject(),
     "open-work": (b) => { const id = b.dataset.id; S.ui = S.ui.work === id && !S.ui.editWork ? {} : { work: id }; render(); const w = $("workPanel"); if (w) w.scrollIntoView({ behavior: "smooth", block: "nearest" }); },
@@ -1527,8 +1545,19 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     "open-raise-review": () => { clearDrafts(...RAISE_FIELDS); S.ui = { raiseFromReview: true }; render(); const i = $("ra-rate"); if (i) i.focus(); },
     "cancel-raise": () => { S.ui = {}; render(); },
     "toggle-args": (b) => { S.ui = { openRaise: S.ui.openRaise === b.dataset.id ? null : b.dataset.id }; render(); },
-    "link": async (b, p) => { try { await S.db.doc("people/" + p.id).update({ projectIds: [...linkedIds(p), b.dataset.id] }); } catch (err) { showErr("link-err", err); } },
-    "unlink": async (b, p) => { try { await S.db.doc("people/" + p.id).update({ projectIds: linkedIds(p).filter((x) => x !== b.dataset.id) }); } catch (err) { showErr("link-err", err); } },
+    "link": async (b, p) => {
+      const id = b.dataset.id, toActive = S.ui.linking === "active"; /* a previous active project stays linked, so it lands in the history */
+      const patch = { projectIds: linkedIds(p).includes(id) ? linkedIds(p) : [...linkedIds(p), id] };
+      if (toActive) patch.activeProject = id;
+      try { await S.db.doc("people/" + p.id).update(patch); if (toActive) { S.ui = {}; render(); } } catch (err) { showErr("link-err", err); }
+    },
+    "unlink": async (b, p) => {
+      const patch = { projectIds: linkedIds(p).filter((x) => x !== b.dataset.id) };
+      if (p.activeProject === b.dataset.id) patch.activeProject = null;
+      try { await S.db.doc("people/" + p.id).update(patch); } catch (err) { showErr("link-err", err); }
+    },
+    "set-active": async (b, p) => { try { await S.db.doc("people/" + p.id).update({ activeProject: b.dataset.id }); } catch (err) { showErr("link-err", err); } },
+    "set-past": async (b, p) => { try { await S.db.doc("people/" + p.id).update({ activeProject: null }); } catch (err) { showErr("link-err", err); } },
     "toggle-fix": async (b) => { try { await S.db.doc("reviews/" + b.dataset.id).update({ done: b.checked }); } catch (err) { b.checked = !b.checked; showErr("rv-err", err); } },
     "del-item": async (b) => { try { await S.db.doc("reviews/" + b.dataset.id).delete(); } catch (err) { showErr("rv-err", err); } },
     "del-rate": async (b, p) => {
@@ -1629,7 +1658,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     "del-project": async (b, sel) => {
       if (!S.pui.confirmDel) { S.pui = { confirmDel: true }; render(); return; }
       try {
-        for (const p of peopleOn(sel.id)) await S.db.doc("people/" + p.id).update({ projectIds: (p.projectIds || []).filter((x) => x !== sel.id) });
+        for (const p of peopleOn(sel.id)) await S.db.doc("people/" + p.id).update({ projectIds: (p.projectIds || []).filter((x) => x !== sel.id), ...(p.activeProject === sel.id ? { activeProject: null } : {}) });
         await S.db.doc("projects/" + sel.id).delete();
         S.selProject = null; S.pui = {}; render();
       } catch (err) { showErr("pc-err", err); }
