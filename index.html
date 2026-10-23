@@ -337,31 +337,16 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .dcard.past .label { filter: grayscale(1); opacity: .7; }
 .dcard.past .meta, .dcard.past .meta.missing { color: var(--ink-3); }
 .dcard.past .pin { filter: grayscale(1); }
-/* becoming active: a radial burst with turning rays in the frame, a sheen across the card, colour returns */
-.dframe::before, .dframe::after { content: ""; position: absolute; pointer-events: none; opacity: 0; }
-.dframe::before {
-  inset: -70%; background: repeating-conic-gradient(rgba(255, 238, 180, .55) 0deg 5deg, transparent 5deg 22deg);
-  -webkit-mask: radial-gradient(circle, #000 12%, transparent 58%); mask: radial-gradient(circle, #000 12%, transparent 58%);
-}
-.dframe::after { inset: -45%; border-radius: 50%; background: radial-gradient(circle, rgba(255, 248, 222, .95) 0%, rgba(255, 220, 140, .5) 28%, transparent 64%); }
-.dframe.shine::before { animation: frame-rays 1.2s ease-out; }
-.dframe.shine::after { animation: frame-burst .9s ease-out; }
-@keyframes frame-rays { 0% { opacity: 0; transform: rotate(0deg) scale(.35); } 25% { opacity: 1; } 100% { opacity: 0; transform: rotate(70deg) scale(1.15); } }
-@keyframes frame-burst { 0% { opacity: 0; transform: scale(.2); } 20% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5); } }
-.dcard.lit { animation: dcard-lit .7s ease-out both; }
-.dcard.lit .label, .dcard.lit .pin { animation: colour-in .7s ease-out both; }
-.dcard.lit::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, .7) 50%, transparent 65%) no-repeat; background-size: 260% 100%;
-  animation: card-sheen .8s ease-out .08s both;
-}
+/* entering or leaving the active frame: the card flashes white, then settles into colour (active) or grey (history) */
+.dcard.lit::after, .dcard.dim::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: #fff; animation: card-flash .35s ease-out both; }
+@keyframes card-flash { 0% { opacity: 0; } 40% { opacity: .9; } 100% { opacity: 0; } }
+.dcard.lit { animation: dcard-lit .35s ease-out both; }
+.dcard.lit .label, .dcard.lit .pin { animation: colour-in .35s ease-out both; }
 @keyframes dcard-lit { from { background-color: #d9d5cc; } to { background-color: var(--paper); } }
 @keyframes colour-in { from { filter: grayscale(1); opacity: .7; } to { filter: grayscale(0); opacity: 1; } }
-@keyframes card-sheen { from { background-position: 100% 0; opacity: 1; } to { background-position: -60% 0; opacity: 0; } }
-/* leaving the frame: colour drains to grey */
-.dcard.dim { animation: dcard-dim .7s ease-out both; }
-.dcard.dim .label { animation: label-dim .7s ease-out both; }
-.dcard.dim .pin { animation: pin-dim .7s ease-out both; }
+.dcard.dim { animation: dcard-dim .35s ease-out both; }
+.dcard.dim .label { animation: label-dim .35s ease-out both; }
+.dcard.dim .pin { animation: pin-dim .35s ease-out both; }
 @keyframes dcard-dim { from { background-color: var(--paper); } to { background-color: #d9d5cc; } }
 @keyframes label-dim { from { filter: grayscale(0); opacity: 1; } to { filter: grayscale(1); opacity: .7; } }
 @keyframes pin-dim { from { filter: grayscale(0); } to { filter: grayscale(1); } }
@@ -1801,7 +1786,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       const s = frameSlot(); rest = 0;
       d.el.classList.add("snap"); d.el.style.left = s.x + "px"; d.el.style.top = s.y + "px";
       if (!d.el.classList.contains("active")) {
-        d.el.classList.replace("past", "active"); replay(d.el, "lit", "dim"); if (f) replay(f, "shine");
+        d.el.classList.replace("past", "active"); replay(d.el, "lit", "dim");
         /* the previous active card fades to grey and slides back to its own spot in the history */
         const prev = [...document.querySelectorAll("#dboard .dcard.active")].find((c) => c !== d.el);
         if (prev) {
