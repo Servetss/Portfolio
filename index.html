@@ -337,16 +337,17 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .dcard.past .label { filter: grayscale(1); opacity: .7; }
 .dcard.past .meta, .dcard.past .meta.missing { color: var(--ink-3); }
 .dcard.past .pin { filter: grayscale(1); }
-/* entering or leaving the active frame: the card flashes white, then settles into colour (active) or grey (history) */
-.dcard.lit::after, .dcard.dim::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: #fff; animation: card-flash .35s ease-out both; }
+/* entering the active frame: the card flashes white, then settles into colour */
+.dcard.lit::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: #fff; animation: card-flash .175s ease-out both; }
 @keyframes card-flash { 0% { opacity: 0; } 40% { opacity: .9; } 100% { opacity: 0; } }
-.dcard.lit { animation: dcard-lit .35s ease-out both; }
-.dcard.lit .label, .dcard.lit .pin { animation: colour-in .35s ease-out both; }
+.dcard.lit { animation: dcard-lit .175s ease-out both; }
+.dcard.lit .label, .dcard.lit .pin { animation: colour-in .175s ease-out both; }
 @keyframes dcard-lit { from { background-color: #d9d5cc; } to { background-color: var(--paper); } }
 @keyframes colour-in { from { filter: grayscale(1); opacity: .7; } to { filter: grayscale(0); opacity: 1; } }
-.dcard.dim { animation: dcard-dim .35s ease-out both; }
-.dcard.dim .label { animation: label-dim .35s ease-out both; }
-.dcard.dim .pin { animation: pin-dim .35s ease-out both; }
+/* leaving it: the colour simply fades to grey */
+.dcard.dim { animation: dcard-dim .175s ease-out both; }
+.dcard.dim .label { animation: label-dim .175s ease-out both; }
+.dcard.dim .pin { animation: pin-dim .175s ease-out both; }
 @keyframes dcard-dim { from { background-color: var(--paper); } to { background-color: #d9d5cc; } }
 @keyframes label-dim { from { filter: grayscale(0); opacity: 1; } to { filter: grayscale(1); opacity: .7; } }
 @keyframes pin-dim { from { filter: grayscale(0); } to { filter: grayscale(1); } }
