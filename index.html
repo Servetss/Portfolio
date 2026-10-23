@@ -434,9 +434,6 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .team-row .nm { font-weight: 700; }
 .team-row .rl { color: var(--ink-2); font-size: .85rem; font-style: italic; }
 .team-row .tx { font-size: .9rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; color: var(--ink-2); }
-.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
-.swatch { width: 30px; height: 30px; border-radius: 4px; padding: 0; border: 2.5px solid currentColor; }
-.swatch[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 2px; }
 .filebtn { display: inline-flex; cursor: pointer; }
 .filebtn span { font-family: var(--font-type); font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; border: 1.5px solid var(--ink-2); border-radius: 3px; padding: 7px 14px; }
 .label-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
@@ -645,10 +642,6 @@ img { max-width: 100%; }
           <label>Назва проєкту<input id="npr-name" required maxlength="100" placeholder="Напр. Кабінет клієнта TransLog"></label>
           <label id="npr-file-wrap">Ярлик (картинка, необов’язково)<input id="npr-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"></label>
         </div>
-      </div>
-      <div style="display:grid;gap:6px">
-        <span class="notice">Колір ярлика, якщо без картинки</span>
-        <div class="swatches" id="npr-swatches"></div>
       </div>
       <div class="row">
         <span class="err" id="npr-err"></span>
@@ -896,8 +889,6 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     return [...m.values()].sort((a, b) => (a.key === "" ? 1 : b.key === "" ? -1 : a.label.localeCompare(b.label, "uk")));
   }
   try { S.group = localStorage.getItem("pf-group") || ""; } catch { S.group = ""; }
-  const swatchesHtml = (current, act) => Array.from({ length: COLORS }, (_, i) =>
-    `<button type="button" class="swatch c${i}" ${act ? `data-act="${act}" ` : ""}data-c="${i}" aria-pressed="${current === i}" aria-label="Колір ${i + 1}"></button>`).join("");
 
   /* ================= tabs ================= */
   function setTab(tab) {
@@ -1227,7 +1218,6 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
           </button>`; }).join("")}</div>` : ""}
         </div>
         ${S.canWrite ? `<div style="display:grid;gap:8px">
-          <div class="swatches" aria-label="Колір ярлика">${swatchesHtml((Number(sel.color) || 0) % COLORS, "recolor")}</div>
           <div class="row start">
             ${true ? `<label class="filebtn"><span>${sel.iconData ? "Замінити картинку" : "Додати картинку"}</span><input id="re-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" hidden></label>` : ""}
             ${sel.iconData ? `<button class="btn" type="button" data-act="drop-icon">Прибрати картинку</button>` : ""}
@@ -1437,13 +1427,12 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
 
   /* ================= add forms ================= */
   function renderNewProjectPreview() {
-    $("npr-swatches").innerHTML = swatchesHtml(S.newColor);
     const prev = $("npr-preview");
     prev.className = "label lg c" + S.newColor + (S.newFileUrl ? " has-img" : "");
     prev.innerHTML = S.newFileUrl ? `<img src="${S.newFileUrl}" alt="">` : esc(initials($("npr-name").value || "?"));
   }
   function resetProjectForm() {
-    $("addProjectForm").reset(); S.newColor = 0; S.newFile = null;
+    $("addProjectForm").reset(); S.newColor = Math.floor(Math.random() * COLORS); /* shown only while the project has no icon */ S.newFile = null;
     if (S.newFileUrl) { URL.revokeObjectURL(S.newFileUrl); S.newFileUrl = null; }
     $("npr-err").textContent = ""; renderNewProjectPreview();
   }
@@ -1483,7 +1472,6 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     } catch (err) { $("np-err").textContent = failText(err); }
   });
   $("npr-name").addEventListener("input", renderNewProjectPreview);
-  $("npr-swatches").addEventListener("click", (e) => { const b = e.target.closest(".swatch"); if (!b) return; S.newColor = Number(b.dataset.c); renderNewProjectPreview(); });
   $("npr-file").addEventListener("change", (e) => {
     const f = e.target.files && e.target.files[0];
     if (S.newFileUrl) URL.revokeObjectURL(S.newFileUrl);
@@ -1637,8 +1625,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     "restore": (b) => setArchived(b.dataset.id, false),
     "rename": () => { clearDrafts("rn-name"); S.pui = { rename: true }; render(); const i = $("rn-name"); if (i) i.focus(); },
     "cancel-rename": () => { S.pui = {}; render(); },
-    "recolor": async (b, sel) => { try { await S.db.doc("projects/" + sel.id).update({ color: Number(b.dataset.c) }); } catch (err) { showErr("pc-err", err); } },
-    "drop-icon": async (b, sel) => { try { await S.db.doc("projects/" + sel.id).update({ iconId: null, iconData: null }); } catch (err) { showErr("pc-err", err); } },
+    "drop-icon": async (b, sel) => { try { await S.db.doc("projects/" + sel.id).update({ iconId: null, iconData: null, color: Math.floor(Math.random() * COLORS) }); } catch (err) { showErr("pc-err", err); } },
     "del-project": async (b, sel) => {
       if (!S.pui.confirmDel) { S.pui = { confirmDel: true }; render(); return; }
       try {
