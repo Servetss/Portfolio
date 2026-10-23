@@ -153,7 +153,12 @@ button { font: inherit; cursor: pointer; color: inherit; }
 /* ---------- folder ---------- */
 .folder {
   flex: 1 1 auto; min-height: 0; position: relative; z-index: 1; display: flex; flex-direction: column; gap: 14px;
-  padding: 16px 18px; border: 1px solid var(--manila-edge); border-radius: 4px 12px 12px 12px;
+  padding: 16px 18px; border: 1px solid var(--manila-edge); border-radius: 4px 12px 12px 12px; background: var(--manila);
+}
+/* The folder's heavy paper (gradients, texture, wide blurred shadows) lives on its own layer,
+   so it is rasterised once instead of on every change inside the folder. */
+.folder::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 3px 11px 11px 11px; pointer-events: none; will-change: transform;
   background:
     radial-gradient(circle at 92% 88%, transparent 34px, rgba(110, 62, 18, .2) 36px, rgba(110, 62, 18, .1) 39px, transparent 43px),
     radial-gradient(40% 30% at 18% 22%, rgba(255, 240, 200, .35), transparent 70%),
@@ -189,7 +194,7 @@ button { font: inherit; cursor: pointer; color: inherit; }
   text-align: left; border: 0; border-top: 3px solid #e2a59b; border-radius: 2px; padding: 10px 12px; color: var(--ink);
   background: var(--noise), var(--paper);
   box-shadow: 0 1px 0 rgba(0, 0, 0, .06), 0 3px 8px rgba(60, 40, 10, .18);
-  transition: transform var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease);
+  transition: transform var(--t-med) var(--ease); /* shadow switches instantly: animating it repaints the card every frame */
 }
 .person-btn:hover { transform: translateX(4px); box-shadow: 0 1px 0 rgba(0, 0, 0, .06), 0 6px 12px rgba(60, 40, 10, .24); }
 .person-btn[aria-current="true"] { transform: translateX(10px); box-shadow: -6px 0 0 var(--red), 0 6px 14px rgba(60, 40, 10, .28); }
@@ -309,7 +314,6 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
   width: 100%; min-width: 0; display: grid; justify-items: center; align-content: start; gap: 8px; padding: 26px 10px 14px;
   text-align: center; border: 0; border-radius: 1px; color: var(--ink); background: var(--noise), var(--paper);
   box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 3px 8px 14px rgba(30, 15, 0, .45);
-  transition: box-shadow var(--t-med) var(--ease);
 }
 .tile:hover { box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 4px 12px 18px rgba(30, 15, 0, .5); }
 .tile[aria-current="true"] { box-shadow: 0 0 0 2px var(--ink), 4px 12px 18px rgba(30, 15, 0, .5); }
@@ -443,7 +447,7 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
   border: 0; border-radius: 1px; color: var(--ink); background: var(--noise), var(--paper);
   box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 3px 8px 14px rgba(30, 15, 0, .45);
   transform: rotate(var(--rot, 0deg)); touch-action: none; user-select: none; cursor: grab;
-  transition: transform var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease);
+  transition: transform var(--t-med) var(--ease);
 }
 .bcard:hover { transform: rotate(0deg) translateY(-2px); box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 5px 14px 20px rgba(30, 15, 0, .5); }
 .bcard[aria-current="true"] { box-shadow: 0 0 0 2px var(--ink), 5px 14px 20px rgba(30, 15, 0, .5); }
@@ -507,10 +511,32 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .bcard.to-trash { opacity: .55; transform: rotate(-6deg) scale(.9); }
 .badge.archived { color: var(--ink-3); }
 
+/* ---------- stats view: payroll ledger ---------- */
+.stats { height: 100%; overflow: auto; contain: layout paint; }
+.ledger { min-height: 100%; display: grid; gap: 22px; align-content: start; padding: 26px 30px 34px; background: var(--noise), var(--paper); box-shadow: 0 4px 12px rgba(60, 40, 10, .22); }
+.st-table { display: grid; border-top: 1.5px solid var(--ink-2); }
+.st-row {
+  display: grid; grid-template-columns: minmax(150px, 1.3fr) 56px minmax(120px, 2fr) 130px 120px; gap: 16px; align-items: center;
+  width: 100%; padding: 10px 6px; border: 0; border-bottom: 1px solid var(--rule); background: transparent; text-align: left; color: var(--ink);
+}
+button.st-row { transition: background-color var(--t-fast) ease-out; }
+button.st-row:hover { background: var(--paper-2); }
+.st-head { font-family: var(--font-type); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); padding-block: 8px; }
+.st-role { font-weight: 700; overflow-wrap: anywhere; }
+.st-n, .st-sum, .st-avg, .st-pct { font-family: var(--font-type); font-variant-numeric: tabular-nums; }
+.st-sum { font-size: 1.05rem; }
+.st-sum small, .st-avg small { font-size: .78rem; color: var(--ink-2); }
+.st-share { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.st-track { flex: 1 1 auto; min-width: 0; }
+.st-bar { display: block; height: 14px; min-width: 2px; background: #b9c4d6; border: 1.5px solid var(--blue); }
+.st-pct { flex: none; width: 52px; text-align: right; font-size: .82rem; color: var(--ink-2); white-space: nowrap; }
+.st-miss { display: block; color: var(--amber) !important; }
+
 /* ---------- responsive ---------- */
 @media (max-width: 860px) {
   html, body { height: auto; }
-  .wrap, .layout, .base { height: auto; }
+  .wrap, .layout, .base, .stats { height: auto; }
+  .stats { overflow: visible; contain: none; }
   .folder { flex: none; }
   .layout { grid-template-columns: minmax(0, 1fr); }
   .roster { overflow: visible; contain: none; margin: 0 0 18px; padding-right: 2px; order: 1; }
@@ -528,6 +554,11 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 }
 @media (max-width: 680px) {
   .pf-grid { grid-template-columns: minmax(0, 1fr); }
+  .ledger { padding: 20px 16px 28px; }
+  .st-row { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
+  .st-head { display: none; }
+  .st-n::after { content: " люд."; }
+  .st-share { grid-column: 1 / -1; }
   .trash { width: min(250px, 80%); }
   .dossier { grid-template-columns: auto minmax(0, 1fr); }
   .stamps { grid-column: 1 / -1; flex-direction: row; }
@@ -570,6 +601,7 @@ img { max-width: 100%; }
     <div class="tabs" role="tablist">
       <button type="button" role="tab" id="tab-people" aria-selected="true">Люди<span class="count" id="cnt-people"></span></button>
       <button type="button" role="tab" id="tab-projects" aria-selected="false">Проєкти<span class="count" id="cnt-projects"></span></button>
+      <button type="button" role="tab" id="tab-stats" aria-selected="false">Статистика</button>
     </div>
     <div class="tools">
       <div class="acct" id="acct" hidden>
@@ -648,6 +680,7 @@ img { max-width: 100%; }
     </div>
 
     <main class="view base" id="view-projects" hidden></main>
+    <main class="view stats" id="view-stats" hidden></main>
     <datalist id="roleList"></datalist>
   </div>
 </div>
@@ -703,6 +736,24 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
 
 (() => {
   "use strict";
+
+  /* Bake the SVG-filter textures into bitmaps once: the same pixels, but repaints stop re-running feTurbulence. */
+  (function bakeTextures() {
+    const root = document.documentElement, dpr = Math.min(3, window.devicePixelRatio || 1);
+    for (const [name, size] of [["--noise", 180], ["--cork-tex", 220]]) {
+      const m = getComputedStyle(root).getPropertyValue(name).trim().match(/^url\(["']?([\s\S]*?)["']?\)$/);
+      if (!m) continue;
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const c = document.createElement("canvas"); c.width = c.height = Math.round(size * dpr);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          root.style.setProperty(name, `image-set(url("${c.toDataURL("image/png")}") ${dpr}x)`);
+        } catch { /* keep the SVG texture */ }
+      };
+      img.src = m[1];
+    }
+  })();
 
   /* ================= constants & state ================= */
   const COLORS = 6;
@@ -850,11 +901,14 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     S.tab = tab;
     $("tab-people").setAttribute("aria-selected", tab === "people");
     $("tab-projects").setAttribute("aria-selected", tab === "projects");
+    $("tab-stats").setAttribute("aria-selected", tab === "stats");
     $("view-people").hidden = tab !== "people";
     $("view-projects").hidden = tab !== "projects";
+    $("view-stats").hidden = tab !== "stats";
     $("addBtn").textContent = tab === "people" ? "+ Додати людину" : "+ Додати проєкт";
+    $("addBtn").hidden = tab === "stats";
     $("addPersonForm").hidden = true; $("addProjectForm").hidden = true;
-    try { history.replaceState(null, "", tab === "projects" ? "#projects" : "#people"); } catch {}
+    try { history.replaceState(null, "", "#" + tab); } catch {}
     render();
   }
 
@@ -1250,6 +1304,55 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     if (prevScroll) { const w = $("boardWrap"); if (w) { w.scrollLeft = prevScroll[0]; w.scrollTop = prevScroll[1]; } }
   }
 
+  /* ================= stats view: monthly payroll by role ================= */
+  /* Each currency gets its own ledger: amounts are never converted between currencies. */
+  function renderStats() {
+    const el = $("view-stats");
+    if (!S.loaded) { setHtml(el, '<p class="empty">Рахуємо відомість…</p>'); return; }
+    if (!S.db) { setHtml(el, '<p class="empty">Сховище недоступне в цьому перегляді.</p>'); return; }
+    const curs = new Map();
+    for (const p of S.people) {
+      const cur = p.currency || "PLN", rate = Number(p.rate) || 0, key = roleKey(p.role);
+      const c = curs.get(cur) || { total: 0, n: 0, roles: new Map() }; curs.set(cur, c);
+      const g = c.roles.get(key) || { key, label: String(p.role || "").trim() || "Без посади", n: 0, sum: 0, unpaid: 0 }; c.roles.set(key, g);
+      g.n++; g.sum += rate; if (!rate) g.unpaid++;
+      c.total += rate; c.n++;
+    }
+    const ledgers = [...curs].sort((a, b) => b[1].total - a[1].total).map(([cur, c]) => {
+      const roles = [...c.roles.values()].sort((a, b) => b.sum - a.sum || b.n - a.n || a.label.localeCompare(b.label, "uk"));
+      const max = Math.max(1, ...roles.map((g) => g.sum));
+      const paid = c.n - roles.reduce((s, g) => s + g.unpaid, 0);
+      const rows = roles.map((g) => {
+        const paidN = g.n - g.unpaid, share = c.total ? (g.sum / c.total) * 100 : 0;
+        const attrs = g.key ? `type="button" data-role="${esc(g.key)}" title="Показати людей на цій посаді"` : "";
+        const tag = g.key ? "button" : "div";
+        return `<${tag} class="st-row" ${attrs}>
+          <span class="st-role">${esc(g.label)}</span>
+          <span class="st-n">${g.n}</span>
+          <span class="st-share"><span class="st-track"><span class="st-bar" style="width:${((g.sum / max) * 100).toFixed(1)}%"></span></span><span class="st-pct">${pct(share)}%</span></span>
+          <span class="st-sum">${num(g.sum)} <small>${esc(cur)}</small></span>
+          <span class="st-avg">${paidN ? num(g.sum / paidN) : "—"}${g.unpaid ? `<small class="st-miss">${g.unpaid} без ЗП</small>` : ""}</span>
+        </${tag}>`;
+      }).join("");
+      return `<section>
+        ${curs.size > 1 ? `<h3>Виплати в ${esc(cur)}</h3>` : ""}
+        <div class="sal-sum">
+          <div><span class="k">Фонд ЗП на місяць</span><span class="v">${num(c.total)} <small>${esc(cur)}</small></span><span class="n">${c.n} ${plural(c.n, "людина", "людини", "людей")}</span></div>
+          <div><span class="k">На рік</span><span class="v">${num(c.total * 12)} <small>${esc(cur)}</small></span><span class="n">за поточних ставок</span></div>
+          <div><span class="k">Середня ЗП</span><span class="v">${paid ? num(c.total / paid) : "—"} <small>${esc(cur)}</small></span><span class="n">${paid === c.n ? "по всіх людях" : `по ${paid} з ${c.n}, без нульових`}</span></div>
+        </div>
+        <div class="st-table">
+          <div class="st-row st-head" aria-hidden="true"><span>Посада</span><span>Людей</span><span>Частка фонду</span><span>На місяць</span><span>Середня</span></div>
+          ${rows}
+        </div>
+      </section>`;
+    }).join("");
+    setHtml(el, `<div class="ledger">
+      <div class="case"><span class="case-no">Відомість фонду оплати праці</span><span class="notice">станом на ${esc(fmtMonth(thisMonth()))} · натисніть посаду, щоб побачити людей</span></div>
+      ${ledgers || '<p class="empty">Ще нікого немає.</p>'}
+    </div>`);
+  }
+
   /* ================= drag physics: a held card hangs from the grab point like a joint ================= */
   const calmMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const settling = new Set(); /* cards swinging back after a drop; renders wait so the DOM is not swapped mid-swing */
@@ -1301,8 +1404,9 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     $("cnt-projects").textContent = S.loaded && S.db ? S.projects.length : "";
     /* only the visible tab is built; setTab renders the other one when it is opened */
     if (S.tab === "projects") renderProjects();
+    else if (S.tab === "stats") renderStats();
     else { const detailScroll = $("detail").scrollTop; renderPeople(); renderDetail(); $("detail").scrollTop = detailScroll; }
-    if (S.animate.view) { const v = $(S.tab === "projects" ? "view-projects" : "view-people"); v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
+    if (S.animate.view) { const v = $("view-" + S.tab); v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
     S.animate.view = false; S.animate.body = false;
     if (f) { const el = $(f.id); if (el && el !== document.activeElement) { el.focus({ preventScroll: true }); try { if (f.s != null) el.setSelectionRange(f.s, f.e); } catch {} } }
   }
@@ -1341,6 +1445,13 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
 
   $("tab-people").addEventListener("click", () => setTab("people"));
   $("tab-projects").addEventListener("click", () => setTab("projects"));
+  $("tab-stats").addEventListener("click", () => setTab("stats"));
+  /* a role row in the ledger opens the roster filtered to that role */
+  $("view-stats").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-role]"); if (!b) return;
+    S.group = b.dataset.role; try { localStorage.setItem("pf-group", S.group); } catch {}
+    setTab("people");
+  });
   $("addBtn").addEventListener("click", () => {
     if (S.tab === "people") { $("addPersonForm").hidden = false; $("np-name").focus(); } else openAddProject();
   });
@@ -1675,7 +1786,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     $("login").hidden = !on;
     document.querySelector(".tabs").style.visibility = on ? "hidden" : "visible";
     $("acct").hidden = on; $("addBtn").hidden = on;
-    if (on) { $("view-people").hidden = true; $("view-projects").hidden = true; $("addPersonForm").hidden = true; $("addProjectForm").hidden = true; }
+    if (on) { $("view-people").hidden = true; $("view-projects").hidden = true; $("view-stats").hidden = true; $("addPersonForm").hidden = true; $("addProjectForm").hidden = true; }
     else setTab(S.tab);
   }
   const toast = (t) => { $("toast").textContent = t; clearTimeout(S.toastT); S.toastT = setTimeout(() => { $("toast").textContent = ""; }, 4000); };
@@ -1737,6 +1848,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
 
   renderNewProjectPreview();
   if (location.hash === "#projects") S.tab = "projects";
+  if (location.hash === "#stats") S.tab = "stats";
 })();
 </script>
 </body>
