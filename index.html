@@ -153,12 +153,7 @@ button { font: inherit; cursor: pointer; color: inherit; }
 /* ---------- folder ---------- */
 .folder {
   flex: 1 1 auto; min-height: 0; position: relative; z-index: 1; display: flex; flex-direction: column; gap: 14px;
-  padding: 16px 18px; border: 1px solid var(--manila-edge); border-radius: 4px 12px 12px 12px; background: var(--manila);
-}
-/* The folder's heavy paper (gradients, texture, wide blurred shadows) lives on its own layer,
-   so it is rasterised once instead of on every change inside the folder. */
-.folder::before {
-  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 3px 11px 11px 11px; pointer-events: none; will-change: transform;
+  padding: 16px 18px; border: 1px solid var(--manila-edge); border-radius: 4px 12px 12px 12px;
   background:
     radial-gradient(circle at 92% 88%, transparent 34px, rgba(110, 62, 18, .2) 36px, rgba(110, 62, 18, .1) 39px, transparent 43px),
     radial-gradient(40% 30% at 18% 22%, rgba(255, 240, 200, .35), transparent 70%),
@@ -186,7 +181,7 @@ button { font: inherit; cursor: pointer; color: inherit; }
 .layout { display: grid; grid-template-columns: 280px minmax(0, 1fr) 56px; height: 100%; }
 
 /* roster: index cards */
-.roster { min-height: 0; overflow: auto; contain: layout paint; display: grid; gap: 8px; align-content: start; padding: 2px 18px 12px 2px; margin-right: 6px; }
+.roster { min-height: 0; overflow: auto; display: grid; gap: 8px; align-content: start; padding: 2px 18px 12px 2px; margin-right: 6px; }
 .roster > input { position: sticky; top: 0; z-index: 3; background: var(--noise), var(--paper); border: 0; padding: 10px 12px; box-shadow: 0 2px 6px rgba(60, 40, 10, .18); margin-bottom: 4px; }
 .people { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .person-btn {
@@ -194,20 +189,17 @@ button { font: inherit; cursor: pointer; color: inherit; }
   text-align: left; border: 0; border-top: 3px solid #e2a59b; border-radius: 2px; padding: 10px 12px; color: var(--ink);
   background: var(--noise), var(--paper);
   box-shadow: 0 1px 0 rgba(0, 0, 0, .06), 0 3px 8px rgba(60, 40, 10, .18);
-  transition: transform var(--t-med) var(--ease); /* shadow switches instantly: animating it repaints the card every frame */
+  transition: transform var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease);
 }
 .person-btn:hover { transform: translateX(4px); box-shadow: 0 1px 0 rgba(0, 0, 0, .06), 0 6px 12px rgba(60, 40, 10, .24); }
 .person-btn[aria-current="true"] { transform: translateX(10px); box-shadow: -6px 0 0 var(--red), 0 6px 14px rgba(60, 40, 10, .28); }
-.person-btn .avatar { grid-row: span 3; }
+.person-btn .avatar { grid-row: span 4; }
+.p-status { grid-column: 2; font-family: var(--font-stamp); text-transform: uppercase; letter-spacing: .08em; font-size: .66rem; color: var(--amber); }
+.p-status.late { color: var(--red); }
+.p-status.plain { color: var(--ink-3); }
 .p-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .p-role { color: var(--ink-2); font-size: .85rem; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .p-rate { font-family: var(--font-type); font-size: .8rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-/* the person's active project, at the card's right edge */
-.person-btn { position: relative; }
-.person-btn.has-proj { padding-right: 52px; }
-.p-proj { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); }
-.label.sm { width: 30px; height: 30px; font-size: .62rem; border-width: 2px; border-radius: 3px; }
-.roster-opt { padding: 0 4px; font-size: .82rem; color: #3d3220; cursor: pointer; }
 .p-due { margin-left: 6px; font-family: var(--font-stamp); text-transform: uppercase; letter-spacing: .08em; font-size: .66rem; color: var(--red); }
 .avatar { width: 40px; height: 48px; display: block; overflow: hidden; border: 2px solid #f4f1e8; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); background: #4b3f8f; }
 .avatar svg, .photo svg { width: 100%; height: 100%; display: block; }
@@ -232,7 +224,7 @@ button { font: inherit; cursor: pointer; color: inherit; }
 .under { position: absolute; inset: 0; background: var(--noise), #efe6cf; box-shadow: 0 1px 3px rgba(60, 40, 10, .25); }
 .under.u1 { transform: translate(5px, 5px) rotate(.5deg); }
 .under.u2 { transform: translate(9px, 9px) rotate(-.4deg); background: var(--noise), #e6d9b9; }
-.detail { position: relative; height: 100%; overflow: auto; overscroll-behavior: contain; contain: layout paint; box-shadow: 0 1px 3px rgba(40, 25, 5, .3); }
+.detail { position: relative; height: 100%; overflow: auto; overscroll-behavior: contain; box-shadow: 0 1px 3px rgba(40, 25, 5, .3); }
 .page {
   min-height: 100%; padding: 30px 34px 44px; display: grid; gap: 22px; align-content: start; position: relative;
   background:
@@ -316,51 +308,11 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .tile-wrap { position: relative; min-width: 0; display: grid; transform: rotate(var(--rot, 0deg)); transition: transform var(--t-med) var(--ease); }
 .tile-wrap:hover { transform: rotate(0deg) translateY(-2px); }
 .tile-wrap > .x { position: absolute; top: 2px; right: 2px; z-index: 3; }
-/* dossier board: free cards + the active-project frame */
-.dboard-wrap { padding: 0; overflow-x: auto; scrollbar-width: none; }
-.dboard-wrap::-webkit-scrollbar { display: none; }
-.dboard { position: relative; min-width: 100%; }
-.dframe { position: absolute; border: 2px dashed rgba(255, 240, 215, .7); border-radius: 6px; background: rgba(255, 240, 215, .07); transition: background-color var(--t-fast) ease-out, border-color var(--t-fast) ease-out; }
-.dframe.hot { border-style: solid; border-color: #fff2dc; background: rgba(255, 240, 215, .22); }
-.dframe-label { position: absolute; left: 0; right: 0; bottom: 100%; padding-bottom: 4px; text-align: center; font-family: var(--font-type); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(255, 240, 215, .9); white-space: nowrap; }
-.dframe-hint { position: absolute; inset: 0; display: grid; place-items: center; padding: 14px; text-align: center; font-size: .85rem; font-style: italic; color: #fff2dc; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
-.dcard {
-  position: absolute; width: 132px; display: grid; padding: 24px 10px 12px; color: var(--ink);
-  background: var(--noise), var(--paper); box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 3px 8px 14px rgba(30, 15, 0, .45);
-  transform: rotate(var(--rot, 0deg)); touch-action: none; user-select: none; cursor: grab; transition: transform var(--t-med) var(--ease);
-}
-.dcard:hover { transform: rotate(0deg) translateY(-2px); }
-.dcard.dragging { cursor: grabbing; z-index: 9999 !important; transition: none; }
-.dcard.snap { transition: left .32s var(--ease), top .32s var(--ease), transform var(--t-med) var(--ease); }
-.dcard.open { box-shadow: 0 0 0 2px var(--ink), 3px 8px 14px rgba(30, 15, 0, .45); }
-.dcard > .x { position: absolute; top: 2px; right: 2px; z-index: 3; }
-.dcard-open { display: grid; justify-items: center; gap: 6px; border: 0; padding: 0; background: transparent; color: inherit; cursor: inherit; text-align: center; }
-.dcard .name { font-weight: 700; font-size: .88rem; line-height: 1.3; overflow-wrap: anywhere; }
-.dcard .meta { font-size: .76rem; color: var(--ink-2); font-style: italic; overflow-wrap: anywhere; }
-.dcard .meta.missing { color: var(--amber); }
-/* history: grey card, grey icon */
-.dcard.past { background: var(--noise), #d9d5cc; color: var(--ink-3); box-shadow: 0 2px 0 rgba(0, 0, 0, .06), 2px 5px 9px rgba(30, 15, 0, .35); }
-.dcard.past .label { filter: grayscale(1); opacity: .7; }
-.dcard.past .meta, .dcard.past .meta.missing { color: var(--ink-3); }
-.dcard.past .pin { filter: grayscale(1); }
-/* entering the active frame: the card flashes white, then settles into colour */
-.dcard.lit::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: #fff; animation: card-flash .35s ease-out both; }
-@keyframes card-flash { 0% { opacity: 0; } 40% { opacity: .9; } 100% { opacity: 0; } }
-.dcard.lit { animation: dcard-lit .35s ease-out both; }
-.dcard.lit .label, .dcard.lit .pin { animation: colour-in .35s ease-out both; }
-@keyframes dcard-lit { from { background-color: #d9d5cc; } to { background-color: var(--paper); } }
-@keyframes colour-in { from { filter: grayscale(1); opacity: .7; } to { filter: grayscale(0); opacity: 1; } }
-/* leaving it: the colour simply fades to grey */
-.dcard.dim { animation: dcard-dim .175s ease-out both; }
-.dcard.dim .label { animation: label-dim .175s ease-out both; }
-.dcard.dim .pin { animation: pin-dim .175s ease-out both; }
-@keyframes dcard-dim { from { background-color: var(--paper); } to { background-color: #d9d5cc; } }
-@keyframes label-dim { from { filter: grayscale(0); opacity: 1; } to { filter: grayscale(1); opacity: .7; } }
-@keyframes pin-dim { from { filter: grayscale(0); } to { filter: grayscale(1); } }
 .tile {
   width: 100%; min-width: 0; display: grid; justify-items: center; align-content: start; gap: 8px; padding: 26px 10px 14px;
   text-align: center; border: 0; border-radius: 1px; color: var(--ink); background: var(--noise), var(--paper);
   box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 3px 8px 14px rgba(30, 15, 0, .45);
+  transition: box-shadow var(--t-med) var(--ease);
 }
 .tile:hover { box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 4px 12px 18px rgba(30, 15, 0, .5); }
 .tile[aria-current="true"] { box-shadow: 0 0 0 2px var(--ink), 4px 12px 18px rgba(30, 15, 0, .5); }
@@ -375,8 +327,6 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .label.lg { width: 84px; height: 84px; font-size: 1.5rem; }
 .label.has-img { border: 1px solid var(--rule); box-shadow: none; }
 .label img { width: 100%; height: 100%; object-fit: cover; display: block; }
-/* Icons on draggable cards must not start the browser's own image drag: the whole card is the handle. */
-.bcard img, .tcard img, .dcard img { pointer-events: none; -webkit-user-drag: none; user-select: none; }
 .c0 { background: var(--l0-bg); color: var(--l0-fg); }
 .c1 { background: var(--l1-bg); color: var(--l1-fg); }
 .c2 { background: var(--l2-bg); color: var(--l2-fg); }
@@ -474,7 +424,6 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .proj-card { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 20px; padding: 18px 20px; border-top: 3px solid #e2a59b; background: var(--noise), var(--paper); box-shadow: 0 4px 12px rgba(60, 40, 10, .22); max-height: 46%; overflow: auto; }
 .proj-card h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; margin: 0; text-wrap: balance; overflow-wrap: anywhere; }
 .proj-card .body { display: grid; gap: 12px; min-width: 0; align-content: start; }
-.proj-head { display: flex; gap: 12px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
 .team { display: grid; border-top: 1px solid var(--rule); }
 .team-row { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; padding: 8px 4px; border: 0; border-bottom: 1px solid var(--rule); background: transparent; text-align: left; width: 100%; transition: background-color var(--t-fast) ease-out; }
 .team-row:hover { background: var(--paper-2); }
@@ -482,21 +431,22 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .team-row .nm { font-weight: 700; }
 .team-row .rl { color: var(--ink-2); font-size: .85rem; font-style: italic; }
 .team-row .tx { font-size: .9rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; color: var(--ink-2); }
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatch { width: 30px; height: 30px; border-radius: 4px; padding: 0; border: 2.5px solid currentColor; }
+.swatch[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 2px; }
 .filebtn { display: inline-flex; cursor: pointer; }
 .filebtn span { font-family: var(--font-type); font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; border: 1.5px solid var(--ink-2); border-radius: 3px; padding: 7px 14px; }
 .label-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 
 /* free-form board (drag like stickies) */
-.board-wrap { flex: 1 1 auto; min-height: 260px; padding: 0; overflow: auto; scrollbar-width: none; } /* still scrolls by wheel/touch, no bar */
-.board-wrap::-webkit-scrollbar { display: none; }
-.board-wrap > .cork-legend { right: auto; left: 12px; } /* the bin and its label sit in the right corner */
+.board-wrap { flex: 1 1 auto; min-height: 260px; padding: 0; overflow: auto; }
 .board { position: relative; min-height: 100%; }
 .bcard {
   position: absolute; width: 168px; display: grid; justify-items: center; gap: 8px; padding: 26px 10px 14px; text-align: center;
   border: 0; border-radius: 1px; color: var(--ink); background: var(--noise), var(--paper);
   box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 3px 8px 14px rgba(30, 15, 0, .45);
   transform: rotate(var(--rot, 0deg)); touch-action: none; user-select: none; cursor: grab;
-  transition: transform var(--t-med) var(--ease);
+  transition: transform var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease);
 }
 .bcard:hover { transform: rotate(0deg) translateY(-2px); box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 5px 14px 20px rgba(30, 15, 0, .5); }
 .bcard[aria-current="true"] { box-shadow: 0 0 0 2px var(--ink), 5px 14px 20px rgba(30, 15, 0, .5); }
@@ -535,12 +485,14 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .bin.hot .lid { transform: rotate(-32deg) translateY(-3px); }
 .bin .count { position: absolute; top: 2px; right: 0; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--paper); color: var(--ink); font-family: var(--font-type); font-size: .75rem; line-height: 22px; text-align: center; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
 .bin.open .bin-label { color: var(--ink-2); }
+.board-wrap > .cork-legend { right: auto; left: 14px; }
 .bin-label { position: absolute; bottom: -18px; font-family: var(--font-type); font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(255, 240, 215, .85); white-space: nowrap; }
 .trash {
-  position: absolute; top: 0; right: 0; bottom: 0; width: 250px; z-index: 1000; /* above every resting card (ranked 1..N), below a dragged one */ display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 120px;
+  position: absolute; top: 0; right: 0; bottom: 0; width: 250px; z-index: 20; display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 120px;
   background: var(--noise), var(--paper-3); border-left: 2px dashed var(--ink-3); box-shadow: -10px 0 22px rgba(20, 10, 0, .35); overflow: auto;
-  animation: trash-in var(--t-med) var(--ease) both;
 }
+.trash.enter { animation: trash-in var(--t-med) var(--ease) both; }
+.board-wrap.dragging-on { overflow: hidden; }
 @keyframes trash-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
 .trash.hot { background: var(--noise), #e3d3ad; }
 .trash-head { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-type); font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; }
@@ -560,35 +512,51 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .bcard.to-trash { opacity: .55; transform: rotate(-6deg) scale(.9); }
 .badge.archived { color: var(--ink-3); }
 
-/* ---------- stats view: payroll ledger ---------- */
-.stats { height: 100%; overflow: auto; contain: layout paint; }
-.ledger { min-height: 100%; display: grid; gap: 22px; align-content: start; padding: 26px 30px 34px; background: var(--noise), var(--paper); box-shadow: 0 4px 12px rgba(60, 40, 10, .22); }
-.st-table { display: grid; border-top: 1.5px solid var(--ink-2); }
-.st-row {
-  display: grid; grid-template-columns: minmax(150px, 1.3fr) 56px minmax(120px, 2fr) 130px 120px; gap: 16px; align-items: center;
-  width: 100%; padding: 10px 6px; border: 0; border-bottom: 1px solid var(--rule); background: transparent; text-align: left; color: var(--ink);
+/* bell + alerts memo */
+.toolbar > .bell { margin-right: auto; margin-bottom: 8px; margin-left: 10px; }
+.bell {
+  position: relative; width: 40px; height: 36px; display: grid; place-items: center; border-radius: 6px; border: 1px solid rgba(255, 240, 210, .25);
+  background: rgba(255, 240, 210, .08); color: #efe2c2; transition: background-color var(--t-fast) ease-out;
 }
-button.st-row { transition: background-color var(--t-fast) ease-out; }
-button.st-row:hover { background: var(--paper-2); }
-.st-head { font-family: var(--font-type); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); padding-block: 8px; }
-.st-role { font-weight: 700; overflow-wrap: anywhere; }
-.st-n, .st-sum, .st-avg, .st-pct { font-family: var(--font-type); font-variant-numeric: tabular-nums; }
-.st-sum { font-size: 1.05rem; }
-.st-sum small, .st-avg small { font-size: .78rem; color: var(--ink-2); }
-.st-share { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.st-track { flex: 1 1 auto; min-width: 0; }
-.st-bar { display: block; height: 14px; min-width: 2px; background: #b9c4d6; border: 1.5px solid var(--blue); }
-.st-pct { flex: none; width: 52px; text-align: right; font-size: .82rem; color: var(--ink-2); white-space: nowrap; }
-.st-miss { display: block; color: var(--amber) !important; }
+.bell:hover, .bell[aria-expanded="true"] { background: rgba(255, 240, 210, .18); }
+.bell svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.bell-n { position: absolute; top: -6px; right: -6px; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 10px; background: var(--red); color: #fff; font-family: var(--font-type); font-size: .7rem; line-height: 19px; text-align: center; box-shadow: 0 1px 3px rgba(0, 0, 0, .4); }
+.bell-n.soft { background: #8a7f69; }
+.alerts {
+  flex: none; max-height: 40%; overflow: auto; display: grid; gap: 10px; padding: 14px 18px 16px; position: relative;
+  background: var(--noise), var(--paper); border-top: 4px solid var(--red); box-shadow: 0 8px 18px rgba(60, 40, 10, .3);
+  animation: view-in var(--t-med) var(--ease) both;
+}
+.alerts-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.alerts-title { font-family: var(--font-type); font-size: .78rem; letter-spacing: .2em; text-transform: uppercase; }
+.alerts-title b { color: var(--red); font-weight: 400; }
+.alerts-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.al { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 4px 14px; align-items: center; padding: 10px 0; border-top: 1px dashed var(--rule); }
+.al:first-child { border-top: 0; }
+.al .avatar { width: 34px; height: 40px; grid-row: span 2; }
+.al-text { min-width: 0; }
+.al-text b { font-weight: 700; }
+.al-kind { font-family: var(--font-stamp); text-transform: uppercase; letter-spacing: .1em; font-size: .7rem; margin-right: 8px; color: var(--amber); }
+.al.due .al-kind { color: var(--red); }
+.al-acts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.al-acts .btn { padding: 5px 10px; font-size: .72rem; }
+.al-acts input { width: 150px; }
+.alerts .empty { padding: 6px 0; text-align: left; }
+
+/* status in the dossier */
+.st-line { display: grid; gap: 4px; }
+.st-line .row { justify-content: flex-start; }
+.prog { height: 6px; background: var(--paper-3); border: 1px solid var(--rule); max-width: 260px; }
+.prog > i { display: block; height: 100%; background: var(--amber); }
+.stamp.amber { color: var(--amber); border-color: var(--amber); transform: rotate(-5deg); }
 
 /* ---------- responsive ---------- */
 @media (max-width: 860px) {
   html, body { height: auto; }
-  .wrap, .layout, .base, .stats { height: auto; }
-  .stats { overflow: visible; contain: none; }
+  .wrap, .layout, .base { height: auto; }
   .folder { flex: none; }
   .layout { grid-template-columns: minmax(0, 1fr); }
-  .roster { overflow: visible; contain: none; margin: 0 0 18px; padding-right: 2px; order: 1; }
+  .roster { overflow: visible; margin: 0 0 18px; padding-right: 2px; order: 1; }
   .roster > input, .group-sel { position: static; }
   .ptabs { order: 2; flex-direction: row; flex-wrap: wrap; margin: 0; padding: 0 0 0 10px; gap: 4px; align-items: flex-end; }
   .ptabs button { writing-mode: horizontal-tb; width: auto; padding: 8px 12px; line-height: 1.4; border-radius: 9px 9px 0 0; }
@@ -597,17 +565,14 @@ button.st-row:hover { background: var(--paper-2); }
   .ptabs .count { margin: 0 0 0 6px; }
   .sheet-card { order: 3; height: auto; }
   .paper-stack, .detail { height: auto; }
-  .detail { overflow: visible; contain: none; }
+  .detail { overflow: visible; }
   .board-wrap { min-height: 420px; max-height: 70vh; }
   .proj-card { max-height: none; }
 }
 @media (max-width: 680px) {
+  .al { grid-template-columns: 34px minmax(0, 1fr); }
+  .al-acts { grid-column: 1 / -1; justify-content: flex-start; }
   .pf-grid { grid-template-columns: minmax(0, 1fr); }
-  .ledger { padding: 20px 16px 28px; }
-  .st-row { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
-  .st-head { display: none; }
-  .st-n::after { content: " люд."; }
-  .st-share { grid-column: 1 / -1; }
   .trash { width: min(250px, 80%); }
   .dossier { grid-template-columns: auto minmax(0, 1fr); }
   .stamps { grid-column: 1 / -1; flex-direction: row; }
@@ -650,8 +615,11 @@ img { max-width: 100%; }
     <div class="tabs" role="tablist">
       <button type="button" role="tab" id="tab-people" aria-selected="true">Люди<span class="count" id="cnt-people"></span></button>
       <button type="button" role="tab" id="tab-projects" aria-selected="false">Проєкти<span class="count" id="cnt-projects"></span></button>
-      <button type="button" role="tab" id="tab-stats" aria-selected="false">Статистика</button>
     </div>
+    <button type="button" class="bell" id="bellBtn" aria-label="Події" aria-expanded="false" title="Події: випробувальний, відпрацювання, перегляд ЗП" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+      <span class="bell-n" id="bellN" hidden></span>
+    </button>
     <div class="tools">
       <div class="acct" id="acct" hidden>
         <span class="acct-email" id="acct-email"></span>
@@ -666,6 +634,7 @@ img { max-width: 100%; }
   </div>
 
   <div class="folder">
+    <section class="alerts" id="alerts" aria-live="polite" hidden></section>
     <form class="blank" id="addPersonForm" novalidate hidden>
       <div class="blank-title">Бланк: нова особова справа</div>
       <div class="grid2">
@@ -674,6 +643,7 @@ img { max-width: 100%; }
         <label>ЗП на місяць<input id="np-rate" type="text" inputmode="decimal" autocomplete="off" required placeholder="15000"></label>
         <label>Валюта<select id="np-cur"><option>PLN</option><option>EUR</option><option>USD</option><option>UAH</option></select></label>
         <label>У фірмі з (рік-місяць)<input id="np-since" type="month" placeholder="2025-03"></label>
+        <label>Випробувальний термін до (порожньо — без випробувального)<input id="np-prob" type="date"></label>
       </div>
       <div class="row">
         <span class="err" id="np-err"></span>
@@ -690,6 +660,10 @@ img { max-width: 100%; }
           <label>Назва проєкту<input id="npr-name" required maxlength="100" placeholder="Напр. Кабінет клієнта TransLog"></label>
           <label id="npr-file-wrap">Ярлик (картинка, необов’язково)<input id="npr-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"></label>
         </div>
+      </div>
+      <div style="display:grid;gap:6px">
+        <span class="notice">Колір ярлика, якщо без картинки</span>
+        <div class="swatches" id="npr-swatches"></div>
       </div>
       <div class="row">
         <span class="err" id="npr-err"></span>
@@ -712,7 +686,6 @@ img { max-width: 100%; }
       <aside class="roster">
         <input id="search" type="search" placeholder="Пошук за ім’ям чи посадою" aria-label="Пошук людей">
         <select id="groupSel" class="group-sel" aria-label="Група за посадою"><option value="">Усі посади</option></select>
-        <label class="check roster-opt"><input type="checkbox" id="sortProj"> Сортувати за проєктом</label>
         <ul class="people" id="people"><li class="empty">Завантажуємо команду…</li></ul>
       </aside>
       <div class="sheet-card">
@@ -726,7 +699,6 @@ img { max-width: 100%; }
     </div>
 
     <main class="view base" id="view-projects" hidden></main>
-    <main class="view stats" id="view-stats" hidden></main>
     <datalist id="roleList"></datalist>
   </div>
 </div>
@@ -783,24 +755,6 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
 (() => {
   "use strict";
 
-  /* Bake the SVG-filter textures into bitmaps once: the same pixels, but repaints stop re-running feTurbulence. */
-  (function bakeTextures() {
-    const root = document.documentElement, dpr = Math.min(3, window.devicePixelRatio || 1);
-    for (const [name, size] of [["--noise", 180], ["--cork-tex", 220]]) {
-      const m = getComputedStyle(root).getPropertyValue(name).trim().match(/^url\(["']?([\s\S]*?)["']?\)$/);
-      if (!m) continue;
-      const img = new Image();
-      img.onload = () => {
-        try {
-          const c = document.createElement("canvas"); c.width = c.height = Math.round(size * dpr);
-          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-          root.style.setProperty(name, `image-set(url("${c.toDataURL("image/png")}") ${dpr}x)`);
-        } catch { /* keep the SVG texture */ }
-      };
-      img.src = m[1];
-    }
-  })();
-
   /* ================= constants & state ================= */
   const COLORS = 6;
   const CURS = ["PLN", "EUR", "USD", "UAH"];
@@ -832,6 +786,38 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   const initials = (name) => String(name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   const hash = (str, seed = 7) => { let h = seed; for (const ch of String(str)) h = (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0; return h; };
   const rotFor = (id, max = 1.4) => ((hash(id, 13) % 1000) / 1000 * 2 - 1) * max;
+  /* day-precision dates for probation and notice periods (YYYY-MM-DD) */
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const ymd = (d) => d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  const todayStr = () => ymd(new Date());
+  const dayIndex = (ds) => { const [y, m, d] = String(ds || "").split("-").map(Number); return y && m && d ? Math.round(Date.UTC(y, m - 1, d) / 86400000) : null; };
+  const addMonthsStr = (ds, n) => { const [y, m, d] = String(ds).split("-").map(Number); const dt = new Date(y, m - 1 + n, d); if (dt.getDate() !== d) dt.setDate(0); return ymd(dt); };
+  const addDaysStr = (ds, n) => { const [y, m, d] = String(ds).split("-").map(Number); return ymd(new Date(y, m - 1, d + n)); };
+  const fmtD = (ds) => { const i = dayIndex(ds); if (i == null) return "—"; const [y, m, d] = ds.split("-"); return `${d}.${m}.${y}`; };
+  const dni = (n) => n + " " + plural(n, "день", "дні", "днів");
+  const statusOf = (p) => (p && (p.status === "probation" || p.status === "notice") ? p.status : "active");
+  const SOON = 7;
+  /* one place that knows how a status reads: roster mark, dossier line, alert */
+  function statusInfo(p) {
+    const st = statusOf(p); const t = dayIndex(todayStr());
+    if (st === "probation") {
+      const pr = p.probation || {}; const e = dayIndex(pr.end); if (e == null) return { st, mark: "випробувальний", cls: "plain", level: null };
+      const left = e - t;
+      if (left < 0) return { st, left, mark: `випробувальний закінчився ${fmtD(pr.end)}`, cls: "late", level: "due", title: `Випробувальний термін закінчився ${fmtD(pr.end)}` };
+      if (left === 0) return { st, left, mark: "випробувальний: сьогодні останній день", cls: "late", level: "due", title: "Випробувальний термін закінчується сьогодні" };
+      if (left <= SOON) return { st, left, mark: `випробувальний · ще ${dni(left)}`, cls: "", level: "soon", title: `Випробувальний термін закінчується ${fmtD(pr.end)} (ще ${dni(left)})` };
+      return { st, left, mark: `випробувальний до ${fmtD(pr.end)}`, cls: "plain", level: null };
+    }
+    if (st === "notice") {
+      const nt = p.notice || {}; const e = dayIndex(nt.lastDay); if (e == null) return { st, mark: "відпрацювання", cls: "late", level: null };
+      const left = e - t;
+      if (left < 0) return { st, left, mark: `відпрацювання закінчилось ${fmtD(nt.lastDay)}`, cls: "late", level: "due", title: `Відпрацювання закінчилось ${fmtD(nt.lastDay)}` };
+      if (left === 0) return { st, left, mark: "відпрацювання: сьогодні останній день", cls: "late", level: "due", title: "Сьогодні останній робочий день" };
+      if (left <= SOON) return { st, left, mark: `відпрацювання · ще ${dni(left)}`, cls: "late", level: "soon", title: `Відпрацювання закінчується ${fmtD(nt.lastDay)} (ще ${dni(left)})` };
+      return { st, left, mark: `відпрацювання до ${fmtD(nt.lastDay)}`, cls: "late", level: null };
+    }
+    return { st, mark: "", cls: "", level: null };
+  }
   const thisMonth = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); };
   const mIndex = (ym) => { const [y, m] = String(ym || "").split("-").map(Number); return y && m ? y * 12 + (m - 1) : null; };
   const fmtMonth = (ym) => { const i = mIndex(ym); if (i == null) return "—"; try { return new Date(Math.floor(i / 12), i % 12, 1).toLocaleString("uk-UA", { month: "long", year: "numeric" }); } catch { return ym; } };
@@ -876,22 +862,15 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   };
   const showErr = (id, e) => { const m = $(id); if (m) m.textContent = failText(e); };
 
-  /* Writes markup only when it differs from what this element last got, so unchanged parts keep their DOM. */
-  const lastHtml = new WeakMap();
-  const setHtml = (el, html) => { if (lastHtml.get(el) !== html) { el.innerHTML = html; lastHtml.set(el, html); } };
-
   /* ================= small renderers ================= */
-  /* Faces are cached as one <img> per seed: a 12×14 grid merged into one path per colour instead of ~120 <rect> nodes. */
-  const faceCache = new Map();
   function pixelFace(seed) {
-    const key = String(seed); const hit = faceCache.get(key); if (hit) return hit;
-    let h = 7; for (const ch of key) h = (Math.imul(h, 131) + ch.charCodeAt(0)) >>> 0;
+    let h = 7; for (const ch of String(seed)) h = (Math.imul(h, 131) + ch.charCodeAt(0)) >>> 0;
     const r = (n) => { h = (Math.imul(h, 1103515245) + 12345) >>> 0; return (h >>> 8) % n; };
     const BG = ["#4b3f8f", "#3d4f8f", "#5a3e7a", "#2f5f6f", "#47457e"], SK = ["#f1c9a5", "#e0ac7d", "#c68a5c", "#9c6644", "#f5d6c0"];
     const HR = ["#2b1d14", "#5a3a1e", "#c99a3c", "#e8d27a", "#7a2e1c", "#3a3a3a", "#b8b2a8"], CL = ["#2f3b52", "#6b2f2f", "#2f5a3b", "#5a4a2f", "#3d3d3d", "#7a6a9a"];
     const bg = BG[r(BG.length)], sk = SK[r(SK.length)], hr = HR[r(HR.length)], cl = CL[r(CL.length)];
     const longHair = r(2) === 0, bangs = r(2) === 0, glasses = r(4) === 0;
-    const grid = new Map(); const P = (x, y, c) => grid.set(x + "," + y, c); /* last write wins, as with stacked rects */
+    const px = []; const P = (x, y, c) => px.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="${c}"/>`);
     if (longHair) for (let y = 3; y <= 12; y++) { P(2, y, hr); P(9, y, hr); if (y >= 5) { P(1, y, hr); P(10, y, hr); } }
     for (let x = 1; x <= 10; x++) { P(x, 12, cl); P(x, 13, cl); }
     for (const x of [2, 3, 4, 7, 8, 9]) P(x, 11, cl);
@@ -904,12 +883,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     P(4, 6, "#1b1b22"); P(7, 6, "#1b1b22");
     if (glasses) for (const x of [3, 5, 6, 8]) P(x, 6, "#22222a");
     P(5, 9, "#9b4a4a"); P(6, 9, "#9b4a4a");
-    const paths = new Map();
-    for (const [xy, c] of grid) { const [x, y] = xy.split(","); paths.set(c, (paths.get(c) || "") + `M${x} ${y}h1v1h-1z`); }
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 14" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges"><rect width="12" height="14" fill="${bg}"/>${[...paths].map(([c, d]) => `<path fill="${c}" d="${d}"/>`).join("")}</svg>`;
-    const html = `<img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="">`;
-    faceCache.set(key, html);
-    return html;
+    return `<svg viewBox="0 0 12 14" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges" aria-hidden="true"><rect width="12" height="14" fill="${bg}"/>${px.join("")}</svg>`;
   }
   const labelHtml = (x, size = "") => {
     const c = " c" + ((Number(x && x.color) || 0) % COLORS);
@@ -938,8 +912,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     return [...m.values()].sort((a, b) => (a.key === "" ? 1 : b.key === "" ? -1 : a.label.localeCompare(b.label, "uk")));
   }
   try { S.group = localStorage.getItem("pf-group") || ""; } catch { S.group = ""; }
-  try { S.byProject = localStorage.getItem("pf-sort-project") !== "0"; } catch { S.byProject = true; }
-  $("sortProj").checked = S.byProject;
+  const swatchesHtml = (current, act) => Array.from({ length: COLORS }, (_, i) =>
+    `<button type="button" class="swatch c${i}" ${act ? `data-act="${act}" ` : ""}data-c="${i}" aria-pressed="${current === i}" aria-label="Колір ${i + 1}"></button>`).join("");
 
   /* ================= tabs ================= */
   function setTab(tab) {
@@ -947,59 +921,52 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     S.tab = tab;
     $("tab-people").setAttribute("aria-selected", tab === "people");
     $("tab-projects").setAttribute("aria-selected", tab === "projects");
-    $("tab-stats").setAttribute("aria-selected", tab === "stats");
     $("view-people").hidden = tab !== "people";
     $("view-projects").hidden = tab !== "projects";
-    $("view-stats").hidden = tab !== "stats";
     $("addBtn").textContent = tab === "people" ? "+ Додати людину" : "+ Додати проєкт";
-    $("addBtn").hidden = tab === "stats";
     $("addPersonForm").hidden = true; $("addProjectForm").hidden = true;
-    try { history.replaceState(null, "", "#" + tab); } catch {}
+    try { history.replaceState(null, "", tab === "projects" ? "#projects" : "#people"); } catch {}
     render();
   }
 
   /* ================= roster ================= */
   function renderPeople() {
     const ul = $("people");
-    if (!S.loaded) { setHtml(ul, '<li class="empty">Завантажуємо команду…</li>'); return; }
-    if (S.denied) { setHtml(ul, `<li class="empty">Акаунт ${esc(S.user && S.user.email)} не має доступу до бази. Увійдіть іншим акаунтом або перевірте пошту в правилах Firestore.</li>`); return; }
-    if (!S.db) { setHtml(ul, '<li class="empty">Увійдіть, щоб відкрити архів.</li>'); return; }
-    if (!S.people.length) { setHtml(ul, '<li class="empty">Ще нікого немає. Натисніть «Додати людину», щоб створити першу справу.</li>'); return; }
+    $("cnt-people").textContent = S.loaded && S.db ? S.people.length : "";
+    if (!S.loaded) { ul.innerHTML = '<li class="empty">Завантажуємо команду…</li>'; return; }
+    if (S.denied) { ul.innerHTML = `<li class="empty">Акаунт ${esc(S.user && S.user.email)} не має доступу до бази. Увійдіть іншим акаунтом або перевірте пошту в правилах Firestore.</li>`; return; }
+    if (!S.db) { ul.innerHTML = '<li class="empty">Увійдіть, щоб відкрити архів.</li>'; return; }
+    if (!S.people.length) { ul.innerHTML = '<li class="empty">Ще нікого немає. Натисніть «Додати людину», щоб створити першу справу.</li>'; return; }
     const groups = roleGroups();
-    if (S.group && !groups.some((g) => g.key === S.group)) S.group = "";
-    const opts = `<option value="">Усі посади · ${S.people.length}</option>` + groups.map((g) => `<option value="${esc(g.key)}">${esc(g.label)} · ${g.n}</option>`).join("");
+    const stCount = { probation: S.people.filter((p) => statusOf(p) === "probation").length, notice: S.people.filter((p) => statusOf(p) === "notice").length };
+    const stFilter = S.group.startsWith("st:") ? S.group.slice(3) : "";
+    if (S.group && !stFilter && !groups.some((g) => g.key === S.group)) S.group = "";
+    if (stFilter && !stCount[stFilter]) S.group = "";
+    const stOpts = (stCount.probation ? `<option value="st:probation">На випробувальному · ${stCount.probation}</option>` : "") + (stCount.notice ? `<option value="st:notice">Відпрацьовують · ${stCount.notice}</option>` : "");
+    const opts = `<option value="">Усі посади · ${S.people.length}</option>` + (stOpts ? `<optgroup label="Статус">${stOpts}</optgroup><optgroup label="Посада">` : "")
+      + groups.map((g) => `<option value="${esc(g.key)}">${esc(g.label)} · ${g.n}</option>`).join("") + (stOpts ? "</optgroup>" : "");
     const gs = $("groupSel"); if (gs.dataset.opts !== opts) { gs.innerHTML = opts; gs.dataset.opts = opts; } gs.value = S.group;
     const roleOpts = groups.filter((g) => g.key).map((g) => `<option value="${esc(g.label)}"></option>`).join("");
     if ($("roleList").innerHTML !== roleOpts) $("roleList").innerHTML = roleOpts;
     const q = S.q.trim().toLowerCase();
-    const list = S.people.filter((p) => (!S.group || roleKey(p.role) === S.group) && (!q || (p.name + " " + (p.role || "")).toLowerCase().includes(q)));
-    if (!list.length) { setHtml(ul, '<li class="empty">Нікого не знайдено.</li>'); return; }
-    const activeProj = (p) => { const id = activeOf(p); return id ? projById(id) : null; };
-    /* within a role group: by active project name, people without one last; the sort is stable, so names stay in order */
-    if (S.byProject) list.sort((a, b) => {
-      const pa = activeProj(a), pb = activeProj(b);
-      return pa && pb ? pa.name.localeCompare(pb.name, "uk") : pa ? -1 : pb ? 1 : 0;
-    });
+    const inGroup = (p) => !S.group || (S.group.startsWith("st:") ? statusOf(p) === S.group.slice(3) : roleKey(p.role) === S.group);
+    const list = S.people.filter((p) => inGroup(p) && (!q || (p.name + " " + (p.role || "")).toLowerCase().includes(q)));
+    if (!list.length) { ul.innerHTML = '<li class="empty">Нікого не знайдено.</li>'; return; }
     const card = (p) => {
-      const rs = reviewState(p), x = activeProj(p);
-      return `<li><button class="person-btn${x ? " has-proj" : ""}" type="button" data-id="${esc(p.id)}" aria-current="false">
+      const rs = reviewState(p);
+      return `<li><button class="person-btn" type="button" data-id="${esc(p.id)}" aria-current="${p.id === S.selected}">
         <span class="avatar">${faceHtml(p)}</span>
         <span class="p-name">${esc(p.name)}</span>
         <span class="p-role">${esc(p.role || "—")}</span>
         <span class="p-rate">${num(p.rate)} ${esc(p.currency || "PLN")}${rs && rs.cls ? `<span class="p-due">перегляд ${esc(rs.text)}</span>` : ""}</span>
-        ${x ? `<span class="p-proj" title="Зараз на проєкті: ${esc(x.name)}">${labelHtml(x, "sm")}</span>` : ""}
+        ${(() => { const si = statusInfo(p); return si.mark ? `<span class="p-status ${si.cls}">${esc(si.mark)}</span>` : ""; })()}
       </button></li>`;
     };
-    setHtml(ul, S.group || groups.length < 2 ? list.map(card).join("") : groups.map((g) => {
+    if (S.group || groups.length < 2) { ul.innerHTML = list.map(card).join(""); return; }
+    ul.innerHTML = groups.map((g) => {
       const members = list.filter((p) => roleKey(p.role) === g.key); if (!members.length) return "";
       return `<li class="grp" aria-hidden="true"><span>${esc(g.label)}</span><span>${members.length}</span></li>` + members.map(card).join("");
-    }).join(""));
-    markSelected();
-  }
-  function markSelected() {
-    for (const b of $("people").querySelectorAll(".person-btn")) {
-      const on = String(b.dataset.id === S.selected); if (b.getAttribute("aria-current") !== on) b.setAttribute("aria-current", on);
-    }
+    }).join("");
   }
 
   /* ================= person sections ================= */
@@ -1032,34 +999,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     </div>`;
   }
 
-  /* A person has at most one active project (p.activeProject); every other linked project is history. */
-  const activeOf = (p) => (linkedIds(p).includes(p.activeProject) ? p.activeProject : null);
-
-  /* Dossier board: cards move freely (positions per person in p.cardPos); the card dropped into the frame is the active project. */
-  const DC = { w: 132, h: 156, pad: 20, top: 34, gap: 18, inset: 14 };
-  const frameBox = () => ({ x: DC.pad, y: DC.top, w: DC.w + DC.inset * 2, h: DC.h + DC.inset * 2 });
-  const frameSlot = () => ({ x: DC.pad + DC.inset, y: DC.top + DC.inset });
-  const topCardZ = (p) => Math.max(0, ...Object.values(p.cardPos || {}).map((q) => (q && q.z) || 0));
-  function dossierLayout(p, width) {
-    const f = frameBox(); const activeId = activeOf(p);
-    const beside = width >= f.x + f.w + DC.gap * 2 + DC.w + DC.pad; /* narrow screens stack the history under the frame */
-    const x0 = beside ? f.x + f.w + DC.gap * 2 : DC.pad, y0 = beside ? f.y : f.y + f.h + DC.gap;
-    const cols = Math.max(1, Math.floor((width - x0 - DC.pad + DC.gap) / (DC.w + DC.gap)));
-    let free = 0, bottom = f.y + f.h;
-    const cards = linkedIds(p).map((id) => {
-      const x = projById(id), saved = (p.cardPos || {})[id];
-      let pos;
-      if (id === activeId) pos = { ...frameSlot(), z: 0 };
-      else if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) pos = { x: saved.x, y: saved.y, z: saved.z || 0 };
-      else { const i = free++; pos = { x: x0 + (i % cols) * (DC.w + DC.gap), y: y0 + Math.floor(i / cols) * (DC.h + DC.gap), z: 0 }; }
-      bottom = Math.max(bottom, pos.y + DC.h);
-      return { x, pos, active: id === activeId };
-    });
-    return { cards, h: bottom + DC.pad };
-  }
-
   function secProjects(p) {
-    const ui = S.ui;
+    const ui = S.ui; const linked = linkedIds(p).map(projById);
     let picker = "";
     if (ui.linking) {
       const q = S.linkQ.trim().toLowerCase();
@@ -1075,31 +1016,22 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
           : `<p class="notice">${q ? "Нічого не знайдено." : "Усі проєкти з бази вже підв’язані до цієї людини."}</p>`}
       </div>`;
     }
-    const width = Math.max(300, (($("detail") && $("detail").clientWidth) || 760) - 88);
-    const L = dossierLayout(p, width), f = frameBox(), hasActive = L.cards.some((c) => c.active);
-    const card = ({ x, pos, active }) => { const w = workOf(p, x.id); return `
-      <div class="dcard ${active ? "active" : "past"}${ui.work === x.id ? " open" : ""}" data-id="${esc(x.id)}"
-        style="left:${pos.x}px;top:${pos.y}px;z-index:${pos.z};--rot:${active ? 0 : rotFor(x.id).toFixed(2)}deg">
-        <span class="pin"></span>
-        <button type="button" class="dcard-open" data-act="open-work" data-id="${esc(x.id)}" title="Що робив(ла) на проєкті">
-          ${labelHtml(x)}<span class="name">${esc(x.name)}</span>
-          ${w.role ? `<span class="meta">${esc(w.role)}</span>` : w.text ? "" : `<span class="meta missing">не описано</span>`}
-        </button>
-        ${S.canWrite ? `<button type="button" class="x" data-act="unlink" data-id="${esc(x.id)}" aria-label="Відв’язати ${esc(x.name)}" title="Відв’язати">✕</button>` : ""}
-      </div>`; };
     return `<section>
       <h3>Проєкти ${S.canWrite && !ui.linking ? `<button class="btn ghost" type="button" data-act="open-link">+ Підв’язати з бази</button>` : ""}</h3>
       <span class="err" id="link-err"></span>
       ${picker}
-      <div class="cork dboard-wrap">
-        <div class="dboard" id="dboard" style="height:${L.h}px">
-          <div class="dframe" style="left:${f.x}px;top:${f.y}px;width:${f.w}px;height:${f.h}px">
-            <span class="dframe-label">Активний проєкт</span>
-            ${hasActive ? "" : `<span class="dframe-hint">${L.cards.length ? "Перетягніть сюди картку проєкту, на якому людина зараз" : "Підв’яжіть проєкт з бази"}</span>`}
-          </div>
-          ${L.cards.map(card).join("")}
-        </div>
-        <span class="cork-legend">${L.cards.length ? "У рамці — зараз · сірі — історія" : "Дошка справи"}</span>
+      <div class="cork">
+        ${linked.length ? `<div class="pgrid">${linked.map((x) => { const w = workOf(p, x.id); return `
+          <div class="tile-wrap" style="--rot:${rotFor(x.id).toFixed(2)}deg">
+            <span class="pin"></span>
+            <button type="button" class="tile" data-act="open-work" data-id="${esc(x.id)}" aria-current="${ui.work === x.id}" title="Що робив(ла) на проєкті">
+              ${labelHtml(x)}<span class="name">${esc(x.name)}</span>
+              ${w.role ? `<span class="meta">${esc(w.role)}</span>` : w.text ? "" : `<span class="meta missing">не описано</span>`}
+            </button>
+            ${S.canWrite ? `<button type="button" class="x" data-act="unlink" data-id="${esc(x.id)}" aria-label="Відв’язати ${esc(x.name)}" title="Відв’язати">✕</button>` : ""}
+          </div>`; }).join("")}</div>`
+          : `<p class="cork-empty">До цієї людини ще не підв’язано жодного проєкту.</p>`}
+        <span class="cork-legend">Дошка справи</span>
       </div>
       ${workPanel(p)}
     </section>`;
@@ -1257,19 +1189,128 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     </form>`;
   }
 
+  function statusLine(p) {
+    const st = statusOf(p); const si = statusInfo(p);
+    const edit = S.canWrite && !S.ui.editStatus ? ` <button type="button" class="link" data-act="edit-status">Змінити</button>` : "";
+    if (st === "probation") {
+      const pr = p.probation || {}; const a = dayIndex(pr.start), b = dayIndex(pr.end), t = dayIndex(todayStr());
+      const total = a != null && b != null ? Math.max(1, b - a) : null; const day = total ? Math.min(total, Math.max(0, t - a)) : null;
+      return `<span class="st-line"><span>Випробувальний термін до ${esc(fmtD(pr.end))}${total ? ` <span class="notice">(день ${day} з ${total})</span>` : ""}${edit}</span>
+        ${total ? `<span class="prog" aria-hidden="true"><i style="width:${Math.round(day / total * 100)}%"></i></span>` : ""}
+        ${si.level === "due" ? `<span class="row"><button class="btn primary" type="button" data-act="st-pass">Пройшов</button><button class="btn" type="button" data-act="edit-status">Продовжити</button><button class="btn danger" type="button" data-act="st-fail">Не пройшов</button></span>` : ""}</span>`;
+    }
+    if (st === "notice") {
+      const nt = p.notice || {};
+      const who = { person: "за бажанням працівника", company: "за ініціативою фірми", mutual: "за згодою сторін" }[nt.initiator] || "";
+      return `<span class="st-line"><span>Відпрацювання, останній день ${esc(fmtD(nt.lastDay))}${si.left === 0 ? ` <span class="notice">(сьогодні)</span>` : si.left > 0 ? ` <span class="notice">(ще ${esc(dni(si.left))})</span>` : ""}${edit}</span>
+        <span class="notice">${esc([nt.start ? "заява " + fmtD(nt.start) : "", who, nt.reason].filter(Boolean).join(" · "))}</span>
+        ${si.level === "due" ? `<span class="row"><button class="btn ${S.ui.confirmDel ? "danger" : "primary"}" type="button" data-act="del-person">${S.ui.confirmDel ? "Точно видалити справу?" : "Видалити справу"}</button></span>` : ""}</span>`;
+    }
+    return `<span>Працює${edit}</span>`;
+  }
+  function statusForm(p) {
+    const st = dv("st-status", statusOf(p)); const t = todayStr();
+    const pr = p.probation || {}, nt = p.notice || {};
+    const pStart = dv("st-pstart", pr.start || t);
+    const pEnd = dv("st-pend", statusOf(p) === "probation" && pr.end ? addMonthsStr(pr.end, 0) : addMonthsStr(pStart, 3));
+    const nStart = dv("st-nstart", nt.start || t), nLast = dv("st-nlast", nt.lastDay || addDaysStr(nStart, 14));
+    const init = dv("st-init", nt.initiator || "person");
+    return `<form class="inline-form" id="statusForm" novalidate>
+      <span class="work-kicker">Статус співпраці</span>
+      <div class="grid3">
+        <label>Статус<select id="st-status" data-draft>
+          <option value="active" ${st === "active" ? "selected" : ""}>Працює</option>
+          <option value="probation" ${st === "probation" ? "selected" : ""}>Випробувальний термін</option>
+          <option value="notice" ${st === "notice" ? "selected" : ""}>Відпрацювання перед звільненням</option>
+        </select></label>
+        ${st === "probation" ? `
+          <label>Початок<input id="st-pstart" data-draft type="date" value="${esc(pStart)}"></label>
+          <label>Кінець<input id="st-pend" data-draft type="date" value="${esc(pEnd)}"></label>` : ""}
+        ${st === "notice" ? `
+          <label>Дата заяви<input id="st-nstart" data-draft type="date" value="${esc(nStart)}"></label>
+          <label>Останній робочий день<input id="st-nlast" data-draft type="date" value="${esc(nLast)}"></label>` : ""}
+      </div>
+      ${st === "notice" ? `<div class="grid2">
+          <label>Хто ініціював<select id="st-init" data-draft>
+            <option value="person" ${init === "person" ? "selected" : ""}>Працівник</option>
+            <option value="company" ${init === "company" ? "selected" : ""}>Фірма</option>
+            <option value="mutual" ${init === "mutual" ? "selected" : ""}>За згодою сторін</option>
+          </select></label>
+          <label>Причина (необов’язково)<input id="st-reason" data-draft maxlength="200" value="${esc(dv("st-reason", nt.reason || ""))}"></label>
+        </div>
+        <p class="notice" style="margin:0">Коли відпрацювання закінчиться, з’явиться нагадування видалити справу.</p>` : ""}
+      ${st === "probation" ? `<p class="notice" style="margin:0">Наприкінці терміну з’явиться нагадування: пройшов, продовжити чи не пройшов.</p>` : ""}
+      <div class="row">
+        <span class="err" id="st-err"></span>
+        <button class="btn ${S.ui.confirmNow ? "danger" : "ghost"}" type="button" data-act="dismiss-now" style="margin-right:auto">${S.ui.confirmNow ? "Точно видалити справу зараз?" : "Звільнити без відпрацювання"}</button>
+        <button class="btn" type="button" data-act="cancel-status">Скасувати</button>
+        <button class="btn primary" type="submit">Зберегти</button>
+      </div>
+    </form>`;
+  }
+
+  /* ================= alerts: what needs a decision ================= */
+  function eventsList() {
+    const out = [];
+    for (const p of S.people) {
+      const si = statusInfo(p);
+      if (si.level) out.push({ key: si.st + ":" + p.id + ":" + (si.st === "probation" ? (p.probation || {}).end : (p.notice || {}).lastDay), p, kind: si.st, level: si.level, title: si.title });
+      const rs = reviewState(p);
+      if (rs && (rs.cls === "late" || rs.text === "цього місяця")) out.push({ key: "review:" + p.id + ":" + (p.nextReview || {}).date, p, kind: "review", level: "soon", title: rs.cls === "late" ? `Перегляд ЗП ${rs.text}` : "Перегляд ЗП цього місяця" });
+    }
+    const rank = { due: 0, soon: 1 };
+    return out.sort((a, b) => rank[a.level] - rank[b.level] || a.p.name.localeCompare(b.p.name, "uk"));
+  }
+  const dismissedSig = () => { try { return sessionStorage.getItem("pf-alerts-seen") || ""; } catch { return S.alertsSeen || ""; } };
+  const setDismissed = (sig) => { S.alertsSeen = sig; try { sessionStorage.setItem("pf-alerts-seen", sig); } catch {} };
+  function renderAlerts() {
+    const box = $("alerts"), bell = $("bellBtn"), n = $("bellN");
+    if (!S.loaded || !S.db) { box.hidden = true; bell.hidden = true; return; }
+    const ev = eventsList(); const due = ev.filter((e) => e.level === "due");
+    bell.hidden = false;
+    n.hidden = !ev.length; n.textContent = ev.length; n.classList.toggle("soft", !due.length);
+    const sig = due.map((e) => e.key).join("|");
+    const show = S.alertsOpen || (due.length && sig !== dismissedSig());
+    bell.setAttribute("aria-expanded", String(!!show));
+    if (!show) { box.hidden = true; box.innerHTML = ""; return; }
+    const list = S.alertsOpen ? ev : due; const au = S.alertUi || {};
+    const kindName = { probation: "Випробувальний", notice: "Відпрацювання", review: "Перегляд ЗП" };
+    const acts = (e) => {
+      const id = esc(e.p.id), key = esc(e.key);
+      if (au.key === e.key && au.mode === "extend") return `<input id="al-date" type="date" value="${esc(au.date)}" aria-label="Нова дата"><button class="btn primary" type="button" data-al="extend-save" data-key="${key}">Зберегти</button><button class="btn" type="button" data-al="cancel">Скасувати</button>`;
+      const open = `<button class="btn ghost" type="button" data-al="open" data-id="${id}" data-key="${key}">Відкрити справу</button>`;
+      if (!S.canWrite) return open;
+      if (e.kind === "probation" && e.level === "due") return `<button class="btn primary" type="button" data-al="pass" data-key="${key}">Пройшов</button><button class="btn" type="button" data-al="extend" data-key="${key}">Продовжити</button><button class="btn danger" type="button" data-al="fail" data-key="${key}">Не пройшов</button>${open}`;
+      if (e.kind === "notice" && e.level === "due") return `<button class="btn ${au.key === e.key && au.mode === "confirm" ? "danger" : "primary"}" type="button" data-al="delete" data-key="${key}">${au.key === e.key && au.mode === "confirm" ? "Точно видалити справу?" : "Видалити справу"}</button><button class="btn" type="button" data-al="extend" data-key="${key}">Продовжити відпрацювання</button>${open}`;
+      return open;
+    };
+    box.innerHTML = `<div class="alerts-head">
+        <span class="alerts-title">${S.alertsOpen ? "Події" : "Потребує уваги"} · <b>${list.length}</b></span>
+        <span class="row">${!S.alertsOpen && ev.length > due.length ? `<button class="btn ghost" type="button" data-al="all">Усі події (${ev.length})</button>` : ""}<button class="btn" type="button" data-al="later">${S.alertsOpen ? "Закрити" : "Пізніше"}</button></span>
+      </div>
+      ${list.length ? `<ul class="alerts-list">${list.map((e) => `
+        <li class="al ${e.level}">
+          <span class="avatar">${faceHtml(e.p)}</span>
+          <span class="al-text"><span class="al-kind">${kindName[e.kind]}</span><b>${esc(e.p.name)}</b> — ${esc(e.title)}</span>
+          <span class="al-acts">${acts(e)}</span>
+          <span class="err" id="al-err-${esc(e.p.id)}"></span>
+        </li>`).join("")}</ul>` : `<p class="empty">Подій немає. Тут з’являться нагадування про кінець випробувального, відпрацювання і перегляди ЗП.</p>`}`;
+    box.hidden = false;
+  }
+
   function renderDetail() {
     const el = $("detail"); const p = person();
     if (!p) {
-      setHtml($("ptabs"), "");
-      setHtml(el, `<div class="page"><p class="empty">${!S.loaded ? "Завантажуємо справу…" : S.people.length ? "Оберіть людину зі списку, щоб відкрити її справу." : "Тут з’явиться особова справа."}</p></div>`);
+      $("ptabs").innerHTML = "";
+      el.innerHTML = `<div class="page"><p class="empty">${!S.loaded ? "Завантажуємо справу…" : S.people.length ? "Оберіть людину зі списку, щоб відкрити її справу." : "Тут з’явиться особова справа."}</p></div>`;
       return;
     }
     const cur = p.currency || "PLN"; const ui = S.ui;
     const counts = { projects: linkedIds(p).length, salary: historyOf(p).length, review: reviewOf(p).length, notes: notesOf(p).length };
-    setHtml($("ptabs"), PTABS.map(([k, t]) => `<button type="button" role="tab" class="pt-${k}" data-tab="${k}" aria-selected="${S.ptab === k}">${t}${counts[k] ? `<span class="count">${counts[k]}</span>` : ""}</button>`).join(""));
+    $("ptabs").innerHTML = PTABS.map(([k, t]) => `<button type="button" role="tab" class="pt-${k}" data-tab="${k}" aria-selected="${S.ptab === k}">${t}${counts[k] ? `<span class="count">${counts[k]}</span>` : ""}</button>`).join("");
     const body = S.ptab === "salary" ? secSalary(p) : S.ptab === "review" ? secReview(p) : S.ptab === "notes" ? secNotes(p) : secProjects(p);
     const rs = reviewState(p);
-    setHtml(el, `<div class="page">
+    el.innerHTML = `<div class="page">
       <div class="case">
         <span class="case-no"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="5" r="3"/><path d="M2 15c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/></svg>Особова справа № <b>${caseNo(p.id)}</b></span>
         ${S.canWrite && !ui.editProfile ? `<span class="row"><button type="button" class="btn ghost" data-act="edit-profile">Редагувати</button><button type="button" class="btn ${ui.confirmDel ? "danger" : "ghost"}" data-act="del-person">${ui.confirmDel ? "Точно знищити справу?" : "Видалити"}</button></span>` : ""}
@@ -1281,14 +1322,17 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
           <dt>Посада</dt><dd>${esc(p.role || "—")}</dd>
           <dt>У фірмі з</dt><dd>${p.since ? `${esc(fmtMonth(p.since))} <span class="notice">(${esc(tenure(p.since))})</span>` : "—"}</dd>
           <dt>ЗП на місяць</dt><dd class="money">${num(p.rate)} <small>${esc(cur)}</small></dd>
+          <dt>Статус</dt><dd>${statusLine(p)}</dd>
         </dl>
         <div class="stamps">
           ${p.isExample ? `<span class="stamp blue">Зразок</span>` : ""}
+          ${statusOf(p) === "probation" ? `<span class="stamp amber">Випробувальний</span>` : statusOf(p) === "notice" ? `<span class="stamp">Відпрацювання</span>` : ""}
           ${rs && rs.cls ? `<span class="stamp">Перегляд ЗП</span>` : ""}
         </div>
       </div>`}
+      ${ui.editStatus ? statusForm(p) : ""}
       <div class="body${S.animate.body ? " enter" : ""}">${body}</div>
-    </div>`);
+    </div>`;
   }
 
   /* ================= projects view ================= */
@@ -1297,57 +1341,63 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     return `<div class="proj-card">
       ${labelHtml(sel, "lg")}
       <div class="body">
-        ${pui.edit && S.canWrite ? `<form id="renameForm" class="inline-form">
-            <span class="work-kicker">Редагування проєкту</span>
-            <label>Назва проєкту<input id="rn-name" data-draft required maxlength="100" value="${esc(dv("rn-name", sel.name))}"></label>
-            <div class="row start">
-              <label class="filebtn"><span>${sel.iconData ? "Замінити картинку" : "Додати картинку"}</span><input id="re-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" hidden></label>
-              ${sel.iconData ? `<button class="btn" type="button" data-act="drop-icon">Прибрати картинку</button>` : ""}
-            </div>
-            <div class="row">
-              <button type="button" class="btn ${pui.confirmDel ? "danger" : "ghost"}" data-act="del-project" style="margin-right:auto">${pui.confirmDel ? (team.length ? `Видалити й відв’язати від ${team.length}?` : "Точно видалити?") : "Видалити з бази"}</button>
-              <span class="err" id="pc-err"></span>
-              <button class="btn" type="button" data-act="cancel-rename">Скасувати</button>
-              <button class="btn primary" type="submit">Зберегти</button>
-            </div>
+        ${pui.rename ? `<form id="renameForm" style="display:flex;gap:8px;flex-wrap:wrap">
+            <input id="rn-name" data-draft required maxlength="100" value="${esc(dv("rn-name", sel.name))}" style="flex:1 1 200px;width:auto" aria-label="Назва проєкту">
+            <button class="btn primary" type="submit">Зберегти</button><button class="btn" type="button" data-act="cancel-rename">Скасувати</button>
           </form>`
-          : `<div class="proj-head"><h2>${esc(sel.name)} ${sel.isExample ? '<span class="badge example">зразок</span>' : ""}${sel.archived ? ' <span class="badge archived">у смітнику</span>' : ""}</h2>
-            ${S.canWrite ? `<button type="button" class="btn ghost" data-act="rename">Редагувати</button>` : ""}</div>`}
-        <div style="display:grid;gap:12px">
-          ${!team.length ? `<div class="notice">До проєкту ще ніхто не підв’язаний.</div>` : [["Зараз на проєкті:", team.filter((p) => activeOf(p) === sel.id)], ["Раніше працювали:", team.filter((p) => activeOf(p) !== sel.id)]]
-            .filter(([, list]) => list.length).map(([title, list]) => `<div>
-            <div class="notice" style="margin-bottom:6px">${title}</div>
-            <div class="team">${list.map((p) => { const w = workOf(p, sel.id); return `<button type="button" class="team-row" data-act="open-person" data-id="${esc(p.id)}" data-proj="${esc(sel.id)}">
-              <span class="avatar">${faceHtml(p)}</span>
-              <span style="min-width:0"><span class="nm">${esc(p.name)}</span> <span class="rl">${esc([w.role, w.period].filter(Boolean).join(" · ") || p.role || "")}</span>
-              <div class="tx">${w.text ? esc(w.text) : `<span class="notice">Що робив(ла) — ще не описано</span>`}</div></span>
-            </button>`; }).join("")}</div>
-          </div>`).join("")}
+          : `<h2>${esc(sel.name)} ${sel.isExample ? '<span class="badge example">зразок</span>' : ""}${sel.archived ? ' <span class="badge archived">у смітнику</span>' : ""}</h2>`}
+        <div>
+          <div class="notice" style="margin-bottom:6px">${team.length ? "Працюють над проєктом:" : "До проєкту ще ніхто не підв’язаний."}</div>
+          ${team.length ? `<div class="team">${team.map((p) => { const w = workOf(p, sel.id); return `<button type="button" class="team-row" data-act="open-person" data-id="${esc(p.id)}" data-proj="${esc(sel.id)}">
+            <span class="avatar">${faceHtml(p)}</span>
+            <span style="min-width:0"><span class="nm">${esc(p.name)}</span> <span class="rl">${esc([w.role, w.period].filter(Boolean).join(" · ") || p.role || "")}</span>
+            <div class="tx">${w.text ? esc(w.text) : `<span class="notice">Що робив(ла) — ще не описано</span>`}</div></span>
+          </button>`; }).join("")}</div>` : ""}
         </div>
+        ${S.canWrite ? `<div style="display:grid;gap:8px">
+          <div class="swatches" aria-label="Колір ярлика">${swatchesHtml((Number(sel.color) || 0) % COLORS, "recolor")}</div>
+          <div class="row start">
+            ${true ? `<label class="filebtn"><span>${sel.iconData ? "Замінити картинку" : "Додати картинку"}</span><input id="re-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" hidden></label>` : ""}
+            ${sel.iconData ? `<button class="btn" type="button" data-act="drop-icon">Прибрати картинку</button>` : ""}
+            ${!pui.rename ? `<button class="btn" type="button" data-act="rename">Перейменувати</button>` : ""}
+            <button type="button" class="btn ${pui.confirmDel ? "danger" : "ghost"}" data-act="del-project">${pui.confirmDel ? (team.length ? `Видалити й відв’язати від ${team.length}?` : "Точно видалити?") : "Видалити з бази"}</button>
+          </div>
+          <span class="err" id="pc-err"></span>
+        </div>` : ""}
       </div>
       <button type="button" class="x" data-act="close-project" aria-label="Закрити картку проєкту" style="align-self:start">✕</button>
     </div>`;
   }
 
-  function boardLayout(list, width) {
+  /* Every card gets a fixed spot. A card that has never been placed takes the first free grid cell
+     (one that overlaps no other card), and that spot is saved right away, so removing, restoring or
+     adding a project never shifts the others. */
+  function boardLayout(all, width) {
     const cols = Math.max(1, Math.floor((width - PAD * 2 + GAP_X) / (CARD_W + GAP_X)));
-    const slot = new Map(S.projects.filter((x) => !x.archived).map((x, i) => [x.id, i])); /* stable home slot: other cards never jump when one is moved */
+    const cell = (i) => ({ x: PAD + (i % cols) * (CARD_W + GAP_X), y: PAD + Math.floor(i / cols) * (CARD_H + GAP_Y) });
+    const rects = [];
+    const hits = (x, y) => rects.some((r) => x < r.x + CARD_W + 8 && x + CARD_W + 8 > r.x && y < r.y + CARD_H + 8 && y + CARD_H + 8 > r.y);
+    const pos = new Map();
+    for (const x of all) {
+      const sp = S.localPos[x.id] || x.pos;
+      if (sp && Number.isFinite(sp.x) && Number.isFinite(sp.y)) { pos.set(x.id, { px: sp.x, py: sp.y, z: sp.z || 0, auto: false }); rects.push({ x: sp.x, y: sp.y }); }
+    }
+    let next = 0;
+    for (const x of all) {
+      if (pos.has(x.id)) continue;
+      let c = cell(next); while (hits(c.x, c.y)) c = cell(++next);
+      pos.set(x.id, { px: c.x, py: c.y, z: 0, auto: true }); rects.push({ x: c.x, y: c.y }); next++;
+    }
     let maxY = 0, maxX = 0;
-    const out = list.map((x) => {
-      const saved = S.localPos[x.id] || x.pos;
-      let px, py, z = 0;
-      if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) { px = saved.x; py = saved.y; z = saved.z || 0; }
-      else { const i = slot.get(x.id) || 0; px = PAD + (i % cols) * (CARD_W + GAP_X); py = PAD + Math.floor(i / cols) * (CARD_H + GAP_Y); }
-      maxY = Math.max(maxY, py + CARD_H); maxX = Math.max(maxX, px + CARD_W);
-      return { x, px, py, z };
-    });
-    return { cards: out, h: maxY + PAD + 20, w: maxX + PAD };
+    const out = all.map((x) => { const q = pos.get(x.id); maxY = Math.max(maxY, q.py + CARD_H); maxX = Math.max(maxX, q.px + CARD_W); return { x, ...q }; });
+    return { cards: out, h: maxY + 12, w: maxX + 12 }; /* same 12px margin as the drag clamp: no scrollbars after a drop */
   }
 
   function renderProjects() {
     const el = $("view-projects");
-    if (!S.loaded) { setHtml(el, '<p class="empty">Завантажуємо проєкти…</p>'); return; }
-    if (!S.db) { setHtml(el, '<p class="empty">Сховище недоступне в цьому перегляді.</p>'); return; }
+    $("cnt-projects").textContent = S.loaded && S.db ? S.projects.length : "";
+    if (!S.loaded) { el.innerHTML = '<p class="empty">Завантажуємо проєкти…</p>'; return; }
+    if (!S.db) { el.innerHTML = '<p class="empty">Сховище недоступне в цьому перегляді.</p>'; return; }
     const q = S.pq.trim().toLowerCase();
     const matches = S.projects.filter((x) => !q || x.name.toLowerCase().includes(q));
     const list = matches.filter((x) => !x.archived), trashed = matches.filter((x) => x.archived);
@@ -1355,10 +1405,9 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const sel = projById(S.selProject);
     const prevWrap = el.querySelector(".board-wrap"); const prevScroll = prevWrap ? [prevWrap.scrollLeft, prevWrap.scrollTop] : null;
     const width = (prevWrap ? prevWrap.clientWidth : el.clientWidth) || 900;
-    const L = boardLayout(list, width);
-    /* saved z only grows with every move; render it as rank 1..N so cards keep their stacking order but stay under the trash panel */
-    [...L.cards].sort((a, b) => a.z - b.z).forEach((c, i) => { c.z = i + 1; });
-    setHtml(el, `
+    const L = boardLayout(S.projects.filter((x) => !x.archived), width);
+    const shown = new Set(list.map((x) => x.id));
+    el.innerHTML = `
       <div class="base-head">
         <input id="pq" type="search" placeholder="Пошук проєкту" value="${esc(S.pq)}" aria-label="Пошук проєкту">
         <span class="notice">${S.projects.length - trashCount} на дошці${trashCount ? ` · ${trashCount} у смітнику` : ""}${S.canWrite ? " · картки можна перетягувати, непотрібні — у смітник" : ""}</span>
@@ -1367,17 +1416,17 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       <div class="board-area" id="boardArea">
       <div class="cork board-wrap" id="boardWrap">
         ${S.projects.length ? `<div class="board" id="board" style="height:${L.h}px;min-width:${L.w}px">
-          ${L.cards.map(({ x, px, py, z }) => { const team = peopleOn(x.id), now = team.filter((p) => activeOf(p) === x.id).length, before = team.length - now; return `
+          ${L.cards.filter((c) => shown.has(c.x.id)).map(({ x, px, py, z }) => { const n = peopleOn(x.id).length; return `
             <button type="button" class="bcard${S.canWrite ? "" : " locked"}" data-id="${esc(x.id)}" aria-current="${x.id === S.selProject}"
               style="left:${px}px;top:${py}px;z-index:${z};--rot:${rotFor(x.id).toFixed(2)}deg">
               <span class="pin"></span>${labelHtml(x)}<span class="name">${esc(x.name)}</span>
-              <span class="meta">${!team.length ? "без людей" : `${now ? `${now} ${plural(now, "людина", "людини", "людей")} зараз` : "зараз нікого"}${before ? ` · ${before} раніше` : ""}`}</span>
+              <span class="meta">${n ? n + " " + plural(n, "людина", "людини", "людей") : "без людей"}</span>
             </button>`; }).join("")}
         </div>${q && !list.length ? '<p class="cork-empty" style="padding:24px">На дошці нічого не знайдено.</p>' : ""}`
         : `<p class="cork-empty" style="padding:24px">База проєктів порожня. Натисніть «+ Додати проєкт» угорі, щоб створити перший.</p>`}
         <span class="cork-legend">Дошка проєктів</span>
       </div>
-      ${S.trashOpen ? `<aside class="trash" id="trash" aria-label="Смітник">
+      ${S.trashOpen ? `<aside class="trash${S.trashAnim ? " enter" : ""}" id="trash" aria-label="Смітник">
         <div class="trash-head"><span>Смітник · ${trashCount}</span><button type="button" class="x" data-act="toggle-trash" aria-label="Закрити смітник">✕</button></div>
         <p class="notice" style="margin:0">${trashCount ? "Перетягніть картку на дошку, щоб повернути проєкт." : "Порожньо. Перетягніть сюди проєкт з дошки, щоб прибрати його."}</p>
         <div class="tlist">${trashed.map((x) => `
@@ -1394,127 +1443,25 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
         ${trashCount ? `<span class="count">${trashCount}</span>` : ""}
         <span class="bin-label">Смітник</span>
       </button>
-      </div>`);
-    /* the layout estimates card height; trim the board to the real cards so it does not overflow by that slack */
-    const board = $("board");
-    if (board) {
-      let bottom = 0; for (const c of board.children) if (c.classList.contains("bcard")) bottom = Math.max(bottom, c.offsetTop + c.offsetHeight);
-      const h = Math.round(bottom + PAD) + "px"; if (board.style.height !== h) board.style.height = h;
-    }
+      </div>`;
     if (prevScroll) { const w = $("boardWrap"); if (w) { w.scrollLeft = prevScroll[0]; w.scrollTop = prevScroll[1]; } }
-  }
-
-  /* ================= stats view: monthly payroll by role ================= */
-  /* Each currency gets its own ledger: amounts are never converted between currencies. */
-  function renderStats() {
-    const el = $("view-stats");
-    if (!S.loaded) { setHtml(el, '<p class="empty">Рахуємо відомість…</p>'); return; }
-    if (!S.db) { setHtml(el, '<p class="empty">Сховище недоступне в цьому перегляді.</p>'); return; }
-    const curs = new Map();
-    for (const p of S.people) {
-      const cur = p.currency || "PLN", rate = Number(p.rate) || 0, key = roleKey(p.role);
-      const c = curs.get(cur) || { total: 0, n: 0, roles: new Map() }; curs.set(cur, c);
-      const g = c.roles.get(key) || { key, label: String(p.role || "").trim() || "Без посади", n: 0, sum: 0, unpaid: 0 }; c.roles.set(key, g);
-      g.n++; g.sum += rate; if (!rate) g.unpaid++;
-      c.total += rate; c.n++;
-    }
-    const ledgers = [...curs].sort((a, b) => b[1].total - a[1].total).map(([cur, c]) => {
-      const roles = [...c.roles.values()].sort((a, b) => b.sum - a.sum || b.n - a.n || a.label.localeCompare(b.label, "uk"));
-      const max = Math.max(1, ...roles.map((g) => g.sum));
-      const paid = c.n - roles.reduce((s, g) => s + g.unpaid, 0);
-      const rows = roles.map((g) => {
-        const paidN = g.n - g.unpaid, share = c.total ? (g.sum / c.total) * 100 : 0;
-        const attrs = g.key ? `type="button" data-role="${esc(g.key)}" title="Показати людей на цій посаді"` : "";
-        const tag = g.key ? "button" : "div";
-        return `<${tag} class="st-row" ${attrs}>
-          <span class="st-role">${esc(g.label)}</span>
-          <span class="st-n">${g.n}</span>
-          <span class="st-share"><span class="st-track"><span class="st-bar" style="width:${((g.sum / max) * 100).toFixed(1)}%"></span></span><span class="st-pct">${pct(share)}%</span></span>
-          <span class="st-sum">${num(g.sum)} <small>${esc(cur)}</small></span>
-          <span class="st-avg">${paidN ? num(g.sum / paidN) : "—"}${g.unpaid ? `<small class="st-miss">${g.unpaid} без ЗП</small>` : ""}</span>
-        </${tag}>`;
-      }).join("");
-      return `<section>
-        ${curs.size > 1 ? `<h3>Виплати в ${esc(cur)}</h3>` : ""}
-        <div class="sal-sum">
-          <div><span class="k">Фонд ЗП на місяць</span><span class="v">${num(c.total)} <small>${esc(cur)}</small></span><span class="n">${c.n} ${plural(c.n, "людина", "людини", "людей")}</span></div>
-          <div><span class="k">На рік</span><span class="v">${num(c.total * 12)} <small>${esc(cur)}</small></span><span class="n">за поточних ставок</span></div>
-          <div><span class="k">Середня ЗП</span><span class="v">${paid ? num(c.total / paid) : "—"} <small>${esc(cur)}</small></span><span class="n">${paid === c.n ? "по всіх людях" : `по ${paid} з ${c.n}, без нульових`}</span></div>
-        </div>
-        <div class="st-table">
-          <div class="st-row st-head" aria-hidden="true"><span>Посада</span><span>Людей</span><span>Частка фонду</span><span>На місяць</span><span>Середня</span></div>
-          ${rows}
-        </div>
-      </section>`;
-    }).join("");
-    setHtml(el, `<div class="ledger">
-      <div class="case"><span class="case-no">Відомість фонду оплати праці</span><span class="notice">станом на ${esc(fmtMonth(thisMonth()))} · натисніть посаду, щоб побачити людей</span></div>
-      ${ledgers || '<p class="empty">Ще нікого немає.</p>'}
-    </div>`);
-  }
-
-  /* ================= drag physics: a held card hangs from the grab point like a joint ================= */
-  const calmMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const settling = new Set(); /* cards swinging back after a drop; renders wait so the DOM is not swapped mid-swing */
-  function hang(el, d, rest) {
-    if (calmMotion.matches) return;
-    const w = el.offsetWidth, h = el.offsetHeight;
-    const ph = el._ph || { a: rest, av: 0, s: 1, sv: 0 };
-    settling.delete(el);
-    Object.assign(ph, { d, rest, held: true, px: d.gx - w / 2, py: d.gy - h / 2,
-      lever: Math.min(1.3, Math.max(0.35, (h * 0.65 - d.gy) / (h * 0.5))), /* grabbed high = long pendulum, more swing */
-      lean: Math.max(-1, Math.min(1, (w / 2 - d.gx) / (w / 2))) * 6 }); /* held off-centre, the free side sags */
-    el._ph = ph; el.style.transition = "none";
-    if (!ph.raf) { ph.t = performance.now(); ph.raf = requestAnimationFrame((t) => swing(el, t)); }
-  }
-  function swing(el, now) {
-    const ph = el._ph; if (!ph) return;
-    const dt = Math.min(0.032, Math.max(0.001, (now - ph.t) / 1000)); ph.t = now;
-    const d = ph.d;
-    if (ph.held && now - d.vt > 40) d.vx *= 0.8; /* pointer stopped: the swing dies out */
-    const angle = ph.held ? Math.max(-14, Math.min(14, ph.lean + d.vx * 10 * ph.lever)) + (d.overTrash ? -6 : 0) : ph.rest;
-    const scale = ph.held ? (d.overTrash ? 0.9 : 1.04) : 1;
-    /* underdamped springs: overshoot a little, then settle */
-    ph.av += (180 * (angle - ph.a) - 12 * ph.av) * dt; ph.a += ph.av * dt;
-    ph.sv += (400 * (scale - ph.s) - 30 * ph.sv) * dt; ph.s += ph.sv * dt;
-    if (!ph.held && Math.abs(ph.a - ph.rest) < 0.05 && Math.abs(ph.av) < 1 && Math.abs(ph.s - 1) < 0.002 && Math.abs(ph.sv) < 0.01) {
-      el.style.transform = ""; el.style.transition = ""; el._ph = null; settling.delete(el);
-      if (!settling.size && !S.drag && S.renderPending) { S.renderPending = false; render(); }
-      return;
-    }
-    /* rest tilt about the centre (as in CSS), swing about the grab point on top of it */
-    el.style.transform = `translate(${ph.px}px, ${ph.py}px) rotate(${(ph.a - ph.rest).toFixed(2)}deg) translate(${-ph.px}px, ${-ph.py}px) rotate(${ph.rest}deg) scale(${ph.s.toFixed(4)})`;
-    ph.raf = requestAnimationFrame((t) => swing(el, t));
-  }
-  function letGo(el, settle) {
-    const ph = el && el._ph; if (!ph) return;
-    ph.held = false;
-    if (settle) { settling.add(el); return; }
-    cancelAnimationFrame(ph.raf); el.style.transform = ""; el.style.transition = ""; el._ph = null;
+    /* pin never-placed cards to the spot they were just drawn at */
+    if (S.tab === "projects" && S.canWrite && S.db && !S.drag) for (const c of L.cards) if (c.auto) savePos(c.x.id, { x: c.px, y: c.py, z: 0 });
   }
 
   /* ================= render orchestration ================= */
   function render() {
-    if (S.drag || settling.size) { S.renderPending = true; return; }
+    if (S.drag) { S.renderPending = true; return; }
     const a = document.activeElement; let f = null;
     if (a && a.id && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest && a.closest("#detail, #view-projects")) {
       f = { id: a.id }; try { f.s = a.selectionStart; f.e = a.selectionEnd; } catch {}
     }
-    $("cnt-people").textContent = S.loaded && S.db ? S.people.length : "";
-    $("cnt-projects").textContent = S.loaded && S.db ? S.projects.length : "";
-    /* only the visible tab is built; setTab renders the other one when it is opened */
-    if (S.tab === "projects") renderProjects();
-    else if (S.tab === "stats") renderStats();
-    else { const detailScroll = $("detail").scrollTop; renderPeople(); renderDetail(); $("detail").scrollTop = detailScroll; }
-    if (S.animate.view) { const v = $("view-" + S.tab); v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
-    S.animate.view = false; S.animate.body = false;
+    const detailScroll = $("detail").scrollTop;
+    renderPeople(); renderDetail(); renderProjects(); renderAlerts();
+    $("detail").scrollTop = detailScroll;
+    if (S.animate.view) { const v = $(S.tab === "projects" ? "view-projects" : "view-people"); v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
+    S.animate.view = false; S.animate.body = false; S.trashAnim = false;
     if (f) { const el = $(f.id); if (el && el !== document.activeElement) { el.focus({ preventScroll: true }); try { if (f.s != null) el.setSelectionRange(f.s, f.e); } catch {} } }
-  }
-  /* Snapshot bursts (four collections at sign-in, batch writes) collapse into one render per frame. */
-  function scheduleRender() {
-    if (S.renderQueued) return;
-    S.renderQueued = true;
-    requestAnimationFrame(() => { S.renderQueued = false; render(); });
   }
   function select(id) {
     if (S.selected !== id) { S.drafts = {}; S.ui = {}; S.animate.body = true; }
@@ -1527,12 +1474,13 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
 
   /* ================= add forms ================= */
   function renderNewProjectPreview() {
+    $("npr-swatches").innerHTML = swatchesHtml(S.newColor);
     const prev = $("npr-preview");
     prev.className = "label lg c" + S.newColor + (S.newFileUrl ? " has-img" : "");
     prev.innerHTML = S.newFileUrl ? `<img src="${S.newFileUrl}" alt="">` : esc(initials($("npr-name").value || "?"));
   }
   function resetProjectForm() {
-    $("addProjectForm").reset(); S.newColor = Math.floor(Math.random() * COLORS); /* shown only while the project has no icon */ S.newFile = null;
+    $("addProjectForm").reset(); S.newColor = 0; S.newFile = null;
     if (S.newFileUrl) { URL.revokeObjectURL(S.newFileUrl); S.newFileUrl = null; }
     $("npr-err").textContent = ""; renderNewProjectPreview();
   }
@@ -1544,15 +1492,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
 
   $("tab-people").addEventListener("click", () => setTab("people"));
   $("tab-projects").addEventListener("click", () => setTab("projects"));
-  $("tab-stats").addEventListener("click", () => setTab("stats"));
-  /* a role row in the ledger opens the roster filtered to that role */
-  $("view-stats").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-role]"); if (!b) return;
-    S.group = b.dataset.role; try { localStorage.setItem("pf-group", S.group); } catch {}
-    setTab("people");
-  });
   $("addBtn").addEventListener("click", () => {
-    if (S.tab === "people") { $("addPersonForm").hidden = false; $("np-name").focus(); } else openAddProject();
+    if (S.tab === "people") { $("addPersonForm").hidden = false; if (!$("np-prob").value) $("np-prob").value = addMonthsStr(todayStr(), 3); $("np-name").focus(); } else openAddProject();
   });
   $("np-cancel").addEventListener("click", () => { $("addPersonForm").hidden = true; $("addPersonForm").reset(); });
   $("addPersonForm").addEventListener("submit", async (e) => {
@@ -1563,7 +1504,10 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     if (rateRaw === "" || !Number.isFinite(Number(rateRaw)) || Number(rateRaw) < 0) { $("np-err").textContent = "Вкажіть ЗП на місяць числом, наприклад 15250."; $("np-rate").focus(); return; }
     $("np-err").textContent = "";
     const rate = Number(rateRaw), currency = $("np-cur").value, since = $("np-since").value || "";
-    const data = { name, role: $("np-role").value.trim(), rate, currency, since, projectIds: [],
+    const probEnd = $("np-prob").value;
+    if (probEnd && dayIndex(probEnd) == null) { $("np-err").textContent = "Перевірте дату кінця випробувального терміну."; return; }
+    const data = { name, role: $("np-role").value.trim(), rate, currency, since: since || thisMonth(), projectIds: [],
+      status: probEnd ? "probation" : "active", ...(probEnd ? { probation: { start: todayStr(), end: probEnd } } : {}),
       rateHistory: [{ id: uid(), date: since || thisMonth(), rate, currency, note: "Початкова ЗП" }], createdAt: new Date().toISOString() };
     try {
       const ref = await S.db.collection("people").add(data);
@@ -1572,6 +1516,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     } catch (err) { $("np-err").textContent = failText(err); }
   });
   $("npr-name").addEventListener("input", renderNewProjectPreview);
+  $("npr-swatches").addEventListener("click", (e) => { const b = e.target.closest(".swatch"); if (!b) return; S.newColor = Number(b.dataset.c); renderNewProjectPreview(); });
   $("npr-file").addEventListener("change", (e) => {
     const f = e.target.files && e.target.files[0];
     if (S.newFileUrl) URL.revokeObjectURL(S.newFileUrl);
@@ -1594,9 +1539,41 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   });
 
   /* ================= roster & bookmarks events ================= */
+  $("bellBtn").addEventListener("click", () => {
+    const visible = !$("alerts").hidden;
+    if (visible) { S.alertsOpen = false; setDismissed(eventsList().filter((e) => e.level === "due").map((e) => e.key).join("|")); }
+    else S.alertsOpen = true;
+    S.alertUi = {}; renderAlerts();
+  });
+  $("alerts").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-al]"); if (!b) return;
+    const act = b.dataset.al; const ev = eventsList().find((x) => x.key === b.dataset.key); const p = ev && ev.p;
+    if (act === "later") { S.alertsOpen = false; S.alertUi = {}; setDismissed(eventsList().filter((x) => x.level === "due").map((x) => x.key).join("|")); renderAlerts(); return; }
+    if (act === "all") { S.alertsOpen = true; renderAlerts(); return; }
+    if (act === "cancel") { S.alertUi = {}; renderAlerts(); return; }
+    if (act === "open") { const id = b.dataset.id; if (ev && ev.kind === "review") S.ptab = "review"; openPerson(id); return; }
+    if (!p) return;
+    if (act === "pass") return passProbation(p);
+    if (act === "fail") return failProbation(p);
+    if (act === "extend") {
+      const base = ev.kind === "probation" ? (p.probation || {}).end : (p.notice || {}).lastDay;
+      const from = dayIndex(base) != null && dayIndex(base) >= dayIndex(todayStr()) ? base : todayStr();
+      S.alertUi = { key: ev.key, mode: "extend", date: ev.kind === "probation" ? addMonthsStr(from, 1) : addDaysStr(from, 7) }; renderAlerts();
+      const i = $("al-date"); if (i) i.focus(); return;
+    }
+    if (act === "extend-save") {
+      const d = $("al-date").value; if (dayIndex(d) == null) return;
+      const patch = ev.kind === "probation" ? { probation: { ...(p.probation || {}), end: d } } : { notice: { ...(p.notice || {}), lastDay: d } };
+      try { await S.db.doc("people/" + p.id).update(patch); S.alertUi = {}; render(); } catch (err) { showErr("al-err-" + p.id, err); }
+      return;
+    }
+    if (act === "delete") {
+      if (!(S.alertUi && S.alertUi.key === ev.key && S.alertUi.mode === "confirm")) { S.alertUi = { key: ev.key, mode: "confirm" }; renderAlerts(); return; }
+      try { await deletePerson(p); } catch (err) { showErr("al-err-" + p.id, err); }
+    }
+  });
   $("search").addEventListener("input", (e) => { S.q = e.target.value; renderPeople(); });
   $("groupSel").addEventListener("change", (e) => { S.group = e.target.value; try { localStorage.setItem("pf-group", S.group); } catch {} renderPeople(); });
-  $("sortProj").addEventListener("change", (e) => { S.byProject = e.target.checked; try { localStorage.setItem("pf-sort-project", S.byProject ? "1" : "0"); } catch {} renderPeople(); });
   $("people").addEventListener("click", (e) => { const b = e.target.closest(".person-btn"); if (b) select(b.dataset.id); });
   $("ptabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) setPtab(b.dataset.tab); });
 
@@ -1613,6 +1590,28 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   }
   const RAISE_FIELDS = ["ra-rate", "ra-cur", "ra-date", "ra-note", "ra-attach"];
 
+  async function deletePerson(p) {
+    for (const c of notesOf(p)) await S.db.doc("comments/" + c.id).delete();
+    for (const r of S.reviews.filter((r) => r.personId === p.id)) await S.db.doc("reviews/" + r.id).delete();
+    await S.db.doc("people/" + p.id).delete();
+    if (S.selected === p.id) S.selected = null;
+    S.ui = {}; S.alertUi = {}; render();
+  }
+  function openPerson(id) { if (S.tab !== "people") setTab("people"); select(id); }
+  async function passProbation(p) {
+    try {
+      await S.db.doc("people/" + p.id).update({ status: "active", probation: { ...(p.probation || {}), result: "passed", resolvedAt: todayStr() } });
+      S.ptab = "salary"; openPerson(p.id);
+      clearDrafts(...RAISE_FIELDS); S.drafts["ra-note"] = "Кінець випробувального терміну";
+      S.ui = { raise: true }; S.animate.body = true; render();
+    } catch (err) { showErr("al-err-" + p.id, err); showErr("st-err", err); }
+  }
+  function failProbation(p) {
+    openPerson(p.id);
+    clearDrafts("st-status", "st-pstart", "st-pend", "st-nstart", "st-nlast", "st-init", "st-reason");
+    S.drafts["st-status"] = "notice"; S.drafts["st-init"] = "company"; S.drafts["st-reason"] = "Не пройшов випробувальний термін";
+    S.ui = { editStatus: true }; render();
+  }
   const detailActions = {
     "edit-profile": () => { clearDrafts("pf-name", "pf-role", "pf-since"); S.ui = { editProfile: true }; render(); const i = $("pf-name"); if (i) i.focus(); },
     "cancel-profile": () => { S.ui = {}; render(); },
@@ -1629,11 +1628,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     "cancel-raise": () => { S.ui = {}; render(); },
     "toggle-args": (b) => { S.ui = { openRaise: S.ui.openRaise === b.dataset.id ? null : b.dataset.id }; render(); },
     "link": async (b, p) => { try { await S.db.doc("people/" + p.id).update({ projectIds: [...linkedIds(p), b.dataset.id] }); } catch (err) { showErr("link-err", err); } },
-    "unlink": async (b, p) => {
-      const patch = { projectIds: linkedIds(p).filter((x) => x !== b.dataset.id) };
-      if (p.activeProject === b.dataset.id) patch.activeProject = null;
-      try { await S.db.doc("people/" + p.id).update(patch); } catch (err) { showErr("link-err", err); }
-    },
+    "unlink": async (b, p) => { try { await S.db.doc("people/" + p.id).update({ projectIds: linkedIds(p).filter((x) => x !== b.dataset.id) }); } catch (err) { showErr("link-err", err); } },
     "toggle-fix": async (b) => { try { await S.db.doc("reviews/" + b.dataset.id).update({ done: b.checked }); } catch (err) { b.checked = !b.checked; showErr("rv-err", err); } },
     "del-item": async (b) => { try { await S.db.doc("reviews/" + b.dataset.id).delete(); } catch (err) { showErr("rv-err", err); } },
     "del-rate": async (b, p) => {
@@ -1648,13 +1643,17 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       } catch (err) { showErr("hist-err", err); }
     },
     "del-person": async (b, p) => {
-      if (!S.ui.confirmDel) { S.ui = { confirmDel: true }; render(); return; }
-      try {
-        for (const c of notesOf(p)) await S.db.doc("comments/" + c.id).delete();
-        for (const r of S.reviews.filter((r) => r.personId === p.id)) await S.db.doc("reviews/" + r.id).delete();
-        await S.db.doc("people/" + p.id).delete(); S.selected = null; S.ui = {}; render();
-      } catch (err) { b.textContent = failText(err); }
+      if (!S.ui.confirmDel) { S.ui = { ...S.ui, confirmDel: true }; render(); return; }
+      try { await deletePerson(p); } catch (err) { b.textContent = failText(err); }
     },
+    "edit-status": () => { clearDrafts("st-status", "st-pstart", "st-pend", "st-nstart", "st-nlast", "st-init", "st-reason"); S.ui = { editStatus: true }; render(); },
+    "cancel-status": () => { S.ui = {}; render(); },
+    "dismiss-now": async (b, p) => {
+      if (!S.ui.confirmNow) { S.ui = { ...S.ui, confirmNow: true }; render(); return; }
+      try { await deletePerson(p); } catch (err) { showErr("st-err", err); }
+    },
+    "st-pass": (b, p) => passProbation(p),
+    "st-fail": (b, p) => failProbation(p),
     "del-note": async (b) => {
       const id = b.dataset.id;
       if (S.ui.confirmNote !== id) { S.ui = { confirmNote: id }; render(); return; }
@@ -1662,13 +1661,13 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     },
   };
   $("detail").addEventListener("click", (e) => {
-    if (S.justDragged) return; /* the click that ends a card drag is not "open" */
     const b = e.target.closest("[data-act]"); if (!b) return; const p = person(); if (!p) return;
     const fn = detailActions[b.dataset.act]; if (fn) fn(b, p);
   });
   $("detail").addEventListener("input", (e) => { if (e.target.id === "link-q") { S.linkQ = e.target.value; render(); } });
   $("detail").addEventListener("change", async (e) => {
     const t = e.target; const p = person(); if (!p || !S.db) return;
+    if (t.id === "st-status") { S.drafts["st-status"] = t.value; render(); return; }
     if (t.id === "pf-file") {
       const f = t.files && t.files[0]; if (!f) return;
       try { S.ui.photo = await toImageData(f, 240, 300); render(); } catch (err) { showErr("pf-err", err); }
@@ -1682,6 +1681,24 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   $("detail").addEventListener("submit", async (e) => {
     e.preventDefault(); const p = person(); if (!p || !S.db) return;
     const f = e.target;
+    if (f.id === "statusForm") {
+      const st = $("st-status").value; const patch = { status: st };
+      if (st === "probation") {
+        const a = $("st-pstart").value, b = $("st-pend").value;
+        if (dayIndex(a) == null || dayIndex(b) == null) { $("st-err").textContent = "Вкажіть дати початку й кінця випробувального."; return; }
+        if (dayIndex(b) < dayIndex(a)) { $("st-err").textContent = "Кінець не може бути раніше за початок."; return; }
+        patch.probation = { start: a, end: b };
+      }
+      if (st === "notice") {
+        const a = $("st-nstart").value, b = $("st-nlast").value;
+        if (dayIndex(b) == null) { $("st-err").textContent = "Вкажіть останній робочий день."; return; }
+        patch.notice = { start: dayIndex(a) == null ? "" : a, lastDay: b, initiator: $("st-init").value, reason: $("st-reason").value.trim() };
+      }
+      const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
+      try { await S.db.doc("people/" + p.id).update(patch); clearDrafts("st-status", "st-pstart", "st-pend", "st-nstart", "st-nlast", "st-init", "st-reason"); S.ui = {}; render(); }
+      catch (err) { showErr("st-err", err); btn.disabled = false; }
+      return;
+    }
     if (f.id === "profileForm") {
       const name = $("pf-name").value.trim();
       if (!name) { $("pf-err").textContent = "Вкажіть ім’я та прізвище."; $("pf-name").focus(); return; }
@@ -1727,15 +1744,20 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   const projectActions = {
     "open-person": (b) => { setTab("people"); S.ptab = "projects"; select(b.dataset.id); if (b.dataset.proj) { S.ui = { work: b.dataset.proj }; render(); const w = $("workPanel"); if (w) w.scrollIntoView({ behavior: "smooth", block: "nearest" }); } },
     "close-project": () => { S.selProject = null; S.pui = {}; render(); },
-    "toggle-trash": () => { S.trashOpen = !S.trashOpen; render(); },
+    "toggle-trash": (b) => {
+      /* hover opens the panel for a peek; a click pins it open, a second click (or ✕) closes it */
+      if (b.id === "bin" && S.trashOpen && S.trashByHover) { S.trashByHover = false; render(); return; }
+      S.trashOpen = !S.trashOpen; S.trashByHover = false; S.trashAnim = S.trashOpen; render();
+    },
     "restore": (b) => setArchived(b.dataset.id, false),
-    "rename": () => { clearDrafts("rn-name"); S.pui = { edit: true }; render(); const i = $("rn-name"); if (i) i.focus(); },
+    "rename": () => { clearDrafts("rn-name"); S.pui = { rename: true }; render(); const i = $("rn-name"); if (i) i.focus(); },
     "cancel-rename": () => { S.pui = {}; render(); },
-    "drop-icon": async (b, sel) => { try { await S.db.doc("projects/" + sel.id).update({ iconId: null, iconData: null, color: Math.floor(Math.random() * COLORS) }); } catch (err) { showErr("pc-err", err); } },
+    "recolor": async (b, sel) => { try { await S.db.doc("projects/" + sel.id).update({ color: Number(b.dataset.c) }); } catch (err) { showErr("pc-err", err); } },
+    "drop-icon": async (b, sel) => { try { await S.db.doc("projects/" + sel.id).update({ iconId: null, iconData: null }); } catch (err) { showErr("pc-err", err); } },
     "del-project": async (b, sel) => {
-      if (!S.pui.confirmDel) { S.pui = { ...S.pui, confirmDel: true }; render(); return; }
+      if (!S.pui.confirmDel) { S.pui = { confirmDel: true }; render(); return; }
       try {
-        for (const p of peopleOn(sel.id)) await S.db.doc("people/" + p.id).update({ projectIds: (p.projectIds || []).filter((x) => x !== sel.id), ...(p.activeProject === sel.id ? { activeProject: null } : {}) });
+        for (const p of peopleOn(sel.id)) await S.db.doc("people/" + p.id).update({ projectIds: (p.projectIds || []).filter((x) => x !== sel.id) });
         await S.db.doc("projects/" + sel.id).delete();
         S.selProject = null; S.pui = {}; render();
       } catch (err) { showErr("pc-err", err); }
@@ -1763,6 +1785,24 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     try { await S.db.doc("projects/" + sel.id).update({ name }); clearDrafts("rn-name"); S.pui = {}; render(); } catch (err) { showErr("pc-err", err); }
   });
 
+  /* ================= trash panel opens on hover ================= */
+  const inTrashZone = (el) => !!(el && el.closest && el.closest("#bin, #trash"));
+  $("view-projects").addEventListener("pointerover", (e) => {
+    if (S.drag || S.hoverBlocked || e.pointerType === "touch" || !inTrashZone(e.target)) return;
+    clearTimeout(S.trashCloseT);
+    if (!S.trashOpen) { S.trashOpen = true; S.trashByHover = true; S.trashAnim = true; render(); }
+  });
+  $("view-projects").addEventListener("pointerout", (e) => {
+    if (!inTrashZone(e.target) || inTrashZone(e.relatedTarget)) return;
+    S.hoverBlocked = false;
+    clearTimeout(S.trashCloseT);
+    const close = () => {
+      if (S.drag) { S.trashCloseT = setTimeout(close, 300); return; }
+      if (S.trashOpen && S.trashByHover) { S.trashOpen = false; S.trashByHover = false; render(); }
+    };
+    S.trashCloseT = setTimeout(close, 450);
+  });
+
   /* ================= drag cards: move, throw into the bin, pull back out ================= */
   const topZ = () => Math.max(0, ...S.projects.map((x) => (S.localPos[x.id] || x.pos || {}).z || 0));
   async function savePos(id, pos) {
@@ -1778,58 +1818,14 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     try { await S.db.doc("projects/" + id).update(patch); } catch (err) { /* the snapshot restores the real state */ }
   }
   const inRect = (el, x, y) => { if (!el) return false; const r = el.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; };
-  $("view-projects").addEventListener("dragstart", (e) => e.preventDefault()); /* no native image/text drag over our own */
   $("view-projects").addEventListener("pointerdown", (e) => {
     if (!S.canWrite || !S.db || e.button !== 0) return;
     if (e.target.closest("button.link, .x")) return;
     const card = e.target.closest(".bcard, .tcard"); if (!card) return;
     const r = card.getBoundingClientRect();
     S.drag = { kind: card.classList.contains("tcard") ? "trash" : "board", id: card.dataset.id, el: card, sx: e.clientX, sy: e.clientY,
-      ox: card.offsetLeft, oy: card.offsetTop, gx: e.clientX - r.left, gy: e.clientY - r.top, moved: false, pointer: e.pointerId,
-      vx: 0, lx: e.clientX, vt: performance.now() };
+      ox: card.offsetLeft, oy: card.offsetTop, gx: e.clientX - r.left, gy: e.clientY - r.top, moved: false, pointer: e.pointerId };
   });
-  /* dossier cards: same drag as the board; the frame decides active vs history */
-  $("detail").addEventListener("dragstart", (e) => { if (e.target.closest && e.target.closest(".dboard")) e.preventDefault(); });
-  $("detail").addEventListener("pointerdown", (e) => {
-    if (!S.canWrite || !S.db || e.button !== 0 || e.target.closest(".x")) return;
-    const card = e.target.closest(".dcard"); if (!card) return;
-    const r = card.getBoundingClientRect();
-    S.drag = { kind: "dossier", person: S.selected, id: card.dataset.id, el: card, sx: e.clientX, sy: e.clientY,
-      ox: card.offsetLeft, oy: card.offsetTop, gx: e.clientX - r.left, gy: e.clientY - r.top, moved: false, pointer: e.pointerId,
-      vx: 0, lx: e.clientX, vt: performance.now() };
-  });
-  /* restart a one-shot CSS animation class */
-  const replay = (el, cls, off) => { if (off) el.classList.remove(off); el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
-  function dropOnDossier(d) {
-    const p = S.people.find((x) => x.id === d.person), f = document.querySelector("#dboard .dframe");
-    d.el.classList.remove("dragging"); if (f) f.classList.remove("hot");
-    if (!p) { letGo(d.el, false); return; }
-    const patch = {}; let rest;
-    if (d.overFrame) {
-      const s = frameSlot(); rest = 0;
-      d.el.classList.add("snap"); d.el.style.left = s.x + "px"; d.el.style.top = s.y + "px";
-      if (!d.el.classList.contains("active")) {
-        d.el.classList.replace("past", "active"); replay(d.el, "lit", "dim");
-        /* the previous active card fades to grey and slides back to its own spot in the history */
-        const prev = [...document.querySelectorAll("#dboard .dcard.active")].find((c) => c !== d.el);
-        if (prev) {
-          const spot = dossierLayout({ ...p, activeProject: d.id }, $("dboard").clientWidth).cards.find((c) => c.x.id === prev.dataset.id);
-          prev.classList.replace("active", "past"); replay(prev, "dim", "lit"); prev.classList.add("snap");
-          if (spot) { prev.style.left = spot.pos.x + "px"; prev.style.top = spot.pos.y + "px"; prev.style.zIndex = spot.pos.z; }
-          prev.style.setProperty("--rot", rotFor(prev.dataset.id).toFixed(2) + "deg");
-        }
-      }
-      if (activeOf(p) !== d.id) patch.activeProject = d.id;
-    } else {
-      const pos = { x: Math.round(d.x), y: Math.round(d.y), z: topCardZ(p) + 1 }; rest = rotFor(d.id);
-      d.el.style.zIndex = pos.z; patch.cardPos = { [d.id]: pos };
-      /* the card on screen is the truth: it may have been snapped in before the snapshot caught up */
-      if (activeOf(p) === d.id || d.el.classList.contains("active")) { patch.activeProject = null; d.el.classList.replace("active", "past"); replay(d.el, "dim", "lit"); }
-    }
-    d.el.style.setProperty("--rot", rest.toFixed(2) + "deg"); if (d.el._ph) d.el._ph.rest = rest;
-    letGo(d.el, true);
-    if (Object.keys(patch).length) S.db.doc("people/" + p.id).update(patch).catch((err) => showErr("link-err", err));
-  }
   window.addEventListener("pointermove", (e) => {
     const d = S.drag; if (!d || e.pointerId !== d.pointer) return;
     const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
@@ -1837,37 +1833,25 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       if (Math.hypot(dx, dy) < 5) return;
       d.moved = true;
       try { d.el.setPointerCapture(d.pointer); } catch {}
-      if (d.kind === "board" || d.kind === "dossier") { d.el.classList.remove("snap"); d.el.classList.add("dragging"); hang(d.el, d, parseFloat(d.el.style.getPropertyValue("--rot")) || 0); }
+      if (d.kind === "board") d.el.classList.add("dragging");
       else {
         d.ghost = d.el.cloneNode(true); d.ghost.classList.add("drag-ghost"); d.ghost.style.width = d.el.offsetWidth + "px";
-        document.body.appendChild(d.ghost); d.el.classList.add("lifted"); hang(d.ghost, d, 3);
+        document.body.appendChild(d.ghost); d.el.classList.add("lifted");
       }
     }
     e.preventDefault();
-    const now = performance.now();
-    d.vx = d.vx * 0.6 + (e.clientX - d.lx) / Math.max(1, now - d.vt) * 0.4; d.lx = e.clientX; d.vt = now;
     const bin = $("bin"), trash = $("trash"), wrap = $("boardWrap");
-    if (d.kind === "dossier") {
-      d.x = Math.max(0, d.ox + dx); d.y = Math.max(0, d.oy + dy);
-      d.el.style.left = d.x + "px"; d.el.style.top = d.y + "px";
-      const board = $("dboard"), f = board && board.querySelector(".dframe");
-      /* the card's centre decides: inside the frame means "this is the current project" */
-      d.overFrame = !!f && inRect(f, e.clientX - d.gx + d.el.offsetWidth / 2, e.clientY - d.gy + d.el.offsetHeight / 2);
-      if (f) f.classList.toggle("hot", d.overFrame);
-      if (board) { const needH = d.y + d.el.offsetHeight + DC.pad; if (needH > board.offsetHeight) board.style.height = needH + "px"; }
-    } else if (d.kind === "board") {
-      d.x = Math.max(0, d.ox + dx); d.y = Math.max(0, d.oy + dy);
+    if (d.kind === "board") {
+      if (wrap) {
+        wrap.classList.add("dragging-on");
+        const maxX = wrap.scrollLeft + wrap.clientWidth - d.el.offsetWidth - 12, maxY = wrap.scrollTop + wrap.clientHeight - d.el.offsetHeight - 12;
+        d.x = Math.min(Math.max(0, d.ox + dx), Math.max(0, maxX)); d.y = Math.min(Math.max(0, d.oy + dy), Math.max(0, maxY));
+      } else { d.x = Math.max(0, d.ox + dx); d.y = Math.max(0, d.oy + dy); }
       d.el.style.left = d.x + "px"; d.el.style.top = d.y + "px";
       d.overTrash = inRect(bin, e.clientX, e.clientY) || inRect(trash, e.clientX, e.clientY);
       d.el.classList.toggle("to-trash", d.overTrash);
       if (bin) bin.classList.toggle("hot", d.overTrash);
       if (trash) trash.classList.toggle("hot", d.overTrash);
-      const board = $("board");
-      if (board && !d.overTrash) {
-        const needH = d.y + CARD_H + PAD + 20, needW = d.x + CARD_W + PAD;
-        if (needH > board.offsetHeight) board.style.height = needH + "px";
-        if (needW > board.offsetWidth) board.style.minWidth = needW + "px";
-      }
     } else {
       d.ghost.style.left = (e.clientX - d.gx) + "px"; d.ghost.style.top = (e.clientY - d.gy) + "px";
       d.overBoard = inRect(wrap, e.clientX, e.clientY) && !inRect(trash, e.clientX, e.clientY) && !inRect(bin, e.clientX, e.clientY);
@@ -1879,14 +1863,13 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const d = S.drag; if (!d || (e && e.pointerId !== d.pointer)) return;
     S.drag = null;
     const bin = $("bin"), trash = $("trash"), wrap = $("boardWrap"), board = $("board");
-    if (bin) bin.classList.remove("hot"); if (trash) trash.classList.remove("hot"); if (wrap) wrap.classList.remove("drop-ok");
-    if (d.ghost) { letGo(d.ghost, false); d.ghost.remove(); }
+    if (bin) bin.classList.remove("hot"); if (trash) trash.classList.remove("hot"); if (wrap) wrap.classList.remove("drop-ok", "dragging-on");
+    if (d.moved && e && (inRect(bin, e.clientX, e.clientY) || inRect(trash, e.clientX, e.clientY))) S.hoverBlocked = true;
+    if (d.ghost) d.ghost.remove();
     if (d.moved) {
       S.justDragged = true; setTimeout(() => { S.justDragged = false; }, 0);
-      if (d.kind === "dossier") { dropOnDossier(d); return; }
       if (d.kind === "board") {
         d.el.classList.remove("dragging");
-        letGo(d.el, !d.overTrash);
         if (d.overTrash) { S.renderPending = false; setArchived(d.id, true); return; }
         const pos = { x: Math.round(d.x), y: Math.round(d.y), z: topZ() + 1 };
         d.el.style.zIndex = pos.z;
@@ -1921,27 +1904,28 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   function startData() {
     const got = { people: false, projects: false };
     const mark = (k) => { got[k] = true; if (got.people && got.projects) S.loaded = true; };
-    const onErr = (k) => (e) => { if (e && e.denied) S.denied = true; if (k) mark(k); scheduleRender(); };
+    const onErr = (k) => (e) => { if (e && e.denied) S.denied = true; if (k) mark(k); render(); };
     S.unsubs.push(S.db.collection("people").orderBy("name").onSnapshot((snap) => {
       S.people = snap.docs.map((d) => ({ id: d.id, ...d.data() })); mark("people");
       if (!S.selected && S.people.length && !window.matchMedia("(max-width: 860px)").matches) S.selected = S.people[0].id;
       if (S.selected && !S.people.some((p) => p.id === S.selected)) S.selected = null;
-      scheduleRender();
+      render();
     }, onErr("people")));
     S.unsubs.push(S.db.collection("projects").orderBy("name").onSnapshot((snap) => {
       S.projects = snap.docs.map((d) => ({ id: d.id, ...d.data() })); mark("projects");
       for (const x of S.projects) { const l = S.localPos[x.id]; if (l && x.pos && x.pos.x === l.x && x.pos.y === l.y) delete S.localPos[x.id]; }
       if (S.selProject && !projById(S.selProject)) S.selProject = null;
-      scheduleRender();
+      render();
     }, onErr("projects")));
-    S.unsubs.push(S.db.collection("comments").orderBy("createdAt", "desc").limit(1000).onSnapshot((snap) => { S.comments = snap.docs.map((d) => ({ id: d.id, ...d.data() })); scheduleRender(); }, onErr()));
-    S.unsubs.push(S.db.collection("reviews").orderBy("createdAt").limit(1000).onSnapshot((snap) => { S.reviews = snap.docs.map((d) => ({ id: d.id, ...d.data() })); scheduleRender(); }, onErr()));
+    S.unsubs.push(S.db.collection("comments").orderBy("createdAt", "desc").limit(1000).onSnapshot((snap) => { S.comments = snap.docs.map((d) => ({ id: d.id, ...d.data() })); render(); }, onErr()));
+    S.unsubs.push(S.db.collection("reviews").orderBy("createdAt").limit(1000).onSnapshot((snap) => { S.reviews = snap.docs.map((d) => ({ id: d.id, ...d.data() })); render(); }, onErr()));
   }
   function showLogin(on) {
     $("login").hidden = !on;
     document.querySelector(".tabs").style.visibility = on ? "hidden" : "visible";
     $("acct").hidden = on; $("addBtn").hidden = on;
-    if (on) { $("view-people").hidden = true; $("view-projects").hidden = true; $("view-stats").hidden = true; $("addPersonForm").hidden = true; $("addProjectForm").hidden = true; }
+    if (on) { $("bellBtn").hidden = true; $("alerts").hidden = true; }
+    if (on) { $("view-people").hidden = true; $("view-projects").hidden = true; $("addPersonForm").hidden = true; $("addProjectForm").hidden = true; }
     else setTab(S.tab);
   }
   const toast = (t) => { $("toast").textContent = t; clearTimeout(S.toastT); S.toastT = setTimeout(() => { $("toast").textContent = ""; }, 4000); };
@@ -2003,7 +1987,6 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
 
   renderNewProjectPreview();
   if (location.hash === "#projects") S.tab = "projects";
-  if (location.hash === "#stats") S.tab = "stats";
 })();
 </script>
 </body>
