@@ -1504,8 +1504,9 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   }
   function placeNear(el, anchor) {
     const r = anchor.getBoundingClientRect(); const w = el.offsetWidth, h = el.offsetHeight, vw = innerWidth, vh = innerHeight;
-    let x = r.right + 6, y = r.top + r.height / 2 - h / 2;
-    if (x + w > vw - 8) { x = Math.max(8, Math.min(vw - w - 8, r.left)); y = r.bottom + 6; }
+    const gap = el.id === "lkTip" ? 2 : 6; /* the hover tip sits right next to its icon so the pointer can cross over quickly */
+    let x = r.right + gap, y = r.top + r.height / 2 - h / 2;
+    if (x + w > vw - 8) { x = Math.max(8, Math.min(vw - w - 8, r.left)); y = r.bottom + gap; }
     el.style.left = Math.round(x) + "px"; el.style.top = Math.round(Math.max(8, Math.min(vh - h - 8, y))) + "px";
   }
   const siteEl = (id) => document.querySelector(`.lr-site[data-id="${CSS.escape(id)}"]`);
@@ -1539,7 +1540,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const t = $("lkTip"); if (t) { t.hidden = true; t.innerHTML = ""; }
     document.querySelectorAll(".lr-site.on").forEach((x) => x.classList.remove("on"));
   }
-  const hideTipSoon = () => { clearTimeout(S.lk.hideT); S.lk.hideT = setTimeout(hideTip, 260); };
+  /* a short grace period only to cross the 2px gap from the icon to its tip; leaving the tip hides it at once */
+  const hideTipSoon = (ms = 120) => { clearTimeout(S.lk.hideT); S.lk.hideT = setTimeout(hideTip, ms); };
   function openLinkForm(mode, id) {
     hideTip();
     const l = id ? linkById(id) : null; const pop = $("lkPop");
@@ -1975,7 +1977,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   $("lrail").addEventListener("pointerover", (e) => { const a = e.target.closest(".lr-site"); if (a && e.pointerType !== "touch") showTip(a.dataset.id); });
   $("lrail").addEventListener("pointerout", (e) => { if (e.target.closest(".lr-site") && !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".lr-site, #lkTip"))) hideTipSoon(); });
   $("lrail").addEventListener("pointerdown", (e) => { S.lk.touch = e.pointerType === "touch"; });
-  $("lrail").addEventListener("focusin", (e) => { const a = e.target.closest(".lr-site"); if (a) showTip(a.dataset.id); });
+  /* keyboard focus only: a mouse click (or coming back from the opened tab) must not pin the tip open */
+  $("lrail").addEventListener("focusin", (e) => { const a = e.target.closest(".lr-site"); if (a && a.matches(":focus-visible")) showTip(a.dataset.id); });
   $("lrail").addEventListener("focusout", (e) => { if (!(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".lr-site, #lkTip"))) hideTipSoon(); });
   $("lrail").addEventListener("scroll", () => hideTip(), { passive: true });
   $("lrail").addEventListener("click", (e) => {
@@ -2037,7 +2040,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   window.addEventListener("pointerup", endLinkDrag);
   window.addEventListener("pointercancel", endLinkDrag);
   $("lkTip").addEventListener("pointerenter", () => clearTimeout(S.lk.hideT));
-  $("lkTip").addEventListener("pointerleave", hideTipSoon);
+  $("lkTip").addEventListener("pointerleave", (e) => { if (!(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".lr-site"))) hideTip(); });
   $("lkTip").addEventListener("focusout", (e) => { if (!(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".lr-site, #lkTip"))) hideTipSoon(); });
   $("lkTip").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-lk]"); if (!b) return;
