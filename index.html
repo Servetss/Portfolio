@@ -1523,8 +1523,14 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   function fillTip(id) {
     const l = linkById(id); if (!l) return;
     const conf = S.lk.confirm === id;
+    /* rebuilding removes the focused button; put focus back on its replacement so the tip does not think focus left */
+    const had = document.activeElement && document.activeElement.closest && document.activeElement.closest("#lkTip [data-lk]");
+    const focusKey = had ? had.dataset.lk : null;
+    S.lk.rebuilding = true;
     $("lkTip").innerHTML = `<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer"><span class="lk-t">${esc(l.title || hostOf(l.url))}</span><span class="lk-d">${esc(hostOf(l.url))}</span></a>
       ${S.canWrite ? `<span class="lk-acts"><button type="button" class="x" data-lk="edit" data-id="${esc(id)}" title="Редагувати" aria-label="Редагувати">✎</button><button type="button" class="x ${conf ? "danger" : ""}" data-lk="del" data-id="${esc(id)}" title="Видалити" aria-label="Видалити">${conf ? "Видалити?" : "✕"}</button></span>` : ""}`;
+    if (focusKey) { const b = $("lkTip").querySelector(`[data-lk="${focusKey}"]`); if (b) b.focus({ preventScroll: true }); }
+    S.lk.rebuilding = false;
   }
   function showTip(id) {
     clearTimeout(S.lk.hideT);
@@ -1975,7 +1981,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   /* ================= roster & bookmarks events ================= */
   /* links: hover shows the name; touch taps show it first, a second tap opens */
   $("lrail").addEventListener("pointerover", (e) => { const a = e.target.closest(".lr-site"); if (a && e.pointerType !== "touch") showTip(a.dataset.id); });
-  $("lrail").addEventListener("pointerout", (e) => { if (e.target.closest(".lr-site") && !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".lr-site, #lkTip"))) hideTipSoon(); });
+  /* a lifted finger "leaves" too; on touch the tip closes only on a tap elsewhere (document pointerdown below) */
+  $("lrail").addEventListener("pointerout", (e) => { if (e.pointerType !== "touch" && e.target.closest(".lr-site") && !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".lr-site, #lkTip"))) hideTipSoon(); });
   $("lrail").addEventListener("pointerdown", (e) => { S.lk.touch = e.pointerType === "touch"; });
   /* keyboard focus only: a mouse click (or coming back from the opened tab) must not pin the tip open */
   $("lrail").addEventListener("focusin", (e) => { const a = e.target.closest(".lr-site"); if (a && a.matches(":focus-visible")) showTip(a.dataset.id); });
@@ -2040,8 +2047,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   window.addEventListener("pointerup", endLinkDrag);
   window.addEventListener("pointercancel", endLinkDrag);
   $("lkTip").addEventListener("pointerenter", () => clearTimeout(S.lk.hideT));
-  $("lkTip").addEventListener("pointerleave", (e) => { if (!(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".lr-site"))) hideTip(); });
-  $("lkTip").addEventListener("focusout", (e) => { if (!(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".lr-site, #lkTip"))) hideTipSoon(); });
+  $("lkTip").addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch" && !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".lr-site"))) hideTip(); });
+  $("lkTip").addEventListener("focusout", (e) => { if (S.lk.rebuilding || $("lkTip").matches(":hover")) return; if (!(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".lr-site, #lkTip"))) hideTipSoon(); });
   $("lkTip").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-lk]"); if (!b) return;
     const id = b.dataset.id;
