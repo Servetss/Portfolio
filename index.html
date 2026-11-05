@@ -94,7 +94,7 @@ body {
   padding-block: 14px 18px;
 }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-.wrap { max-width: 1320px; height: 100%; margin: 0 auto; display: flex; flex-direction: column; }
+.wrap { max-width: 1320px; height: 100%; margin: 0 auto; display: flex; flex-direction: column; position: relative; padding-left: 44px; }
 
 /* ---------- controls ---------- */
 input, textarea, select {
@@ -554,8 +554,51 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .prog > i { display: block; height: 100%; background: var(--amber); }
 .stamp.amber { color: var(--amber); border-color: var(--amber); transform: rotate(-5deg); }
 
+/* useful materials: left tabs tucked behind the folder + a sheet pulled out over it */
+.lrail { position: absolute; left: 0; top: 150px; z-index: 0; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; width: 52px; }
+.lrail button {
+  display: block; width: 50px; border: 1px solid rgba(70, 45, 10, .5); border-right: 0; border-radius: 9px 0 0 9px;
+  box-shadow: -2px 3px 5px rgba(20, 12, 2, .35); transition: transform var(--t-med) var(--ease), background-color var(--t-med) ease-out;
+}
+.lrail button:hover { transform: translateX(-4px); }
+.lrail .lr-open {
+  writing-mode: vertical-rl; transform: rotate(180deg); padding: 18px 0 18px 0; line-height: 44px; text-align: center;
+  background: var(--noise), var(--card); color: var(--ink); font-family: var(--font-type); font-size: .78rem; letter-spacing: .14em; text-transform: uppercase;
+  border-radius: 0 9px 9px 0; border: 1px solid rgba(70, 45, 10, .5); border-left: 0; box-shadow: 2px -3px 5px rgba(20, 12, 2, .35);
+}
+.lrail .lr-open:hover { transform: rotate(180deg) translateX(4px); }
+.lrail .lr-open[aria-expanded="true"] { background: var(--noise), var(--paper); font-weight: 700; }
+.lrail .lr-open .count { margin-top: 6px; letter-spacing: 0; color: var(--ink-2); }
+.lrail .lr-add { height: 46px; display: grid; place-items: center; background: var(--noise), var(--red); color: #fff; font-family: var(--font-display); font-size: 1.7rem; line-height: 1; padding: 0; }
+.links-drawer {
+  position: absolute; left: 0; top: 0; bottom: 0; z-index: 60; width: min(380px, 100%); display: flex; flex-direction: column; gap: 12px;
+  padding: 18px 18px 20px; overflow: auto; background: var(--noise), var(--paper);
+  border-right: 1px solid var(--rule); box-shadow: 12px 0 26px rgba(20, 10, 0, .4); animation: drawer-in var(--t-med) var(--ease) both;
+}
+@keyframes drawer-in { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+.links-drawer .blank-title { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.lk-form { display: grid; gap: 10px; padding: 14px; border: 1.5px dashed var(--ink-3); background: var(--paper-2); }
+.lk-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.lk { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 8px 8px 10px; background: var(--noise), var(--paper); border: 1px solid var(--rule); border-left: 3px solid var(--card-edge); box-shadow: 0 1px 3px rgba(60, 40, 10, .15); transition: transform var(--t-fast) ease-out, box-shadow var(--t-fast) ease-out; }
+.lk:hover { transform: translateX(3px); box-shadow: 0 3px 8px rgba(60, 40, 10, .22); }
+.lk-ico { width: 34px; height: 34px; border-radius: 6px; display: grid; place-items: center; overflow: hidden; background: var(--paper-3); color: var(--ink-2); font-family: var(--font-stamp); font-weight: 600; font-size: .95rem; border: 1px solid var(--rule); }
+.lk-ico img { width: 20px; height: 20px; display: block; }
+.lk a { min-width: 0; color: var(--ink); text-decoration: none; display: grid; gap: 1px; }
+.lk a:hover .lk-t { text-decoration: underline; text-underline-offset: 3px; }
+.lk-t { font-weight: 700; overflow-wrap: anywhere; line-height: 1.3; }
+.lk-d { font-family: var(--font-type); font-size: .72rem; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lk-acts { display: flex; gap: 2px; }
+.lk-edit { grid-column: 1 / -1; display: grid; gap: 8px; }
+
 /* ---------- responsive ---------- */
 @media (max-width: 860px) {
+  .wrap { padding-left: 0; }
+  .lrail { position: static; flex-direction: row; width: auto; align-items: center; margin-bottom: 10px; }
+  .lrail button, .lrail .lr-open { writing-mode: horizontal-tb; transform: none; width: auto; line-height: 1.4; padding: 8px 14px; border: 1px solid rgba(70, 45, 10, .5); border-radius: 8px; box-shadow: none; }
+  .lrail .lr-open:hover, .lrail button:hover { transform: none; }
+  .lrail .lr-open .count { margin: 0 0 0 6px; }
+  .lrail .lr-add { width: 44px; height: 38px; padding: 0; }
+  .links-drawer { position: fixed; top: max(12px, env(safe-area-inset-top, 0px)); bottom: 12px; left: max(12px, env(safe-area-inset-left, 0px)); width: auto; right: max(12px, env(safe-area-inset-right, 0px)); }
   html, body { height: auto; }
   .wrap, .layout, .base { height: auto; }
   .folder { flex: none; }
@@ -615,6 +658,11 @@ img { max-width: 100%; }
 <div class="wrap">
   <h1 class="sr-only">Портфоліо команди</h1>
 
+  <nav class="lrail" id="lrail" aria-label="Корисні матеріали" hidden>
+    <button type="button" class="lr-open" id="lrOpen" aria-expanded="false" aria-controls="linksDrawer" title="Корисні матеріали">Матеріали<span class="count" id="lrCount"></span></button>
+    <button type="button" class="lr-add" id="lrAdd" title="Додати посилання" aria-label="Додати посилання">+</button>
+  </nav>
+
   <div class="toolbar">
     <div class="tabs" role="tablist">
       <button type="button" role="tab" id="tab-people" aria-selected="true">Люди<span class="count" id="cnt-people"></span></button>
@@ -638,6 +686,7 @@ img { max-width: 100%; }
   </div>
 
   <div class="folder">
+    <aside class="links-drawer" id="linksDrawer" aria-label="Корисні матеріали" hidden></aside>
     <section class="alerts" id="alerts" aria-live="polite" hidden></section>
     <form class="blank" id="addPersonForm" novalidate hidden>
       <div class="blank-title">Бланк: нова особова справа</div>
@@ -1253,6 +1302,58 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     </form>`;
   }
 
+  /* ================= useful materials ================= */
+  S.links = []; S.lk = { open: false, adding: false, edit: null, confirm: null, q: "" };
+  function normUrl(raw) {
+    let v = String(raw || "").trim(); if (!v) return null;
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(v)) v = "https://" + v;
+    try { const u = new URL(v); return /^https?:$/.test(u.protocol) && u.hostname.includes(".") ? u.href : null; } catch { return null; }
+  }
+  const hostOf = (url) => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } };
+  function linkIco(l) {
+    const h = hostOf(l.url); const letter = esc((l.title || h || "?").trim()[0] || "?").toUpperCase();
+    return `<span class="lk-ico" aria-hidden="true">${h ? `<img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=64" alt="" onerror="this.replaceWith(document.createTextNode('${letter}'))">` : letter}</span>`;
+  }
+  function renderLinks() {
+    const rail = $("lrail"), dr = $("linksDrawer");
+    if (!S.loaded || !S.db) { rail.hidden = true; dr.hidden = true; return; }
+    rail.hidden = false;
+    $("lrCount").textContent = S.links.length ? " · " + S.links.length : "";
+    $("lrOpen").setAttribute("aria-expanded", String(S.lk.open));
+    if (!S.lk.open) { dr.hidden = true; dr.innerHTML = ""; return; }
+    const q = S.lk.q.trim().toLowerCase();
+    const list = S.links.filter((l) => !q || (l.title + " " + l.url).toLowerCase().includes(q));
+    const form = S.canWrite && (S.lk.adding || !S.links.length) ? `<form class="lk-form" id="lkForm" novalidate>
+        <label>Назва<input id="lk-title" data-draft maxlength="120" placeholder="Напр. Кодекс праці, шаблон договору" value="${esc(dv("lk-title", ""))}"></label>
+        <label>Посилання<input id="lk-url" data-draft inputmode="url" autocomplete="off" placeholder="https://…" value="${esc(dv("lk-url", ""))}"></label>
+        <div class="row"><span class="err" id="lk-err"></span>${S.links.length ? `<button class="btn" type="button" data-lk="cancel-add">Скасувати</button>` : ""}<button class="btn primary" type="submit">Додати</button></div>
+      </form>` : "";
+    dr.innerHTML = `
+      <div class="blank-title"><span>Корисні матеріали · ${S.links.length}</span><button type="button" class="x" data-lk="close" aria-label="Закрити">✕</button></div>
+      ${S.canWrite && !form ? `<button class="btn primary" type="button" data-lk="add" style="justify-self:start">+ Додати посилання</button>` : ""}
+      ${form}
+      ${S.links.length > 6 ? `<input id="lk-q" type="search" placeholder="Пошук серед матеріалів" value="${esc(S.lk.q)}" aria-label="Пошук серед матеріалів">` : ""}
+      ${S.links.length ? (list.length ? `<ul class="lk-list">${list.map((l) => S.lk.edit === l.id ? `
+        <li class="lk"><form class="lk-edit" id="lkEdit" data-id="${esc(l.id)}" novalidate>
+          <label>Назва<input id="lke-title" data-draft maxlength="120" value="${esc(dv("lke-title", l.title))}"></label>
+          <label>Посилання<input id="lke-url" data-draft inputmode="url" autocomplete="off" value="${esc(dv("lke-url", l.url))}"></label>
+          <div class="row"><span class="err" id="lke-err"></span><button class="btn" type="button" data-lk="cancel-edit">Скасувати</button><button class="btn primary" type="submit">Зберегти</button></div>
+        </form></li>` : `
+        <li class="lk">
+          ${linkIco(l)}
+          <a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" title="${esc(l.url)}"><span class="lk-t">${esc(l.title || hostOf(l.url))}</span><span class="lk-d">${esc(hostOf(l.url))}</span></a>
+          ${S.canWrite ? `<span class="lk-acts"><button type="button" class="x" data-lk="edit" data-id="${esc(l.id)}" aria-label="Редагувати ${esc(l.title)}" title="Редагувати">✎</button><button type="button" class="x ${S.lk.confirm === l.id ? "danger" : ""}" data-lk="del" data-id="${esc(l.id)}" aria-label="Видалити ${esc(l.title)}" title="Видалити">${S.lk.confirm === l.id ? "Видалити?" : "✕"}</button></span>` : ""}
+        </li>`).join("")}</ul>` : `<p class="notice">Нічого не знайдено.</p>`)
+        : `<p class="notice" style="margin:0">Тут збиратимуться посилання, потрібні для роботи: документи, шаблони, сервіси. Додайте перше вище.</p>`}`;
+    dr.hidden = false;
+  }
+  function openLinks(adding) {
+    S.lk.open = true; S.lk.adding = !!adding; S.lk.edit = null; S.lk.confirm = null;
+    if (adding) clearDrafts("lk-title", "lk-url");
+    renderLinks(); const i = $(adding ? "lk-title" : "lk-q"); if (i) i.focus();
+  }
+  const closeLinks = () => { S.lk.open = false; S.lk.adding = false; S.lk.edit = null; S.lk.confirm = null; renderLinks(); };
+
   /* ================= alerts: what needs a decision ================= */
   function eventsList() {
     const out = [];
@@ -1457,11 +1558,11 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   function render() {
     if (S.drag) { S.renderPending = true; return; }
     const a = document.activeElement; let f = null;
-    if (a && a.id && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest && a.closest("#detail, #view-projects")) {
+    if (a && a.id && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest && a.closest("#detail, #view-projects, #linksDrawer")) {
       f = { id: a.id }; try { f.s = a.selectionStart; f.e = a.selectionEnd; } catch {}
     }
     const detailScroll = $("detail").scrollTop;
-    renderPeople(); renderDetail(); renderProjects(); renderAlerts();
+    renderPeople(); renderDetail(); renderProjects(); renderAlerts(); renderLinks();
     $("detail").scrollTop = detailScroll;
     if (S.animate.view) { const v = $(S.tab === "projects" ? "view-projects" : "view-people"); v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
     S.animate.view = false; S.animate.body = false; S.trashAnim = false;
@@ -1543,6 +1644,41 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   });
 
   /* ================= roster & bookmarks events ================= */
+  $("lrOpen").addEventListener("click", () => (S.lk.open && !S.lk.adding ? closeLinks() : openLinks(false)));
+  $("lrAdd").addEventListener("click", () => openLinks(true));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && S.lk.open) closeLinks(); });
+  document.addEventListener("pointerdown", (e) => {
+    if (!S.lk.open || !e.target.closest) return;
+    if (e.target.closest("#linksDrawer, #lrail")) return;
+    closeLinks();
+  });
+  $("linksDrawer").addEventListener("input", (e) => { if (e.target.id === "lk-q") { S.lk.q = e.target.value; render(); } });
+  $("linksDrawer").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-lk]"); if (!b) return;
+    const act = b.dataset.lk, id = b.dataset.id;
+    if (act === "close") return closeLinks();
+    if (act === "add") return openLinks(true);
+    if (act === "cancel-add") { S.lk.adding = false; renderLinks(); return; }
+    if (act === "edit") { clearDrafts("lke-title", "lke-url"); S.lk.edit = id; S.lk.confirm = null; renderLinks(); const i = $("lke-title"); if (i) i.focus(); return; }
+    if (act === "cancel-edit") { S.lk.edit = null; renderLinks(); return; }
+    if (act === "del") {
+      if (S.lk.confirm !== id) { S.lk.confirm = id; renderLinks(); return; }
+      try { await S.db.doc("links/" + id).delete(); S.lk.confirm = null; } catch (err) { b.textContent = failText(err); }
+    }
+  });
+  $("linksDrawer").addEventListener("submit", async (e) => {
+    e.preventDefault(); if (!S.db) return;
+    const f = e.target; const isEdit = f.id === "lkEdit"; const pre = isEdit ? "lke-" : "lk-";
+    const url = normUrl($(pre + "url").value), title = $(pre + "title").value.trim();
+    if (!url) { $(pre + "err").textContent = "Вкажіть адресу сторінки, наприклад https://example.com."; $(pre + "url").focus(); return; }
+    const data = { title: title || hostOf(url), url };
+    const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
+    try {
+      if (isEdit) { await S.db.doc("links/" + f.dataset.id).update(data); clearDrafts("lke-title", "lke-url"); S.lk.edit = null; }
+      else { await S.db.collection("links").add({ ...data, createdAt: new Date().toISOString() }); clearDrafts("lk-title", "lk-url"); S.lk.adding = true; }
+      render(); if (!isEdit) { const i = $("lk-title"); if (i) i.focus(); }
+    } catch (err) { $(pre + "err").textContent = failText(err); btn.disabled = false; }
+  });
   $("bellBtn").addEventListener("click", () => {
     const visible = !$("alerts").hidden;
     if (visible) { S.alertsOpen = false; setDismissed(eventsList().filter((e) => e.level === "due").map((e) => e.key).join("|")); }
@@ -1923,12 +2059,13 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     }, onErr("projects")));
     S.unsubs.push(S.db.collection("comments").orderBy("createdAt", "desc").limit(1000).onSnapshot((snap) => { S.comments = snap.docs.map((d) => ({ id: d.id, ...d.data() })); render(); }, onErr()));
     S.unsubs.push(S.db.collection("reviews").orderBy("createdAt").limit(1000).onSnapshot((snap) => { S.reviews = snap.docs.map((d) => ({ id: d.id, ...d.data() })); render(); }, onErr()));
+    S.unsubs.push(S.db.collection("links").orderBy("createdAt", "desc").limit(500).onSnapshot((snap) => { S.links = snap.docs.map((d) => ({ id: d.id, ...d.data() })); render(); }, onErr()));
   }
   function showLogin(on) {
     $("login").hidden = !on;
     document.querySelector(".tabs").style.visibility = on ? "hidden" : "visible";
     $("acct").hidden = on; $("addBtn").hidden = on;
-    if (on) { $("bellBtn").hidden = true; $("alerts").hidden = true; }
+    if (on) { $("bellBtn").hidden = true; $("alerts").hidden = true; $("lrail").hidden = true; $("linksDrawer").hidden = true; S.lk.open = false; }
     if (on) { $("view-people").hidden = true; $("view-projects").hidden = true; $("addPersonForm").hidden = true; $("addProjectForm").hidden = true; }
     else setTab(S.tab);
   }
@@ -1953,7 +2090,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   $("exportBtn").addEventListener("click", () => {
     const strip = (arr) => arr.map((x) => ({ ...x }));
     const data = { exportedAt: new Date().toISOString(), app: "Портфоліо команди",
-      collections: { people: strip(S.people), projects: strip(S.projects), comments: strip(S.comments), reviews: strip(S.reviews) } };
+      collections: { people: strip(S.people), projects: strip(S.projects), comments: strip(S.comments), reviews: strip(S.reviews), links: strip(S.links) } };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
     a.download = "portfolio-" + new Date().toISOString().slice(0, 10) + ".json";
@@ -1965,7 +2102,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     try {
       const json = JSON.parse(await f.text()); const cols = json.collections || json;
       const ops = [];
-      for (const name of ["people", "projects", "comments", "reviews"]) for (const item of (cols[name] || [])) {
+      for (const name of ["people", "projects", "comments", "reviews", "links"]) for (const item of (cols[name] || [])) {
         if (!item || !item.id) continue; const { id, ...rest } = item; delete rest.iconId; ops.push([name + "/" + id, rest]);
       }
       if (!ops.length) { toast("У файлі немає записів"); return; }
@@ -1980,7 +2117,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
 
   onAuthStateChanged(auth, (u) => {
     stopData();
-    Object.assign(S, { user: u, people: [], projects: [], comments: [], reviews: [], selected: null, selProject: null, loaded: false, denied: false, ui: {}, pui: {}, drafts: {} });
+    Object.assign(S, { user: u, people: [], projects: [], comments: [], reviews: [], links: [], selected: null, selProject: null, loaded: false, denied: false, ui: {}, pui: {}, drafts: {} });
     if (!u) { S.db = null; showLogin(true); return; }
     $("acct-email").textContent = u.email || "";
     S.db = FB; S.assets = {}; S.canWrite = true;
