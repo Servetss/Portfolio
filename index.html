@@ -564,7 +564,12 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 }
 .lr-item:hover, .lr-item:focus-visible, .lr-item.on { margin-left: 2px; width: 52px; }
 .lr-add { background: var(--noise), var(--red); color: #fff; font-family: var(--font-display); font-size: 1.7rem; line-height: 1; }
-.lr-site { background: var(--noise), var(--paper); text-decoration: none; }
+.lr-site { background: var(--noise), var(--paper); text-decoration: none; touch-action: none; user-select: none; -webkit-user-drag: none; cursor: pointer; }
+.lr-site img { -webkit-user-drag: none; pointer-events: none; }
+.lrail.sorting .lr-site { transition: transform var(--t-med) var(--ease), margin-left var(--t-med) var(--ease), width var(--t-med) var(--ease); }
+.lr-site.dragging { position: relative; z-index: 5; cursor: grabbing; transition: none !important; margin-left: 2px; width: 52px; box-shadow: -4px 8px 14px rgba(20, 12, 2, .5); }
+.lk-icon-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.lk-icon-row .lk-ico { width: 34px; height: 34px; }
 .lr-site .lk-ico { width: 28px; height: 28px; border-radius: 6px; font-size: .9rem; }
 .lk-ico { width: 34px; height: 34px; border-radius: 6px; display: grid; place-items: center; overflow: hidden; background: var(--paper-3); color: var(--ink-2); font-family: var(--font-stamp); font-weight: 600; font-size: .95rem; border: 1px solid var(--rule); }
 .lk-ico img { width: 70%; height: 70%; display: block; }
@@ -1298,10 +1303,43 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   }
   const hostOf = (url) => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } };
   const linkById = (id) => S.links.find((l) => l.id === id);
+  /* the order you set by dragging; links never dragged keep the order they were added in */
+  const sortedLinks = () => S.links.slice().sort((a, b) => {
+    const ao = Number.isFinite(a.order) ? a.order : 1e9, bo = Number.isFinite(b.order) ? b.order : 1e9;
+    return ao - bo || String(a.createdAt || "").localeCompare(String(b.createdAt || ""));
+  });
+  /* Site icons: several sources in turn. The site's own icon files come first: when a site has none, the
+     server answers with an error page that is not an image, so the next source is tried. Google's service
+     goes last, and its small generic globe (16 px, returned when it knows no icon) counts as "no icon". */
+  const rootDomain = (h) => { const p = h.split("."); return p.length > 2 ? p.slice(-2).join(".") : h; };
+  function iconSources(url) {
+    let u; try { u = new URL(url); } catch { return []; }
+    const h = u.hostname, root = rootDomain(h.replace(/^www\./, ""));
+    const own = (o) => [`${o}/favicon.ico`, `${o}/apple-touch-icon.png`, `${o}/favicon.png`, `${o}/favicon.svg`];
+    const list = own(u.origin);
+    if (root !== h && root !== h.replace(/^www\./, "")) list.push(...own("https://" + root));
+    list.push(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=64`);
+    if (root !== h) list.push(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(root)}&sz=64`);
+    return list;
+  }
+  S.icoOk = (() => { try { return JSON.parse(localStorage.getItem("pf-ico") || "{}"); } catch { return {}; } })();
+  window.__pfIcoNext = (img) => {
+    const srcs = JSON.parse(img.dataset.srcs || "[]"); const i = Number(img.dataset.i || 0) + 1;
+    if (i < srcs.length) { img.dataset.i = i; img.src = srcs[i]; return; }
+    const box = img.parentNode; box.classList.remove("has-img"); box.textContent = img.dataset.letter || "?";
+  };
+  window.__pfIcoOk = (img) => {
+    if (img.naturalWidth && img.naturalWidth < 8) return window.__pfIcoNext(img); /* 1×1 placeholders */
+    if (/google\.com\/s2\/favicons/.test(img.src) && img.naturalWidth <= 16) return window.__pfIcoNext(img); /* Google's generic globe */
+    const host = img.dataset.host; if (!host) return;
+    S.icoOk[host] = img.currentSrc || img.src; try { localStorage.setItem("pf-ico", JSON.stringify(S.icoOk)); } catch {}
+  };
   function linkIco(l) {
-    const h = hostOf(l.url); const letter = esc(((l.title || h || "?").trim()[0] || "?").toUpperCase());
-    return h ? `<span class="lk-ico has-img" aria-hidden="true"><img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=64" alt="" onerror="this.parentNode.classList.remove('has-img');this.replaceWith(document.createTextNode('${letter}'))"></span>`
-             : `<span class="lk-ico" aria-hidden="true">${letter}</span>`;
+    const h = hostOf(l.url); const letter = ((l.title || h || "?").trim()[0] || "?").toUpperCase();
+    if (l.iconData) return `<span class="lk-ico has-img" aria-hidden="true"><img src="${esc(l.iconData)}" alt=""></span>`;
+    let srcs = iconSources(l.url); if (!srcs.length) return `<span class="lk-ico" aria-hidden="true">${esc(letter)}</span>`;
+    const known = S.icoOk[h]; if (known) srcs = [known, ...srcs.filter((x) => x !== known)];
+    return `<span class="lk-ico has-img" aria-hidden="true"><img src="${esc(srcs[0])}" alt="" draggable="false" data-i="0" data-host="${esc(h)}" data-letter="${esc(letter)}" data-srcs="${esc(JSON.stringify(srcs))}" onload="__pfIcoOk(this)" onerror="__pfIcoNext(this)"></span>`;
   }
   function placeNear(el, anchor) {
     const r = anchor.getBoundingClientRect(); const w = el.offsetWidth, h = el.offsetHeight, vw = innerWidth, vh = innerHeight;
@@ -1313,8 +1351,9 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   function renderLinks() {
     const rail = $("lrail");
     if (!S.loaded || !S.db) { rail.hidden = true; hideTip(); closeLinkForm(); return; }
+    if (S.lkDrag && S.lkDrag.moved) return; /* never rebuild the column under a dragged icon */
     const html = (S.canWrite ? `<button type="button" class="lr-item lr-add" id="lrAdd" title="Додати корисне посилання" aria-label="Додати корисне посилання">+</button>` : "")
-      + S.links.map((l) => `<a class="lr-item lr-site" data-id="${esc(l.id)}" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(l.title || hostOf(l.url))}">${linkIco(l)}</a>`).join("");
+      + sortedLinks().map((l) => `<a class="lr-item lr-site" data-id="${esc(l.id)}" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" draggable="false" aria-label="${esc(l.title || hostOf(l.url))}">${linkIco(l)}</a>`).join("");
     if (rail.dataset.html !== html) { rail.innerHTML = html; rail.dataset.html = html; }
     rail.hidden = false;
     if (S.lk.tip) { const a = siteEl(S.lk.tip); if (!a || !linkById(S.lk.tip)) hideTip(); else { a.classList.add("on"); fillTip(S.lk.tip); placeNear($("lkTip"), a); } }
@@ -1327,6 +1366,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   }
   function showTip(id) {
     clearTimeout(S.lk.hideT);
+    if (S.lkDrag && S.lkDrag.moved) return;
     if (S.lk.form) return;
     if (S.lk.tip !== id) { document.querySelectorAll(".lr-site.on").forEach((x) => x.classList.remove("on")); S.lk.confirm = null; }
     const a = siteEl(id); if (!a) return;
@@ -1347,11 +1387,21 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
         <div class="blank-title"><span>${mode === "edit" ? "Змінити посилання" : "Нове корисне посилання"}</span><button type="button" class="x" data-lk="close" aria-label="Закрити">✕</button></div>
         <label>Назва<input id="lk-title" maxlength="120" placeholder="Напр. Кодекс праці, шаблон договору" value="${esc(l ? l.title : "")}"></label>
         <label>Посилання<input id="lk-url" inputmode="url" autocomplete="off" placeholder="https://…" value="${esc(l ? l.url : "")}"></label>
+        <div class="lk-icon-row" id="lkIconRow"></div>
         <div class="row"><span class="err" id="lk-err"></span><button class="btn" type="button" data-lk="close">Скасувати</button><button class="btn primary" type="submit">${mode === "edit" ? "Зберегти" : "Додати"}</button></div>
       </form>`;
+    S.lk.icon = undefined; renderIconRow();
     pop.hidden = false;
     placeNear(pop, (id && siteEl(id)) || $("lrAdd") || $("lrail"));
     const i = $(mode === "edit" ? "lk-title" : "lk-url"); if (i) i.focus();
+  }
+  function renderIconRow() {
+    const row = $("lkIconRow"); if (!row || !S.lk.form) return;
+    const l = S.lk.form.id ? linkById(S.lk.form.id) : null;
+    const own = S.lk.icon === undefined ? (l && l.iconData) || null : S.lk.icon;
+    const preview = own ? `<span class="lk-ico has-img" aria-hidden="true"><img src="${esc(own)}" alt=""></span>` : "";
+    row.innerHTML = `${preview}<label class="filebtn"><span>${own ? "Інший значок" : "Свій значок"}</span><input id="lk-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/x-icon,image/vnd.microsoft.icon" hidden></label>
+      ${own ? `<button type="button" class="btn ghost" data-lk="drop-icon">Прибрати</button>` : `<span class="notice">необов’язково, якщо значок сайту не знайшовся</span>`}`;
   }
   function closeLinkForm() { S.lk.form = null; const pop = $("lkPop"); if (pop) { pop.hidden = true; pop.innerHTML = ""; } }
 
@@ -1655,9 +1705,61 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   $("lrail").addEventListener("click", (e) => {
     if (e.target.closest("#lrAdd")) { S.lk.form && S.lk.form.mode === "add" ? closeLinkForm() : openLinkForm("add"); return; }
     const a = e.target.closest(".lr-site"); if (!a) return;
+    if (S.lk.justDragged) { e.preventDefault(); return; }
     if (S.lk.touch && S.lk.tip !== a.dataset.id) { e.preventDefault(); showTip(a.dataset.id); }
     S.lk.touch = false;
   });
+  $("lrail").addEventListener("dragstart", (e) => e.preventDefault());
+  $("lrail").addEventListener("pointerdown", (e) => {
+    const a = e.target.closest(".lr-site"); if (!a || e.button !== 0 || !S.canWrite) return;
+    S.lkDrag = { id: a.dataset.id, el: a, sx: e.clientX, sy: e.clientY, pointer: e.pointerId, moved: false };
+  });
+  window.addEventListener("pointermove", (e) => {
+    const d = S.lkDrag; if (!d || e.pointerId !== d.pointer) return;
+    const rail = $("lrail"); const row = getComputedStyle(rail).flexDirection === "row";
+    const delta = row ? e.clientX - d.sx : e.clientY - d.sy;
+    if (!d.moved) {
+      if (Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 6) return;
+      d.moved = true; hideTip(); closeLinkForm();
+      try { d.el.setPointerCapture(d.pointer); } catch {}
+      d.items = [...rail.querySelectorAll(".lr-site")]; d.from = d.items.indexOf(d.el);
+      d.step = (row ? d.el.offsetWidth : d.el.offsetHeight) + 6;
+      d.mids = d.items.map((x) => { const r = x.getBoundingClientRect(); return row ? r.left + r.width / 2 : r.top + r.height / 2; });
+      rail.classList.add("sorting"); d.el.classList.add("dragging");
+    }
+    e.preventDefault();
+    const min = -d.from * d.step, max = (d.items.length - 1 - d.from) * d.step;
+    const off = Math.max(min, Math.min(max, delta));
+    d.el.style.transform = row ? `translateX(${off}px)` : `translateY(${off}px)`;
+    const pos = d.mids[d.from] + off;
+    let to = 0; d.mids.forEach((m, i) => { if (i !== d.from && pos > m) to++; });
+    d.to = to;
+    d.items.forEach((x, i) => {
+      if (x === d.el) return;
+      let shift = 0;
+      if (d.from < to && i > d.from && i <= to) shift = -d.step;
+      if (d.from > to && i >= to && i < d.from) shift = d.step;
+      x.style.transform = shift ? (row ? `translateX(${shift}px)` : `translateY(${shift}px)`) : "";
+    });
+  }, { passive: false });
+  const endLinkDrag = async (e) => {
+    const d = S.lkDrag; if (!d || (e && e.pointerId !== d.pointer)) return;
+    S.lkDrag = null;
+    if (!d.moved) return;
+    S.lk.justDragged = true; setTimeout(() => { S.lk.justDragged = false; }, 0);
+    const rail = $("lrail"); rail.classList.remove("sorting");
+    d.items.forEach((x) => { x.style.transform = ""; x.classList.remove("dragging"); });
+    const ids = d.items.map((x) => x.dataset.id);
+    const to = d.to == null ? d.from : d.to;
+    if (to !== d.from) { const [m] = ids.splice(d.from, 1); ids.splice(to, 0, m); }
+    /* save the new order; the local copy updates first so nothing jumps back */
+    const changed = [];
+    ids.forEach((id, i) => { const l = linkById(id); if (l && l.order !== i) { l.order = i; changed.push([id, i]); } });
+    rail.dataset.html = ""; render();
+    for (const [id, i] of changed) { try { await S.db.doc("links/" + id).update({ order: i }); } catch (err) { /* the next snapshot restores the saved order */ } }
+  };
+  window.addEventListener("pointerup", endLinkDrag);
+  window.addEventListener("pointercancel", endLinkDrag);
   $("lkTip").addEventListener("pointerenter", () => clearTimeout(S.lk.hideT));
   $("lkTip").addEventListener("pointerleave", hideTipSoon);
   $("lkTip").addEventListener("focusout", (e) => { if (!(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".lr-site, #lkTip"))) hideTipSoon(); });
@@ -1670,16 +1772,28 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       try { await S.db.doc("links/" + id).delete(); hideTip(); } catch (err) { b.textContent = failText(err); }
     }
   });
-  $("lkPop").addEventListener("click", (e) => { if (e.target.closest('[data-lk="close"]')) closeLinkForm(); });
+  $("lkPop").addEventListener("click", (e) => {
+    if (e.target.closest('[data-lk="close"]')) closeLinkForm();
+    if (e.target.closest('[data-lk="drop-icon"]')) { S.lk.icon = null; renderIconRow(); }
+  });
+  $("lkPop").addEventListener("change", async (e) => {
+    if (e.target.id !== "lk-file") return; const f = e.target.files && e.target.files[0]; if (!f) return;
+    try { S.lk.icon = await toImageData(f, 64, 64); renderIconRow(); } catch (err) { $("lk-err").textContent = failText(err); }
+  });
   $("lkPop").addEventListener("submit", async (e) => {
     e.preventDefault(); if (!S.db || !S.lk.form) return;
     const url = normUrl($("lk-url").value), title = $("lk-title").value.trim();
     if (!url) { $("lk-err").textContent = "Вкажіть адресу сторінки, наприклад https://example.com."; $("lk-url").focus(); return; }
     const data = { title: title || hostOf(url), url }; const form = S.lk.form;
+    if (S.lk.icon !== undefined) data.iconData = S.lk.icon;
     const btn = e.target.querySelector("button[type=submit]"); btn.disabled = true;
     try {
       if (form.mode === "edit") await S.db.doc("links/" + form.id).update(data);
-      else await S.db.collection("links").add({ ...data, createdAt: new Date().toISOString() });
+      else {
+        const cur = sortedLinks();
+        for (let i = 0; i < cur.length; i++) if (cur[i].order !== i) { cur[i].order = i; await S.db.doc("links/" + cur[i].id).update({ order: i }); }
+        await S.db.collection("links").add({ ...data, order: cur.length, createdAt: new Date().toISOString() });
+      }
       closeLinkForm();
     } catch (err) { $("lk-err").textContent = failText(err); btn.disabled = false; }
   });
