@@ -599,6 +599,16 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .al-acts .btn { padding: 5px 10px; font-size: .72rem; }
 .al-acts input { width: 150px; }
 .alerts .empty { padding: 6px 0; text-align: left; }
+.alerts.migrate { border-top-color: var(--blue); }
+.alerts.migrate p { margin: 0; }
+
+/* access list (owner only) */
+.acc-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.acc-list li { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 7px 0; border-top: 1px dashed var(--rule); font-family: var(--font-type); font-size: .9rem; overflow-wrap: anywhere; }
+.acc-list li:first-child { border-top: 0; }
+.acc-list .notice { font-family: var(--font-body); }
+.acc-add { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.acc-add label { flex: 1 1 240px; }
 
 /* status in the dossier */
 .st-line { display: grid; gap: 4px; }
@@ -753,7 +763,8 @@ img { max-width: 100%; }
       <div class="acct" id="acct" hidden>
         <span class="acct-email" id="acct-email"></span>
         <span class="toast" id="toast" role="status"></span>
-        <button class="btn light" id="exportBtn" type="button" title="Зберегти всі дані у файл JSON">Експорт</button>
+        <button class="btn light" id="accessBtn" type="button" title="Хто з лідерів може входити" hidden>Доступ</button>
+        <button class="btn light" id="exportBtn" type="button" title="Зберегти свої дані у файл JSON">Експорт</button>
         <label class="btn light" for="importFile" title="Завантажити дані з файлу JSON">Імпорт</label>
         <input type="file" id="importFile" accept="application/json,.json" hidden>
         <button class="btn light" id="logoutBtn" type="button">Вийти</button>
@@ -763,7 +774,21 @@ img { max-width: 100%; }
   </div>
 
   <div class="folder">
+    <section class="alerts migrate" id="migrate" aria-live="polite" hidden></section>
     <section class="alerts" id="alerts" aria-live="polite" hidden></section>
+    <form class="blank" id="accessForm" novalidate hidden>
+      <div class="blank-title">Доступ: лідери, які можуть входити</div>
+      <p class="notice" style="margin:0">Проєкти спільні. Люди, статистика, нагадування, розкладка дошки й посилання — у кожного свої; ніхто, крім самого лідера, їх не бачить (і ви теж).</p>
+      <ul class="acc-list" id="accList"></ul>
+      <div class="acc-add">
+        <label>Пошта Google лідера<input id="acc-email" type="email" maxlength="120" autocomplete="off" placeholder="name@gmail.com"></label>
+        <button class="btn primary" type="submit">Відкрити доступ</button>
+      </div>
+      <div class="row">
+        <span class="err" id="acc-err"></span>
+        <button class="btn" type="button" id="acc-close">Закрити</button>
+      </div>
+    </form>
     <form class="blank" id="addPersonForm" novalidate hidden>
       <div class="blank-title">Бланк: нова особова справа</div>
       <div class="grid2">
@@ -833,7 +858,7 @@ img { max-width: 100%; }
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-import { initializeFirestore, collection, query, orderBy, limit, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, writeBatch, FieldPath } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import { initializeFirestore, collection, query, orderBy, limit, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, getDocs, writeBatch, FieldPath } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCXokwMSeeqNRzo1UWKLY73bbEiXVFvsoE",
@@ -846,6 +871,12 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 const fdb = initializeFirestore(fbApp, { ignoreUndefinedProperties: true });
+
+/* Personal data lives in each leader's own drawer users/{uid}/…; projects (and the access list) are shared.
+   The app keeps writing "people/…", "links/…" etc.; the adapter routes those paths into the drawer. */
+let curUid = null;
+const PERSONAL = new Set(["people", "comments", "reviews", "links", "boardPos"]);
+const mapPath = (path) => (curUid && PERSONAL.has(String(path).split("/")[0]) ? "users/" + curUid + "/" + path : path);
 
 /* Small adapter: the same db interface the app used inside claude.ai, backed by Firestore. */
 const mapErr = (e) => {
@@ -860,15 +891,16 @@ function flatten(obj, pre = [], out = []) {
   return out;
 }
 const docApi = (path) => {
+  path = mapPath(path);
   const ref = doc(fdb, path);
   return {
     id: path.split("/").pop(),
     update: (data) => { const args = flatten(data).flatMap(([p, v]) => [new FieldPath(...p), v]); return updateDoc(ref, ...args).catch((e) => { throw mapErr(e); }); },
-    set: (data) => setDoc(ref, data).catch((e) => { throw mapErr(e); }),
+    set: (data, merge) => setDoc(ref, data, merge ? { merge: true } : {}).catch((e) => { throw mapErr(e); }),
     delete: () => deleteDoc(ref).catch((e) => { throw mapErr(e); }),
   };
 };
-const colApi = (path, cons = []) => ({
+const colApi = (rawPath, cons = [], path = mapPath(rawPath)) => ({
   orderBy: (f, d) => colApi(path, [...cons, orderBy(f, d || "asc")]),
   limit: (n) => colApi(path, [...cons, limit(n)]),
   onSnapshot: (next, err) => onSnapshot(query(collection(fdb, path), ...cons),
@@ -913,7 +945,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
 
   const S = {
     db: null, assets: null, canWrite: true, loaded: false,
-    people: [], projects: [], comments: [], reviews: [],
+    people: [], projects: [], projRaw: [], myPos: {}, comments: [], reviews: [], members: [],
     tab: "people", ptab: "projects", selected: null, selProject: null,
     q: "", pq: "", linkQ: "",
     ui: {}, pui: {}, drafts: {},
@@ -1093,9 +1125,9 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   function renderPeople() {
     const ul = $("people");
     if (!S.loaded) { setHtml(ul, '<li class="empty">Завантажуємо команду…</li>'); return; }
-    if (S.denied) { setHtml(ul, `<li class="empty">Акаунт ${esc(S.user && S.user.email)} не має доступу до бази. Увійдіть іншим акаунтом або перевірте пошту в правилах Firestore.</li>`); return; }
+    if (S.denied) { setHtml(ul, `<li class="empty">Акаунт ${esc(S.user && S.user.email)} ще не має доступу. Попросіть власника відкрити доступ для цієї пошти або увійдіть іншим акаунтом.</li>`); return; }
     if (!S.db) { setHtml(ul, '<li class="empty">Увійдіть, щоб відкрити архів.</li>'); return; }
-    if (!S.people.length) { setHtml(ul, '<li class="empty">Ще нікого немає. Натисніть «Додати людину», щоб створити першу справу.</li>'); return; }
+    if (!S.people.length) { setHtml(ul, S.legacy ? '<li class="empty">Ваші справи ще лежать у спільній частині бази. Натисніть «Перенести в особистий розділ» угорі.</li>' : '<li class="empty">Ще нікого немає. Натисніть «Додати людину», щоб створити першу справу.</li>'); return; }
     const groups = roleGroups();
     const stCount = { probation: S.people.filter((p) => statusOf(p) === "probation").length, notice: S.people.filter((p) => statusOf(p) === "notice").length };
     const stFilter = S.group.startsWith("st:") ? S.group.slice(3) : "";
@@ -2315,6 +2347,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       try {
         for (const p of peopleOn(sel.id)) await S.db.doc("people/" + p.id).update({ projectIds: (p.projectIds || []).filter((x) => x !== sel.id), ...(p.activeProject === sel.id ? { activeProject: null } : {}) });
         await S.db.doc("projects/" + sel.id).delete();
+        S.db.doc("boardPos/" + sel.id).delete().catch(() => {});
         S.selProject = null; S.pui = {}; render();
       } catch (err) { showErr("pc-err", err); }
     },
@@ -2361,9 +2394,10 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
 
   /* ================= drag cards: move, throw into the bin, pull back out ================= */
   const topZ = () => Math.max(0, ...S.projects.map((x) => (S.localPos[x.id] || x.pos || {}).z || 0));
+  /* each leader has their own layout of the shared board: users/{uid}/boardPos/{projectId} */
   async function savePos(id, pos) {
     S.localPos[id] = pos;
-    try { await S.db.doc("projects/" + id).update({ pos }); } catch (err) { /* keep local position for this visit */ }
+    try { await S.db.doc("boardPos/" + id).set({ x: pos.x, y: pos.y, z: pos.z || 0 }); } catch (err) { /* keep local position for this visit */ }
   }
   async function setArchived(id, archived, pos) {
     const x = projById(id); if (!x) return;
@@ -2371,7 +2405,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     S.projects = S.projects.map((y) => (y.id === id ? { ...y, ...patch } : y)); /* optimistic, the snapshot confirms */
     if (archived && S.selProject === id) { S.selProject = null; S.pui = {}; }
     render();
-    try { await S.db.doc("projects/" + id).update(patch); } catch (err) { /* the snapshot restores the real state */ }
+    try { await S.db.doc("projects/" + id).update({ archived }); } catch (err) { /* the snapshot restores the real state */ }
+    if (pos) savePos(id, pos);
   }
   const inRect = (el, x, y) => { if (!el) return false; const r = el.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; };
   $("view-projects").addEventListener("dragstart", (e) => e.preventDefault()); /* no native image/text drag over our own */
@@ -2523,12 +2558,24 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       if (S.selected && !S.people.some((p) => p.id === S.selected)) S.selected = null;
       scheduleRender();
     }, onErr("people")));
-    S.unsubs.push(S.db.collection("projects").orderBy("name").onSnapshot((snap) => {
-      S.projects = snap.docs.map((d) => ({ id: d.id, ...d.data() })); mark("projects");
+    /* shared projects + this leader's own card positions (the project's old shared pos is only a fallback) */
+    const mergeProjects = () => {
+      S.projects = S.projRaw.map((x) => (S.myPos[x.id] ? { ...x, pos: S.myPos[x.id] } : x));
       for (const x of S.projects) { const l = S.localPos[x.id]; if (l && x.pos && x.pos.x === l.x && x.pos.y === l.y) delete S.localPos[x.id]; }
       if (S.selProject && !projById(S.selProject)) S.selProject = null;
       scheduleRender();
+    };
+    S.unsubs.push(S.db.collection("projects").orderBy("name").onSnapshot((snap) => {
+      S.projRaw = snap.docs.map((d) => ({ id: d.id, ...d.data() })); mark("projects"); mergeProjects();
     }, onErr("projects")));
+    S.unsubs.push(S.db.collection("boardPos").onSnapshot((snap) => {
+      S.myPos = {}; for (const d of snap.docs) S.myPos[d.id] = d.data(); mergeProjects();
+    }, onErr()));
+    /* only the owner may read the access list: success here is what shows the «Доступ» button */
+    S.unsubs.push(S.db.collection("members").onSnapshot((snap) => {
+      S.isOwner = true; S.members = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.id.localeCompare(b.id));
+      $("accessBtn").hidden = false; if (!$("accessForm").hidden) renderAccess();
+    }, () => { S.isOwner = false; $("accessBtn").hidden = true; }));
     S.unsubs.push(S.db.collection("comments").orderBy("createdAt", "desc").limit(1000).onSnapshot((snap) => { S.comments = snap.docs.map((d) => ({ id: d.id, ...d.data() })); scheduleRender(); }, onErr()));
     S.unsubs.push(S.db.collection("reviews").orderBy("createdAt").limit(1000).onSnapshot((snap) => { S.reviews = snap.docs.map((d) => ({ id: d.id, ...d.data() })); scheduleRender(); }, onErr()));
     S.unsubs.push(S.db.collection("links").orderBy("createdAt").limit(500).onSnapshot((snap) => { S.links = snap.docs.map((d) => ({ id: d.id, ...d.data() })); scheduleRender(); }, onErr()));
@@ -2538,7 +2585,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     document.querySelector(".tabs").style.visibility = on ? "hidden" : "visible";
     $("acct").hidden = on; $("addBtn").hidden = on;
     if (on) { $("bellBtn").hidden = true; $("alerts").hidden = true; $("lrail").hidden = true; hideTip(); closeLinkForm(); }
-    if (on) { $("view-people").hidden = true; $("view-projects").hidden = true; $("view-stats").hidden = true; $("addPersonForm").hidden = true; $("addProjectForm").hidden = true; }
+    if (on) { $("view-people").hidden = true; $("view-projects").hidden = true; $("view-stats").hidden = true; $("addPersonForm").hidden = true; $("addProjectForm").hidden = true; $("accessForm").hidden = true; $("migrate").hidden = true; }
     else setTab(S.tab);
   }
   const toast = (t) => { $("toast").textContent = t; clearTimeout(S.toastT); S.toastT = setTimeout(() => { $("toast").textContent = ""; }, 4000); };
@@ -2559,43 +2606,134 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   });
   $("logoutBtn").addEventListener("click", () => signOut(auth));
 
+  const saveJson = (data, name) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  };
+  const dayStamp = () => new Date().toISOString().slice(0, 10);
+  /* writes in batches of 400: [["set", path, data] | ["del", path]] with already-resolved paths */
+  async function commitOps(ops) {
+    for (let k = 0; k < ops.length; k += 400) {
+      const b = writeBatch(fdb);
+      for (const [op, path, data] of ops.slice(k, k + 400)) op === "del" ? b.delete(doc(fdb, path)) : b.set(doc(fdb, path), data);
+      await b.commit();
+    }
+  }
+
+  /* export: this leader's own data, the shared projects and their own board layout */
   $("exportBtn").addEventListener("click", () => {
     const strip = (arr) => arr.map((x) => ({ ...x }));
-    const data = { exportedAt: new Date().toISOString(), app: "Портфоліо команди",
-      collections: { people: strip(S.people), projects: strip(S.projects), comments: strip(S.comments), reviews: strip(S.reviews), links: strip(S.links) } };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-    a.download = "portfolio-" + new Date().toISOString().slice(0, 10) + ".json";
-    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    saveJson({ exportedAt: new Date().toISOString(), app: "Портфоліо команди", account: S.user && S.user.email,
+      collections: { people: strip(S.people), projects: strip(S.projRaw), comments: strip(S.comments), reviews: strip(S.reviews), links: strip(S.links),
+        boardPos: Object.entries(S.myPos).map(([id, v]) => ({ id, ...v })) } }, "portfolio-" + dayStamp() + ".json");
     toast("Експортовано");
   });
+  /* import: personal records go into this leader's drawer; shared projects are only added when missing, never overwritten */
   $("importFile").addEventListener("change", async (e) => {
-    const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+    const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f || !curUid) return;
     try {
       const json = JSON.parse(await f.text()); const cols = json.collections || json;
-      const ops = [];
-      for (const name of ["people", "projects", "comments", "reviews", "links"]) for (const item of (cols[name] || [])) {
-        if (!item || !item.id) continue; const { id, ...rest } = item; delete rest.iconId; ops.push([name + "/" + id, rest]);
+      const ops = []; let skipped = 0;
+      for (const name of ["people", "comments", "reviews", "links", "boardPos"]) for (const item of (cols[name] || [])) {
+        if (!item || !item.id) continue; const { id, ...rest } = item; delete rest.iconId; ops.push(["set", mapPath(name + "/" + id), rest]);
       }
-      if (!ops.length) { toast("У файлі немає записів"); return; }
-      for (let k = 0; k < ops.length; k += 400) {
-        const b = writeBatch(fdb);
-        for (const [p, d] of ops.slice(k, k + 400)) b.set(doc(fdb, p), d);
-        await b.commit();
+      const hasPos = Array.isArray(cols.boardPos) && cols.boardPos.length;
+      for (const item of (cols.projects || [])) {
+        if (!item || !item.id) continue; const { id, ...rest } = item; delete rest.iconId;
+        if (S.projRaw.some((x) => x.id === id)) skipped++; else ops.push(["set", "projects/" + id, rest]);
+        if (!hasPos && rest.pos && Number.isFinite(rest.pos.x) && Number.isFinite(rest.pos.y)) ops.push(["set", mapPath("boardPos/" + id), { x: rest.pos.x, y: rest.pos.y, z: rest.pos.z || 0 }]);
       }
-      toast(`Імпортовано записів: ${ops.length}`);
+      if (!ops.length) { toast(skipped ? "Усі проєкти з файлу вже є в базі" : "У файлі немає записів"); return; }
+      await commitOps(ops);
+      toast(`Імпортовано записів: ${ops.length}` + (skipped ? ` (наявні проєкти не змінено: ${skipped})` : ""));
     } catch (err) { toast(err && err.code === "permission-denied" ? "Немає прав на запис" : "Не вдалося імпортувати файл"); }
+  });
+
+  /* ================= one-time move of the owner's old data into their own drawer ================= */
+  /* Before multi-user, people/comments/reviews/links sat at the top of the database. Only the owner can read them. */
+  const LEGACY = ["people", "comments", "reviews", "links"];
+  async function checkLegacy() {
+    const me = curUid; let found = 0;
+    try { for (const c of LEGACY) { const sn = await getDocs(query(collection(fdb, c), limit(1))); if (!sn.empty) { found = 1; break; } } }
+    catch { found = 0; /* not the owner, or nothing there */ }
+    if (me !== curUid) return;
+    S.legacy = found; renderMigrate(); scheduleRender();
+  }
+  function renderMigrate() {
+    const box = $("migrate");
+    if (!S.legacy || !S.user) { box.hidden = true; box.innerHTML = ""; return; }
+    box.innerHTML = `<div class="alerts-head"><span class="alerts-title">Перенесення даних</span></div>
+      <p>Ваші люди, коментарі, пункти перегляду ЗП і посилання ще лежать у спільній частині бази. Перенесіть їх у ваш особистий розділ, і тоді їх бачитимете тільки ви. Перед перенесенням застосунок збереже файл із резервною копією.</p>
+      <div class="row start"><button class="btn primary" type="button" id="migrateBtn"${S.migrating ? " disabled" : ""}>${S.migrating ? "Переносимо…" : "Перенести в особистий розділ"}</button><span class="err" id="migrate-err">${esc(S.migrateErr || "")}</span></div>`;
+    box.hidden = false;
+  }
+  async function migrate() {
+    if (S.migrating || !curUid) return;
+    S.migrating = true; S.migrateErr = ""; renderMigrate();
+    try {
+      const got = {};
+      for (const c of LEGACY) got[c] = (await getDocs(collection(fdb, c))).docs.map((d) => ({ id: d.id, ...d.data() }));
+      saveJson({ exportedAt: new Date().toISOString(), app: "Портфоліо команди", note: "Резервна копія перед перенесенням у особистий розділ",
+        collections: { ...got, projects: S.projRaw.map((x) => ({ ...x })) } }, "portfolio-before-move-" + dayStamp() + ".json");
+      const copy = [];
+      for (const c of LEGACY) for (const { id, ...rest } of got[c]) copy.push(["set", "users/" + curUid + "/" + c + "/" + id, rest]);
+      for (const x of S.projRaw) if (x.pos && Number.isFinite(x.pos.x) && Number.isFinite(x.pos.y) && !S.myPos[x.id])
+        copy.push(["set", "users/" + curUid + "/boardPos/" + x.id, { x: x.pos.x, y: x.pos.y, z: x.pos.z || 0 }]);
+      await commitOps(copy);
+      /* the copy is committed: now remove the old shared records */
+      await commitOps(LEGACY.flatMap((c) => got[c].map((r) => ["del", c + "/" + r.id])));
+      S.legacy = 0; toast(`Перенесено записів: ${copy.length}`);
+    } catch (err) { S.migrateErr = failText(err); }
+    finally { S.migrating = false; renderMigrate(); scheduleRender(); }
+  }
+  $("migrate").addEventListener("click", (e) => { if (e.target.closest("#migrateBtn")) migrate(); });
+
+  /* ================= access list (owner only) ================= */
+  function renderAccess() {
+    $("accList").innerHTML = S.members.length
+      ? S.members.map((m) => `<li><span>${esc(m.id)}</span><button type="button" class="x${S.accConfirm === m.id ? " danger" : ""}" data-acc="${esc(m.id)}" title="Закрити доступ">${S.accConfirm === m.id ? "Закрити доступ?" : "✕"}</button></li>`).join("")
+      : `<li><span class="notice">Поки що доступ є тільки у вас.</span></li>`;
+  }
+  $("accessBtn").addEventListener("click", () => {
+    const f = $("accessForm"); f.hidden = !f.hidden; S.accConfirm = null; $("acc-err").textContent = "";
+    if (!f.hidden) { $("addPersonForm").hidden = true; $("addProjectForm").hidden = true; renderAccess(); $("acc-email").focus(); }
+  });
+  $("acc-close").addEventListener("click", () => { $("accessForm").hidden = true; S.accConfirm = null; });
+  $("accList").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-acc]"); if (!b) return;
+    const id = b.dataset.acc;
+    if (S.accConfirm !== id) { S.accConfirm = id; renderAccess(); return; }
+    S.accConfirm = null;
+    try { await S.db.doc("members/" + id).delete(); $("acc-err").textContent = ""; } catch (err) { $("acc-err").textContent = failText(err); }
+  });
+  $("accList").addEventListener("pointerleave", () => { if (S.accConfirm) { S.accConfirm = null; renderAccess(); } });
+  $("accessForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = $("acc-email").value.trim().toLowerCase();
+    if (!/^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(email)) { $("acc-err").textContent = "Вкажіть пошту, напр. name@gmail.com."; $("acc-email").focus(); return; }
+    if (S.user && email === String(S.user.email || "").toLowerCase()) { $("acc-err").textContent = "Це ваша пошта: у вас доступ і так є."; return; }
+    if (S.members.some((m) => m.id === email)) { $("acc-err").textContent = "Ця пошта вже має доступ."; return; }
+    $("acc-err").textContent = "";
+    try { await S.db.doc("members/" + email).set({ email, addedAt: new Date().toISOString() }); $("acc-email").value = ""; }
+    catch (err) { $("acc-err").textContent = failText(err); }
   });
 
   onAuthStateChanged(auth, (u) => {
     stopData();
-    Object.assign(S, { user: u, people: [], projects: [], comments: [], reviews: [], links: [], selected: null, selProject: null, loaded: false, denied: false, ui: {}, pui: {}, drafts: {} });
+    curUid = u ? u.uid : null;
+    Object.assign(S, { user: u, people: [], projects: [], projRaw: [], myPos: {}, localPos: {}, comments: [], reviews: [], links: [], selected: null, selProject: null,
+      loaded: false, denied: false, ui: {}, pui: {}, drafts: {}, isOwner: false, members: [], legacy: 0, migrating: false, migrateErr: "", accConfirm: null });
+    $("accessBtn").hidden = true; $("accessForm").hidden = true; renderMigrate();
     if (!u) { S.db = null; showLogin(true); return; }
     $("acct-email").textContent = u.email || "";
     S.db = FB; S.assets = {}; S.canWrite = true;
     showLogin(false);
     startData();
     render();
+    /* the drawer's cover: lets the owner's mail script know whose reminders go where */
+    FB.doc("users/" + u.uid).set({ email: String(u.email || "").toLowerCase(), name: u.displayName || "", seenAt: new Date().toISOString() }, true).catch(() => {});
+    checkLegacy();
   });
 
   renderNewProjectPreview();
