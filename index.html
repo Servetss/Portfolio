@@ -678,6 +678,95 @@ button.st-row:hover { background: var(--paper-2); }
 .st-pct { flex: none; width: 52px; text-align: right; font-size: .82rem; color: var(--ink-2); white-space: nowrap; }
 .st-miss { display: block; color: var(--amber) !important; }
 
+/* ---------- team hierarchy: one shared cork board per project, opened over the folder ---------- */
+body.org-open { overflow: hidden; }
+.org { position: fixed; inset: 0; z-index: 400; display: grid; padding: 16px; background: rgba(5, 9, 13, .74); animation: org-fade var(--t-med) ease-out both; }
+@keyframes org-fade { from { opacity: 0; } to { opacity: 1; } }
+.org-sheet {
+  width: min(1560px, 100%); height: 100%; min-height: 0; margin: 0 auto; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; padding: 14px 16px 16px;
+  border: 1px solid var(--manila-edge); border-radius: 6px; background: var(--noise), var(--manila);
+  box-shadow: inset 0 0 0 1px rgba(255, 240, 200, .25), inset 0 0 60px rgba(90, 52, 8, .4), 0 26px 60px rgba(0, 0, 0, .65);
+  animation: view-in var(--t-med) var(--ease) both;
+}
+.org-head { display: flex; gap: 14px; align-items: center; padding: 10px 12px 10px 14px; background: var(--noise), var(--paper); box-shadow: 0 3px 8px rgba(60, 40, 10, .18); }
+.org-head .label { width: 42px; height: 42px; font-size: .8rem; border-width: 2px; }
+.org-title { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
+.org-title h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; line-height: 1.2; overflow-wrap: anywhere; }
+.org-title .kick { font-family: var(--font-type); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-3); }
+.org-msg { font-size: .85rem; font-style: italic; color: var(--ink-2); }
+.org-msg.warn { color: var(--red); font-style: normal; font-family: var(--font-type); font-size: .8rem; }
+.org-body { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 14px; min-height: 0; }
+.org-tray { min-height: 0; overflow: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--noise), var(--paper-3); box-shadow: 0 3px 8px rgba(60, 40, 10, .2); }
+.org-tray-title { font-family: var(--font-type); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+.org-tray .notice { font-size: .82rem; }
+.org-tray .btn { padding: 5px 10px; font-size: .72rem; align-self: flex-start; }
+.otray {
+  flex: none; width: 100%; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 9px; align-items: center; padding: 7px 8px; border: 0; text-align: left; color: var(--ink);
+  background: var(--noise), var(--paper); box-shadow: 0 2px 5px rgba(60, 40, 10, .22); cursor: grab; touch-action: pan-y; user-select: none;
+  transition: transform var(--t-fast) var(--ease);
+}
+.otray:hover { transform: translateX(3px); }
+.otray .avatar { width: 30px; height: 36px; border-width: 1.5px; }
+.otray img { pointer-events: none; -webkit-user-drag: none; }
+.otray.past { background: var(--noise), #e2ddd2; color: var(--ink-2); }
+.otray.lifted { opacity: .35; }
+.ot-name { display: block; font-weight: 700; font-size: .84rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ot-role { display: block; font-size: .72rem; font-style: italic; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.org-wrap { min-height: 0; padding: 0; overflow: auto; scrollbar-width: none; }
+.org-wrap::-webkit-scrollbar { display: none; }
+.org-wrap.drop-ok { box-shadow: inset 0 0 0 3px rgba(255, 240, 200, .7), inset 0 0 26px rgba(40, 20, 5, .55); }
+.org-canvas { position: relative; margin: 0 auto; }
+.org-stage { position: absolute; left: 0; top: 0; width: 1400px; height: 900px; transform-origin: 0 0; }
+.org-empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 40px; text-align: center; font-size: 1.15rem; pointer-events: none; }
+.org-lines { position: absolute; left: 0; top: 0; width: 1400px; height: 900px; overflow: visible; z-index: 0; }
+.org-lines .hit { stroke: transparent; stroke-width: 16; fill: none; pointer-events: stroke; cursor: pointer; }
+.org-lines .thr { stroke: #b3241b; stroke-width: 2.4; fill: none; stroke-linecap: round; pointer-events: none; filter: drop-shadow(1px 2px 1px rgba(20, 8, 0, .5)); }
+.org-lines g:hover .thr { stroke: #d0392c; }
+.org-lines g.sel .thr { stroke: #e0412f; stroke-width: 3.6; }
+.org-rubber { position: absolute; left: 0; top: 0; width: 1400px; height: 900px; overflow: visible; z-index: 100000; pointer-events: none; }
+.org-rubber path { stroke: var(--pin); stroke-width: 2.4; stroke-dasharray: 7 5; fill: none; stroke-linecap: round; }
+.ocard {
+  position: absolute; width: 200px; height: 88px; display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 11px; align-items: center; padding: 18px 14px 9px 11px;
+  color: var(--ink); background: var(--noise), var(--paper); box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 3px 8px 14px rgba(30, 15, 0, .45);
+  transform: rotate(var(--rot, 0deg)); touch-action: none; user-select: none; transition: transform var(--t-med) var(--ease);
+}
+.ocard.mine { cursor: grab; }
+.ocard.mine:hover { transform: rotate(0deg) translateY(-2px); }
+.ocard.theirs { background: var(--noise), #f1e9d3; }
+.ocard.past { background: var(--noise), #d9d5cc; color: var(--ink-3); }
+.ocard.past .avatar { filter: grayscale(1); opacity: .75; }
+.ocard.dragging { cursor: grabbing; z-index: 9999 !important; transition: none; }
+.ocard.target { box-shadow: 0 0 0 3px var(--pin), 3px 8px 14px rgba(30, 15, 0, .45); }
+.ocard.denied { animation: oc-shake .24s ease-out; }
+@keyframes oc-shake { 25% { translate: -3px 0; } 75% { translate: 3px 0; } }
+.ocard .avatar { width: 46px; height: 55px; }
+.ocard img { pointer-events: none; -webkit-user-drag: none; }
+.ocard .pin { top: 4px; cursor: crosshair; transition: transform var(--t-fast) var(--ease); }
+.ocard .pin::after { content: ""; position: absolute; inset: -10px; border-radius: 50%; }
+.ocard .pin:hover, .ocard.from .pin { transform: scale(1.3); }
+.oc-txt { min-width: 0; display: grid; }
+.oc-name { font-weight: 700; font-size: .95rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.oc-role { font-size: .8rem; font-style: italic; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.oc-own { font-family: var(--font-type); font-size: .64rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ocard > .x { position: absolute; top: 1px; right: 1px; font-size: .72rem; padding: 0 5px; }
+.olink-x { position: absolute; z-index: 99999; transform: translate(-50%, -50%); padding: 4px 10px; font-size: .7rem; background: var(--paper); box-shadow: 0 3px 8px rgba(20, 10, 0, .45); }
+.org-legend { right: 12px; left: auto; }
+@media (max-width: 860px) {
+  .org { padding: 0; }
+  .org-sheet { border-radius: 0; padding: 10px; gap: 10px; }
+  .org-head { align-items: flex-start; gap: 10px; padding: 8px 10px; }
+  .org-head > .label { display: none; }
+  .org-title h2 { font-size: 1.1rem; }
+  .org-msg { font-size: .78rem; line-height: 1.4; }
+  .org-head .btn { padding: 5px 10px; font-size: .72rem; }
+  .org-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 10px; }
+  .org-tray { flex-direction: row; align-items: center; overflow-x: auto; overflow-y: hidden; padding: 8px; }
+  .org-tray-title { display: none; }
+  .org-tray .notice { flex: none; max-width: 240px; }
+  .otray { width: 168px; touch-action: pan-x; }
+  .org-tray .btn { align-self: center; flex: none; }
+}
+
 /* ---------- responsive ---------- */
 @media (max-width: 860px) {
   .wrap { padding-left: 0; }
@@ -877,11 +966,12 @@ img { max-width: 100%; }
     <datalist id="roleList"></datalist>
   </div>
 </div>
+<div class="org" id="org" role="dialog" aria-modal="true" aria-label="Ієрархія команди проєкту" hidden></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import { getAuth, initializeAuth, inMemoryPersistence, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, updatePassword, deleteUser, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-import { initializeFirestore, collection, query, orderBy, limit, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, getDocs, writeBatch, FieldPath } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import { initializeFirestore, collection, query, orderBy, limit, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, getDocs, writeBatch, FieldPath, where } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCXokwMSeeqNRzo1UWKLY73bbEiXVFvsoE",
@@ -1749,7 +1839,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
             </div>
           </form>`
           : `<div class="proj-head"><h2>${esc(sel.name)} ${sel.isExample ? '<span class="badge example">зразок</span>' : ""}${sel.archived ? ' <span class="badge archived">у смітнику</span>' : ""}</h2>
-            ${S.canWrite ? `<button type="button" class="btn ghost" data-act="rename">Редагувати</button>` : ""}</div>`}
+            <div class="row"><button type="button" class="btn" data-act="open-org" title="Спільна дошка: люди всіх лідерів на цьому проєкті, ієрархія червоними нитками">Ієрархія команди</button>
+            ${S.canWrite ? `<button type="button" class="btn ghost" data-act="rename">Редагувати</button>` : ""}</div></div>`}
         <div style="display:grid;gap:12px">
           ${!team.length ? `<div class="notice">До проєкту ще ніхто не підв’язаний.</div>` : [["Зараз на проєкті:", team.filter((p) => activeOf(p) === sel.id)], ["Раніше працювали:", team.filter((p) => activeOf(p) !== sel.id)]]
             .filter(([, list]) => list.length).map(([title, list]) => `<div>
@@ -1956,6 +2047,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     else if (S.tab === "stats") renderStats();
     else { const detailScroll = $("detail").scrollTop; renderPeople(); renderDetail(); $("detail").scrollTop = detailScroll; }
     renderAlerts(); renderLinks();
+    if (S.og) renderOrg();
     if (S.animate.view) { const v = $("view-" + S.tab); v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
     S.animate.view = false; S.animate.body = false; S.trashAnim = false;
     if (f) { const el = $(f.id); if (el && el !== document.activeElement) { el.focus({ preventScroll: true }); try { if (f.s != null) el.setSelectionRange(f.s, f.e); } catch {} } }
@@ -2214,6 +2306,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     for (const c of notesOf(p)) await S.db.doc("comments/" + c.id).delete();
     for (const r of S.reviews.filter((r) => r.personId === p.id)) await S.db.doc("reviews/" + r.id).delete();
     await S.db.doc("people/" + p.id).delete();
+    for (const pid of (p.projectIds || [])) orgDropRemote(pid, p.id);
     if (S.selected === p.id) S.selected = null;
     S.ui = {}; S.alertUi = {}; render();
   }
@@ -2251,7 +2344,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     "unlink": async (b, p) => {
       const patch = { projectIds: linkedIds(p).filter((x) => x !== b.dataset.id) };
       if (p.activeProject === b.dataset.id) patch.activeProject = null;
-      try { await S.db.doc("people/" + p.id).update(patch); } catch (err) { showErr("link-err", err); }
+      try { await S.db.doc("people/" + p.id).update(patch); orgDropRemote(b.dataset.id, p.id); } catch (err) { showErr("link-err", err); }
     },
     "toggle-fix": async (b) => { try { await S.db.doc("reviews/" + b.dataset.id).update({ done: b.checked }); } catch (err) { b.checked = !b.checked; showErr("rv-err", err); } },
     "del-item": async (b) => { try { await S.db.doc("reviews/" + b.dataset.id).delete(); } catch (err) { showErr("rv-err", err); } },
@@ -2330,7 +2423,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       const patch = { name, role: $("pf-role").value.trim(), since: $("pf-since").value || "" };
       if (S.ui.photo !== undefined) patch.photoData = S.ui.photo;
       const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
-      try { await S.db.doc("people/" + p.id).update(patch); clearDrafts("pf-name", "pf-role", "pf-since"); S.ui = {}; render(); }
+      try { await S.db.doc("people/" + p.id).update(patch); orgPushPerson({ ...p, ...patch }); clearDrafts("pf-name", "pf-role", "pf-since"); S.ui = {}; render(); }
       catch (err) { showErr("pf-err", err); btn.disabled = false; }
       return;
     }
@@ -2369,6 +2462,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   const projectActions = {
     "open-person": (b) => { setTab("people"); S.ptab = "projects"; select(b.dataset.id); if (b.dataset.proj) { S.ui = { work: b.dataset.proj }; render(); const w = $("workPanel"); if (w) w.scrollIntoView({ behavior: "smooth", block: "nearest" }); } },
     "close-project": () => { S.selProject = null; S.pui = {}; render(); },
+    "open-org": (b, sel) => openOrg(sel.id),
     "toggle-trash": (b) => {
       /* hover opens the panel for a peek; a click pins it open, a second click (or ✕) closes it */
       if (b.id === "bin" && S.trashOpen && S.trashByHover) { S.trashByHover = false; render(); return; }
@@ -2384,6 +2478,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
         for (const p of peopleOn(sel.id)) await S.db.doc("people/" + p.id).update({ projectIds: (p.projectIds || []).filter((x) => x !== sel.id), ...(p.activeProject === sel.id ? { activeProject: null } : {}) });
         await S.db.doc("projects/" + sel.id).delete();
         S.db.doc("boardPos/" + sel.id).delete().catch(() => {});
+        orgWipe(sel.id);
         S.selProject = null; S.pui = {}; render();
       } catch (err) { showErr("pc-err", err); }
     },
@@ -2495,7 +2590,9 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     }
     d.el.style.setProperty("--rot", rest.toFixed(2) + "deg"); if (d.el._ph) d.el._ph.rest = rest;
     letGo(d.el, true);
-    if (Object.keys(patch).length) S.db.doc("people/" + p.id).update(patch).catch((err) => showErr("link-err", err));
+    if (Object.keys(patch).length) S.db.doc("people/" + p.id).update(patch)
+      .then(() => { if ("activeProject" in patch) orgPushPerson({ ...p, activeProject: patch.activeProject }); })
+      .catch((err) => showErr("link-err", err));
   }
   window.addEventListener("pointermove", (e) => {
     const d = S.drag; if (!d || e.pointerId !== d.pointer) return;
@@ -2581,6 +2678,359 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   });
   window.addEventListener("resize", () => { if (S.tab === "projects") { clearTimeout(S.resizeT); S.resizeT = setTimeout(render, 150); } });
 
+  /* ================= team hierarchy: one shared board per project ================= */
+  /* projects/{pid}/org/{uid}_{personId}: a leader's person on the board — name, position and a small photo only, never pay or notes.
+     projects/{pid}/orgLinks/{a}__{b}: a red thread between two cards.
+     Everyone with access sees the whole board; a leader moves and removes only their own cards (the owner may remove any);
+     a thread needs at least one of its two cards to be yours. Positions are in board units (1400×900), the same for everyone. */
+  const OW = 1400, OH = 900, OCW = 200, OCH = 88;
+  const cardIdOf = (personId) => curUid + "_" + String(personId).replace(/\//g, "_");
+  const isMineCard = (c) => !!(c && curUid && c.owner === curUid);
+  const linkIdOf = (a, b) => [a, b].sort().join("__");
+  const ownsEnd = (id) => !!curUid && String(id).startsWith(curUid + "_");
+  const canCut = (l) => !!S.isOwner || l.by === curUid || ownsEnd(l.a) || ownsEnd(l.b);
+  const clampPos = (x, y) => ({ x: Math.round(Math.min(Math.max(0, Number(x) || 0), OW - OCW)), y: Math.round(Math.min(Math.max(0, Number(y) || 0), OH - OCH)) });
+  const orgErr = (e) => (e && e.denied ? "Немає дозволу на запис. Схоже, у Firebase ще не оновлено правила Firestore для дошки ієрархії." : failText(e));
+  const myName = () => (S.user && (S.user.displayName || shownName(S.user.email))) || "";
+  /* what other leaders may see about a person: nothing beyond this */
+  const cardFields = (p, pid) => ({ name: p.name || "", role: p.role || "", photoKey: p.photoData ? String(hash(p.photoData)) : "", current: activeOf(p) === pid, ownerName: myName() });
+  const thumbCache = new Map();
+  function thumbOf(src) {
+    if (!src) return Promise.resolve("");
+    if (!thumbCache.has(src)) thumbCache.set(src, new Promise((res) => {
+      const i = new Image();
+      i.onload = () => {
+        try {
+          const W = 80, H = 96, c = document.createElement("canvas"); c.width = W; c.height = H;
+          const k = Math.max(W / (i.naturalWidth || W), H / (i.naturalHeight || H)), w = (i.naturalWidth || W) * k, h = (i.naturalHeight || H) * k;
+          c.getContext("2d").drawImage(i, (W - w) / 2, (H - h) / 2, w, h); res(c.toDataURL("image/jpeg", 0.82));
+        } catch { res(""); }
+      };
+      i.onerror = () => res(""); i.src = src;
+    }));
+    return thumbCache.get(src);
+  }
+
+  function openOrg(pid) {
+    if (!S.db || !curUid || !projById(pid)) return;
+    if (S.og) closeOrg();
+    const og = S.og = { pid, cards: [], links: [], got: {}, unsubs: [], confirm: null, selLink: null, msg: "", warn: false, loadErr: "", busy: new Set(), drag: null, scale: 1, back: document.activeElement };
+    const base = "projects/" + pid + "/";
+    const fail = (k) => (e) => { if (S.og !== og) return; og.got[k] = true; og.loadErr = e && e.denied ? "Дошка ще не працює: у Firebase потрібно оновити правила Firestore (версія з дошкою ієрархії)." : failText(e); renderOrg(); };
+    og.unsubs.push(S.db.collection(base + "org").onSnapshot((snap) => {
+      if (S.og !== og) return; og.cards = snap.docs.map((d) => ({ id: d.id, ...d.data() })); og.got.cards = true; og.loadErr = ""; queueOrgSync(); renderOrg();
+    }, fail("cards")));
+    og.unsubs.push(S.db.collection(base + "orgLinks").onSnapshot((snap) => {
+      if (S.og !== og) return; og.links = snap.docs.map((d) => ({ id: d.id, ...d.data() })); og.got.links = true; renderOrg();
+    }, fail("links")));
+    document.body.classList.add("org-open"); $("org").hidden = false;
+    renderOrg();
+    const c = $("org").querySelector('[data-og="close"]'); if (c) c.focus({ preventScroll: true });
+  }
+  function closeOrg() {
+    const og = S.og; if (!og) return;
+    og.unsubs.forEach((u) => { try { u(); } catch {} });
+    if (og.drag && og.drag.ghost) og.drag.ghost.remove();
+    S.og = null; clearTimeout(S.orgSyncT);
+    const el = $("org"); el.hidden = true; setHtml(el, "");
+    document.body.classList.remove("org-open");
+    if (og.back && og.back.isConnected) { try { og.back.focus({ preventScroll: true }); } catch {} }
+  }
+
+  /* a thread hangs a little between the two cards; it runs under them, centre to centre */
+  function orgThread(a, b) {
+    const ax = a.x + OCW / 2, ay = a.y + OCH / 2, bx = b.x + OCW / 2, by = b.y + OCH / 2;
+    const sag = Math.min(46, Math.hypot(bx - ax, by - ay) * 0.12), mx = (ax + bx) / 2, my = (ay + by) / 2 + sag;
+    return { d: `M${ax} ${ay} Q${mx} ${my} ${bx} ${by}`, mid: { x: (ax + 2 * mx + bx) / 4, y: (ay + 2 * my + by) / 4 } };
+  }
+  function orgLinesHtml(links, posOf) {
+    return links.map((l) => { const t = orgThread(posOf(l.a), posOf(l.b));
+      return `<g data-link="${esc(l.id)}"${S.og && S.og.selLink === l.id ? ' class="sel"' : ""}><path class="hit" d="${t.d}"/><path class="thr" d="${t.d}"/></g>`; }).join("");
+  }
+  function drawOrgLines(over = {}) {
+    const og = S.og, svg = $("orgLines"); if (!og || !svg) return;
+    const byId = new Map(og.cards.map((c) => [c.id, c]));
+    const posOf = (id) => over[id] || clampPos(byId.get(id).x, byId.get(id).y);
+    svg.innerHTML = orgLinesHtml(og.links.filter((l) => byId.has(l.a) && byId.has(l.b)), posOf);
+  }
+  const orgHint = (n, leaders) => n
+    ? `${n} ${plural(n, "людина", "людини", "людей")} на дошці${leaders > 1 ? ` · ${leaders} ${plural(leaders, "лід", "ліди", "лідів")}` : ""}. Тягніть нитку від шпильки до іншої картки; натисніть нитку, щоб зняти.`
+    : "Перетягніть своїх людей з панелі ліворуч на дошку.";
+  function orgSay(text, warn) {
+    const og = S.og; if (!og) return; og.msg = text; og.warn = !!warn;
+    const m = $("orgMsg"); if (m) { m.textContent = text; m.classList.toggle("warn", !!warn); }
+  }
+  const orgTray = (og) => peopleOn(og.pid).filter((p) => !og.cards.some((c) => c.id === cardIdOf(p.id)))
+    .sort((a, b) => (activeOf(b) === og.pid) - (activeOf(a) === og.pid) || String(a.name).localeCompare(String(b.name), "uk"));
+
+  function renderOrg() {
+    const og = S.og, el = $("org"); if (!og) return;
+    if (og.drag) { og.pending = true; return; }
+    if (settling.size) { S.renderPending = true; og.pending = true; return; }
+    const sel = projById(og.pid); if (!sel) { if (S.loaded) closeOrg(); return; }
+    og.pending = false;
+    const cards = og.cards.map((c) => ({ ...c, ...clampPos(c.x, c.y) }));
+    const byId = new Map(cards.map((c) => [c.id, c]));
+    [...cards].sort((a, b) => (Number(a.z) || 0) - (Number(b.z) || 0)).forEach((c, i) => { c.rank = i + 1; });
+    const links = og.links.filter((l) => byId.has(l.a) && byId.has(l.b));
+    if (og.selLink && !links.some((l) => l.id === og.selLink)) og.selLink = null;
+    if (og.confirm && !byId.has(og.confirm)) og.confirm = null;
+    const team = peopleOn(og.pid), tray = orgTray(og);
+    const leaders = new Set(cards.map((c) => c.owner)).size;
+    const loading = !(og.got.cards && og.got.links);
+    const msg = og.loadErr || og.msg || (loading ? "Завантажуємо дошку…" : orgHint(cards.length, leaders));
+    const card = (c) => {
+      const mine = isMineCard(c), conf = og.confirm === c.id, past = c.current === false;
+      return `<div class="ocard ${mine ? "mine" : "theirs"}${past ? " past" : ""}" data-id="${esc(c.id)}"${mine ? ' tabindex="0"' : ""} style="left:${c.x}px;top:${c.y}px;z-index:${c.rank};--rot:${rotFor(c.id, 1.2).toFixed(2)}deg"
+        title="${esc(mine ? "Перетягніть, щоб пересунути. Двічі клацніть, щоб відкрити справу." : "Картку розставляє " + (c.ownerName || "інший лід"))}">
+        <span class="pin" title="Потягніть нитку до іншої картки"></span>
+        <span class="avatar">${c.photo ? `<img src="${esc(c.photo)}" alt="">` : pixelFace(c.personId || c.id)}</span>
+        <span class="oc-txt"><span class="oc-name">${esc(c.name || "Без імені")}</span><span class="oc-role">${esc([c.role, past ? "раніше" : ""].filter(Boolean).join(" · ") || "—")}</span>${mine ? "" : `<span class="oc-own">лід: ${esc(c.ownerName || "—")}</span>`}</span>
+        ${mine || S.isOwner ? `<button type="button" class="x${conf ? " danger" : ""}" data-og="drop" data-id="${esc(c.id)}" aria-label="Зняти з дошки" title="Зняти з дошки">${conf ? "Зняти?" : "✕"}</button>` : ""}
+      </div>`;
+    };
+    const selL = og.selLink && links.find((l) => l.id === og.selLink);
+    const cut = selL && canCut(selL) ? (() => { const m = orgThread(byId.get(selL.a), byId.get(selL.b)).mid;
+      return `<button type="button" class="btn olink-x" data-og="cut" data-id="${esc(selL.id)}" style="left:${m.x.toFixed(0)}px;top:${m.y.toFixed(0)}px">✕ Зняти нитку</button>`; })() : "";
+    setHtml(el, `<div class="org-sheet">
+      <header class="org-head">
+        ${labelHtml(sel)}
+        <div class="org-title"><span class="kick">Ієрархія команди · спільна дошка</span><h2>${esc(sel.name)}</h2>
+          <span class="org-msg${og.loadErr || og.warn ? " warn" : ""}" id="orgMsg" role="status">${esc(msg)}</span></div>
+        <button type="button" class="btn" data-og="close" title="Закрити (Esc)">Закрити</button>
+      </header>
+      <div class="org-body">
+        <aside class="org-tray" aria-label="Мої люди на проєкті">
+          <span class="org-tray-title">Мої люди на проєкті</span>
+          ${!team.length ? `<p class="notice">У вас до цього проєкту ще ніхто не підв’язаний. Підв’яжіть людей у їхніх справах, розділ «Проєкти».</p>`
+            : !tray.length ? `<p class="notice">Усі ваші люди вже на дошці.</p>`
+            : tray.map((p) => { const past = activeOf(p) !== og.pid; return `<button type="button" class="otray${past ? " past" : ""}" data-pid="${esc(p.id)}" title="Перетягніть на дошку або натисніть">
+                <span class="avatar">${faceHtml(p)}</span><span style="min-width:0"><span class="ot-name">${esc(p.name)}</span><span class="ot-role">${esc([p.role, past ? "раніше" : ""].filter(Boolean).join(" · ") || "—")}</span></span></button>`; }).join("")
+              + (tray.length > 1 ? `<button type="button" class="btn" data-og="all">Викласти всіх (${tray.length})</button>` : "")}
+        </aside>
+        <div class="cork org-wrap" id="orgWrap">
+          <div class="org-canvas" id="orgCanvas"><div class="org-stage" id="orgStage">
+            <svg class="org-lines" id="orgLines" viewBox="0 0 ${OW} ${OH}" aria-hidden="true">${orgLinesHtml(links, (id) => byId.get(id))}</svg>
+            ${cards.map(card).join("")}
+            ${cut}
+            <svg class="org-rubber" id="orgRubber" viewBox="0 0 ${OW} ${OH}" aria-hidden="true"></svg>
+            ${!cards.length ? `<p class="org-empty cork-empty">${loading ? "Завантажуємо дошку…" : og.loadErr ? "" : "Дошка порожня. Перетягніть людей з панелі ліворуч або натисніть на них."}</p>` : ""}
+          </div></div>
+        </div>
+      </div>
+    </div>`);
+    fitOrg();
+  }
+  /* the whole board fits the window down to 70%; below that it scrolls */
+  function fitOrg() {
+    const og = S.og, wrap = $("orgWrap"), canvas = $("orgCanvas"), stage = $("orgStage"); if (!og || !wrap || !canvas || !stage) return;
+    const fit = Math.min(wrap.clientWidth / OW, wrap.clientHeight / OH);
+    const s = Math.max(0.7, Math.min(1, fit || 1));
+    og.scale = s; canvas.style.width = Math.round(OW * s) + "px"; canvas.style.height = Math.round(OH * s) + "px"; stage.style.transform = `scale(${s})`;
+  }
+  const orgPoint = (x, y) => { const r = $("orgStage").getBoundingClientRect(), s = (S.og && S.og.scale) || 1; return { x: (x - r.left) / s, y: (y - r.top) / s }; };
+  function freeSpot(taken) {
+    const SX = OCW + 34, SY = OCH + 56;
+    for (let y = 40; y + OCH <= OH; y += SY) for (let x = 30; x + OCW <= OW; x += SX)
+      if (!taken.some((t) => x < t.x + OCW + 12 && x + OCW + 12 > t.x && y < t.y + OCH + 12 && y + OCH + 12 > t.y)) return { x, y };
+    return clampPos(30 + (taken.length * 17) % 600, 40 + (taken.length * 23) % 500);
+  }
+
+  /* ---------- writes ---------- */
+  async function orgAddCards(list) {
+    const og = S.og; if (!og || !list.length) return;
+    const taken = og.cards.map((c) => clampPos(c.x, c.y));
+    let z = Math.max(0, ...og.cards.map((c) => Number(c.z) || 0));
+    const jobs = list.map(([p, x, y]) => { const pos = x == null ? freeSpot(taken) : clampPos(x, y); taken.push(pos); return [p, pos, ++z]; });
+    try {
+      await Promise.all(jobs.map(async ([p, pos, zz]) => {
+        const photo = await thumbOf(p.photoData);
+        await S.db.doc(`projects/${og.pid}/org/${cardIdOf(p.id)}`).set({ owner: curUid, personId: p.id, ...cardFields(p, og.pid), photo, x: pos.x, y: pos.y, z: zz, addedAt: new Date().toISOString() });
+      }));
+    } catch (err) { orgSay(orgErr(err), true); }
+  }
+  async function orgLink(a, b) {
+    const og = S.og; if (!og || a === b) return;
+    const ca = og.cards.find((c) => c.id === a), cb = og.cards.find((c) => c.id === b); if (!ca || !cb) return;
+    if (!isMineCard(ca) && !isMineCard(cb)) { orgSay("Нитку можна натягнути, лише якщо одна з двох карток — ваша.", true); return; }
+    const id = linkIdOf(a, b);
+    if (og.links.some((l) => l.id === id)) { orgSay("Ці картки вже з’єднані."); return; }
+    const [x, y] = [a, b].sort();
+    try { await S.db.doc(`projects/${og.pid}/orgLinks/${id}`).set({ a: x, b: y, by: curUid, createdAt: new Date().toISOString() }); }
+    catch (err) { orgSay(orgErr(err), true); }
+  }
+  /* a card leaves the board together with its threads */
+  async function orgDrop(id) {
+    const og = S.og; if (!og) return; const pid = og.pid;
+    const links = og.links.filter((l) => l.a === id || l.b === id);
+    try {
+      await S.db.doc(`projects/${pid}/org/${id}`).delete();
+      for (const l of links) await S.db.doc(`projects/${pid}/orgLinks/${l.id}`).delete().catch(() => {});
+    } catch (err) { orgSay(orgErr(err), true); }
+  }
+  /* while the board is open: my cards follow my dossiers (name, position, photo, now/before); unlinked or deleted people leave the board */
+  function queueOrgSync() { clearTimeout(S.orgSyncT); S.orgSyncT = setTimeout(orgSync, 300); }
+  async function orgSync() {
+    const og = S.og; if (!og || !og.got.cards || !S.loaded || S.denied || !curUid) return;
+    for (const c of og.cards) {
+      if (!isMineCard(c) || og.busy.has(c.id)) continue;
+      og.busy.add(c.id);
+      try {
+        const p = S.people.find((x) => x.id === c.personId);
+        if (!p || !(p.projectIds || []).includes(og.pid)) { await orgDrop(c.id); continue; }
+        const f = cardFields(p, og.pid), diff = {};
+        for (const k of Object.keys(f)) if (c[k] !== f[k]) diff[k] = f[k];
+        if ("photoKey" in diff) diff.photo = await thumbOf(p.photoData);
+        if (Object.keys(diff).length && S.og === og) await S.db.doc(`projects/${og.pid}/org/${c.id}`).update(diff);
+      } catch { /* the next snapshot retries */ }
+      finally { og.busy.delete(c.id); }
+    }
+  }
+  /* board closed: best-effort updates straight to the boards a person may be on (a missing card is fine) */
+  async function orgPushPerson(p) {
+    if (!p || !curUid || !S.db) return;
+    const photo = await thumbOf(p.photoData);
+    for (const pid of linkedIds(p)) S.db.doc(`projects/${pid}/org/${cardIdOf(p.id)}`).update({ ...cardFields(p, pid), photo }).catch(() => {});
+  }
+  async function orgDropRemote(pid, personId) {
+    if (!curUid || !pid) return;
+    const id = cardIdOf(personId), base = `projects/${pid}/`;
+    try {
+      for (const f of ["a", "b"]) { const sn = await getDocs(query(collection(fdb, base + "orgLinks"), where(f, "==", id))); for (const d of sn.docs) await deleteDoc(d.ref).catch(() => {}); }
+      await deleteDoc(doc(fdb, base + "org/" + id));
+    } catch { /* no board for this project, or no rights yet */ }
+  }
+  /* a deleted project takes its board along (the rules allow it once the project is gone) */
+  async function orgWipe(pid) {
+    try { for (const c of ["orgLinks", "org"]) { const sn = await getDocs(collection(fdb, `projects/${pid}/${c}`)); await commitOps(sn.docs.map((d) => ["del", d.ref.path])); } } catch {}
+  }
+
+  /* ---------- board events ---------- */
+  $("org").addEventListener("dragstart", (e) => e.preventDefault());
+  $("org").addEventListener("pointerdown", (e) => {
+    const og = S.og; if (!og || e.button !== 0 || og.drag || !e.target.closest) return;
+    const t = e.target;
+    if (t.closest("[data-og], .olink-x")) return;
+    const cardEl = t.closest(".ocard"), item = t.closest(".otray");
+    const base = { pointer: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false, vx: 0, lx: e.clientX, vt: performance.now() };
+    if (cardEl && t.closest(".pin")) { e.preventDefault(); og.drag = { ...base, kind: "line", from: cardEl.dataset.id, el: cardEl }; return; }
+    if (cardEl) {
+      const c = og.cards.find((x) => x.id === cardEl.dataset.id); if (!c) return;
+      if (!isMineCard(c)) { orgSay(`Цю картку розставляє ${c.ownerName || "інший лід"}. Нитку від неї можна потягнути за шпильку.`); replay(cardEl, "denied"); return; }
+      const p = orgPoint(e.clientX, e.clientY);
+      og.drag = { ...base, kind: "move", id: c.id, el: cardEl, ox: cardEl.offsetLeft, oy: cardEl.offsetTop, gx: p.x - cardEl.offsetLeft, gy: p.y - cardEl.offsetTop };
+      return;
+    }
+    if (item) { const r = item.getBoundingClientRect(); og.drag = { ...base, kind: "tray", pid: item.dataset.pid, el: item, gx: e.clientX - r.left, gy: e.clientY - r.top }; }
+  });
+  window.addEventListener("pointermove", (e) => {
+    const og = S.og, d = og && og.drag; if (!d || e.pointerId !== d.pointer) return;
+    const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
+    if (!d.moved) {
+      if (Math.hypot(dx, dy) < 5) return;
+      d.moved = true;
+      if (og.selLink || og.confirm) { og.selLink = null; og.confirm = null; const x = $("org").querySelector(".olink-x"); if (x) x.remove(); }
+      try { d.el.setPointerCapture(d.pointer); } catch {}
+      if (d.kind === "move") { d.el.classList.add("dragging"); hang(d.el, d, rotFor(d.id, 1.2)); }
+      else if (d.kind === "line") d.el.classList.add("from");
+      else {
+        d.ghost = d.el.cloneNode(true); d.ghost.classList.add("drag-ghost"); d.ghost.style.width = d.el.offsetWidth + "px";
+        document.body.appendChild(d.ghost); d.el.classList.add("lifted"); hang(d.ghost, d, 3);
+      }
+    }
+    e.preventDefault();
+    const now = performance.now(); d.vx = d.vx * 0.6 + (e.clientX - d.lx) / Math.max(1, now - d.vt) * 0.4; d.lx = e.clientX; d.vt = now;
+    const s = og.scale || 1;
+    if (d.kind === "move") {
+      const q = clampPos(d.ox + dx / s, d.oy + dy / s); d.x = q.x; d.y = q.y;
+      d.el.style.left = q.x + "px"; d.el.style.top = q.y + "px";
+      drawOrgLines({ [d.id]: q });
+    } else if (d.kind === "line") {
+      const p = orgPoint(e.clientX, e.clientY), ax = d.el.offsetLeft + OCW / 2, ay = d.el.offsetTop + 11;
+      const rub = $("orgRubber"); if (rub) rub.innerHTML = `<path d="M${ax} ${ay} L${p.x.toFixed(1)} ${p.y.toFixed(1)}"/>`;
+      const under = document.elementFromPoint(e.clientX, e.clientY), tc = under && under.closest && under.closest(".ocard");
+      const to = tc && tc.dataset.id !== d.from ? tc : null;
+      if (to !== d.toEl) { if (d.toEl) d.toEl.classList.remove("target"); d.toEl = to; if (to) to.classList.add("target"); }
+    } else {
+      d.ghost.style.left = (e.clientX - d.gx) + "px"; d.ghost.style.top = (e.clientY - d.gy) + "px";
+      const wrap = $("orgWrap"); d.over = inRect(wrap, e.clientX, e.clientY); d.lastX = e.clientX; d.lastY = e.clientY;
+      if (wrap) wrap.classList.toggle("drop-ok", d.over);
+    }
+  }, { passive: false });
+  const endOrgDrag = (e) => {
+    const og = S.og, d = og && og.drag; if (!d || (e && e.pointerId !== d.pointer)) return;
+    og.drag = null;
+    const wrap = $("orgWrap"); if (wrap) wrap.classList.remove("drop-ok");
+    if (d.toEl) d.toEl.classList.remove("target");
+    if (d.kind === "line") { d.el.classList.remove("from"); const r = $("orgRubber"); if (r) r.innerHTML = ""; }
+    if (d.ghost) { letGo(d.ghost, false); d.ghost.remove(); d.el.classList.remove("lifted"); }
+    if (d.moved) { og.justDragged = true; setTimeout(() => { og.justDragged = false; }, 0); }
+    if (d.kind === "move" && d.moved && e.type !== "pointercancel") {
+      d.el.classList.remove("dragging"); letGo(d.el, true);
+      const z = Math.max(0, ...og.cards.map((c) => Number(c.z) || 0)) + 1;
+      d.el.style.zIndex = og.cards.length + 1;
+      const c = og.cards.find((x) => x.id === d.id); if (c) Object.assign(c, { x: d.x, y: d.y, z });
+      S.db.doc(`projects/${og.pid}/org/${d.id}`).update({ x: d.x, y: d.y, z }).catch((err) => orgSay(orgErr(err), true));
+    } else if (d.kind === "move" && d.moved) { d.el.classList.remove("dragging"); letGo(d.el, false); og.pending = true; }
+    else if (d.kind === "line" && d.moved && d.toEl) orgLink(d.from, d.toEl.dataset.id);
+    else if (d.kind === "line" && !d.moved) orgSay("Тягніть від шпильки до іншої картки, щоб натягнути нитку.");
+    else if (d.kind === "tray" && e.type !== "pointercancel") {
+      const p = S.people.find((x) => x.id === d.pid);
+      if (p && d.moved && d.over) { const q = orgPoint(d.lastX, d.lastY); orgAddCards([[p, q.x - OCW / 2, q.y - 20]]); }
+      else if (p && !d.moved) orgAddCards([[p]]);
+    }
+    if (og.pending) { if (settling.size) S.renderPending = true; else renderOrg(); }
+  };
+  window.addEventListener("pointerup", endOrgDrag);
+  window.addEventListener("pointercancel", endOrgDrag);
+  $("org").addEventListener("click", (e) => {
+    const og = S.og; if (!og || og.justDragged || !e.target.closest) return;
+    const b = e.target.closest("[data-og]");
+    if (b) {
+      const act = b.dataset.og, id = b.dataset.id;
+      if (act === "close") { closeOrg(); return; }
+      if (act === "all") { orgAddCards(orgTray(og).map((p) => [p])); return; }
+      if (act === "drop") { if (og.confirm !== id) { og.confirm = id; og.selLink = null; renderOrg(); return; } og.confirm = null; orgDrop(id); return; }
+      if (act === "cut") { og.selLink = null; renderOrg(); S.db.doc(`projects/${og.pid}/orgLinks/${id}`).delete().catch((err) => orgSay(orgErr(err), true)); return; }
+      return;
+    }
+    const g = e.target.closest("[data-link]");
+    if (g) {
+      const l = og.links.find((x) => x.id === g.dataset.link);
+      og.selLink = og.selLink === g.dataset.link ? null : g.dataset.link; og.confirm = null;
+      if (l && og.selLink && !canCut(l)) orgSay("Цю нитку між чужими картками може зняти лише їхній лід.");
+      renderOrg(); return;
+    }
+    if (og.selLink || og.confirm) { og.selLink = null; og.confirm = null; renderOrg(); }
+  });
+  /* "Зняти?" resets once the pointer leaves it, like the other two-click deletes */
+  $("org").addEventListener("pointerout", (e) => {
+    const og = S.og, b = e.target.closest && e.target.closest('[data-og="drop"]');
+    if (!og || !b || !og.confirm || (e.relatedTarget && b.contains(e.relatedTarget))) return;
+    og.confirm = null; renderOrg();
+  });
+  $("org").addEventListener("dblclick", (e) => {
+    const og = S.og, el = e.target.closest && e.target.closest(".ocard.mine"); if (!og || !el) return;
+    const c = og.cards.find((x) => x.id === el.dataset.id); if (!c || !S.people.some((p) => p.id === c.personId)) return;
+    closeOrg(); S.ptab = "projects"; openPerson(c.personId);
+  });
+  document.addEventListener("keydown", (e) => {
+    const og = S.og; if (!og) return;
+    if (e.key === "Escape") {
+      if (og.drag) return;
+      if (og.selLink || og.confirm) { og.selLink = null; og.confirm = null; renderOrg(); } else closeOrg();
+      return;
+    }
+    const el = e.target.closest && e.target.closest(".ocard.mine");
+    const mv = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (!el || !mv) return; e.preventDefault();
+    const c = og.cards.find((x) => x.id === el.dataset.id); if (!c) return;
+    const step = e.shiftKey ? 40 : 10, q = clampPos((Number(c.x) || 0) + mv[0] * step, (Number(c.y) || 0) + mv[1] * step);
+    Object.assign(c, q); el.style.left = q.x + "px"; el.style.top = q.y + "px"; drawOrgLines();
+    clearTimeout(og.keyT); og.keyT = setTimeout(() => { if (S.og === og) S.db.doc(`projects/${og.pid}/org/${c.id}`).update(q).catch((err) => orgSay(orgErr(err), true)); }, 400);
+  });
+  window.addEventListener("resize", () => { if (S.og) fitOrg(); });
+
   /* ================= data (Firebase) ================= */
   S.unsubs = [];
   function stopData() { S.unsubs.forEach((u) => { try { u(); } catch {} }); S.unsubs = []; }
@@ -2592,6 +3042,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       S.people = snap.docs.map((d) => ({ id: d.id, ...d.data() })); mark("people");
       if (!S.selected && S.people.length && !window.matchMedia("(max-width: 860px)").matches) S.selected = S.people[0].id;
       if (S.selected && !S.people.some((p) => p.id === S.selected)) S.selected = null;
+      if (S.og) queueOrgSync();
       scheduleRender();
     }, onErr("people")));
     /* shared projects + this leader's own card positions (the project's old shared pos is only a fallback) */
@@ -2864,7 +3315,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   });
 
   onAuthStateChanged(auth, (u) => {
-    stopData();
+    closeOrg(); stopData();
     curUid = u ? u.uid : null;
     Object.assign(S, { user: u, people: [], projects: [], projRaw: [], myPos: {}, localPos: {}, comments: [], reviews: [], links: [], selected: null, selProject: null,
       loaded: false, denied: false, ui: {}, pui: {}, drafts: {}, isOwner: false, members: [], legacy: 0, migrating: false, migrateErr: "", accConfirm: null, accEdit: null, accShow: {}, accBusy: false });
