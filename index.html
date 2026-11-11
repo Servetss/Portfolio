@@ -713,7 +713,9 @@ body.org-open { overflow: hidden; }
 .ot-name { display: block; font-weight: 700; font-size: .84rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ot-role { display: block; font-size: .72rem; font-style: italic; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .org-board { position: relative; min-height: 0; min-width: 0; display: grid; }
-.org-wrap { min-height: 0; padding: 0; overflow: auto; scrollbar-width: thin; }
+.org-wrap { min-height: 0; padding: 0; overflow: auto; scrollbar-width: thin; cursor: grab; }
+.org-wrap.panning, .org-wrap.panning * { cursor: grabbing !important; }
+.ocard.theirs { cursor: default; }
 .org-zoom { position: absolute; right: 20px; bottom: 20px; z-index: 5; display: flex; gap: 4px; padding: 5px; background: var(--noise), var(--paper); box-shadow: 0 4px 10px rgba(20, 10, 0, .45); }
 .org-zoom .btn { padding: 4px 9px; font-size: .74rem; min-width: 30px; }
 .org-zoom .oz-val { min-width: 54px; }
@@ -2981,7 +2983,10 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       og.drag = { ...base, kind: "move", id: c.id, el: cardEl, ox: cardEl.offsetLeft, oy: cardEl.offsetTop, gx: p.x - cardEl.offsetLeft, gy: p.y - cardEl.offsetTop };
       return;
     }
-    if (item) { const r = item.getBoundingClientRect(); og.drag = { ...base, kind: "tray", pid: item.dataset.pid, el: item, gx: e.clientX - r.left, gy: e.clientY - r.top }; }
+    if (item) { const r = item.getBoundingClientRect(); og.drag = { ...base, kind: "tray", pid: item.dataset.pid, el: item, gx: e.clientX - r.left, gy: e.clientY - r.top }; return; }
+    /* holding the mouse on the bare cork (or on a thread) and moving it pans the board; fingers scroll it natively */
+    const wrap = t.closest("#orgWrap");
+    if (wrap && e.pointerType !== "touch") { e.preventDefault(); og.drag = { ...base, kind: "pan", el: wrap, sl: wrap.scrollLeft, st: wrap.scrollTop }; }
   });
   window.addEventListener("pointermove", (e) => {
     const og = S.og, d = og && og.drag; if (!d || e.pointerId !== d.pointer) return;
@@ -2993,6 +2998,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       try { d.el.setPointerCapture(d.pointer); } catch {}
       if (d.kind === "move") { d.el.classList.add("dragging"); hang(d.el, d, rotFor(d.id, 1.2)); }
       else if (d.kind === "line") d.el.classList.add("from");
+      else if (d.kind === "pan") d.el.classList.add("panning");
       else {
         d.ghost = d.el.cloneNode(true); d.ghost.classList.add("drag-ghost"); d.ghost.style.width = d.el.offsetWidth + "px";
         document.body.appendChild(d.ghost); d.el.classList.add("lifted"); hang(d.ghost, d, 3);
@@ -3001,7 +3007,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     e.preventDefault();
     const now = performance.now(); d.vx = d.vx * 0.6 + (e.clientX - d.lx) / Math.max(1, now - d.vt) * 0.4; d.lx = e.clientX; d.vt = now;
     const s = og.scale || 1;
-    if (d.kind === "move") {
+    if (d.kind === "pan") { d.el.scrollLeft = d.sl - dx; d.el.scrollTop = d.st - dy; }
+    else if (d.kind === "move") {
       const wrap = $("orgWrap"), wr = wrap.getBoundingClientRect(), E = 36;
       if (e.clientY > wr.bottom - E) wrap.scrollTop += 14; else if (e.clientY < wr.top + E) wrap.scrollTop -= 14;
       if (e.clientX > wr.right - E) wrap.scrollLeft += 14; else if (e.clientX < wr.left + E) wrap.scrollLeft -= 14;
@@ -3028,6 +3035,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const wrap = $("orgWrap"); if (wrap) wrap.classList.remove("drop-ok");
     if (d.toEl) d.toEl.classList.remove("target");
     if (d.kind === "line") { d.el.classList.remove("from"); const r = $("orgRubber"); if (r) r.innerHTML = ""; }
+    if (d.kind === "pan") d.el.classList.remove("panning");
     if (d.ghost) { letGo(d.ghost, false); d.ghost.remove(); d.el.classList.remove("lifted"); }
     if (d.moved) { og.justDragged = true; setTimeout(() => { og.justDragged = false; }, 0); }
     if (d.kind === "move" && d.moved && e.type !== "pointercancel") {
