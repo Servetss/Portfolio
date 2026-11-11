@@ -712,18 +712,17 @@ body.org-open { overflow: hidden; }
 .otray.lifted { opacity: .35; }
 .ot-name { display: block; font-weight: 700; font-size: .84rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ot-role { display: block; font-size: .72rem; font-style: italic; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.org-wrap { min-height: 0; padding: 0; overflow: auto; scrollbar-width: none; }
-.org-wrap::-webkit-scrollbar { display: none; }
+.org-wrap { min-height: 0; padding: 0; overflow: auto; scrollbar-width: thin; }
 .org-wrap.drop-ok { box-shadow: inset 0 0 0 3px rgba(255, 240, 200, .7), inset 0 0 26px rgba(40, 20, 5, .55); }
 .org-canvas { position: relative; margin: 0 auto; }
-.org-stage { position: absolute; left: 0; top: 0; width: 1400px; height: 900px; transform-origin: 0 0; }
+.org-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .org-empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 40px; text-align: center; font-size: 1.15rem; pointer-events: none; }
-.org-lines { position: absolute; left: 0; top: 0; width: 1400px; height: 900px; overflow: visible; z-index: 0; }
+.org-lines { position: absolute; left: 0; top: 0; overflow: visible; z-index: 0; }
 .org-lines .hit { stroke: transparent; stroke-width: 16; fill: none; pointer-events: stroke; cursor: pointer; }
 .org-lines .thr { stroke: #b3241b; stroke-width: 2.4; fill: none; stroke-linecap: round; pointer-events: none; filter: drop-shadow(1px 2px 1px rgba(20, 8, 0, .5)); }
 .org-lines g:hover .thr { stroke: #d0392c; }
 .org-lines g.sel .thr { stroke: #e0412f; stroke-width: 3.6; }
-.org-rubber { position: absolute; left: 0; top: 0; width: 1400px; height: 900px; overflow: visible; z-index: 100000; pointer-events: none; }
+.org-rubber { position: absolute; left: 0; top: 0; overflow: visible; z-index: 100000; pointer-events: none; }
 .org-rubber path { stroke: var(--pin); stroke-width: 2.4; stroke-dasharray: 7 5; fill: none; stroke-linecap: round; }
 .ocard {
   position: absolute; width: 200px; height: 88px; display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 11px; align-items: center; padding: 18px 14px 9px 11px;
@@ -2689,7 +2688,9 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   const linkIdOf = (a, b) => [a, b].sort().join("__");
   const ownsEnd = (id) => !!curUid && String(id).startsWith(curUid + "_");
   const canCut = (l) => !!S.isOwner || l.by === curUid || ownsEnd(l.a) || ownsEnd(l.b);
-  const clampPos = (x, y) => ({ x: Math.round(Math.min(Math.max(0, Number(x) || 0), OW - OCW)), y: Math.round(Math.min(Math.max(0, Number(y) || 0), OH - OCH)) });
+  /* the board is as big as the visible cork (OW wide at 100%, scaled down to 70%) and grows to wherever the cards are */
+  const boardW = () => (S.og && S.og.W) || OW, boardH = () => (S.og && S.og.H) || OH;
+  const clampPos = (x, y) => ({ x: Math.round(Math.min(Math.max(0, Number(x) || 0), boardW() - OCW)), y: Math.round(Math.min(Math.max(0, Number(y) || 0), boardH() - OCH)) });
   const orgErr = (e) => (e && e.denied ? "Немає дозволу на запис. Схоже, у Firebase ще не оновлено правила Firestore для дошки ієрархії." : failText(e));
   const myName = () => (S.user && (S.user.displayName || shownName(S.user.email))) || "";
   /* what other leaders may see about a person: nothing beyond this */
@@ -2769,6 +2770,18 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     if (settling.size) { S.renderPending = true; og.pending = true; return; }
     const sel = projById(og.pid); if (!sel) { if (S.loaded) closeOrg(); return; }
     og.pending = false;
+    /* the window frame is built once per opening; only its parts are refreshed, so the sheet never re-plays its fade-in
+       (a full rebuild let the dark backdrop flash through on every move) */
+    if (!$("orgStage")) setHtml(el, `<div class="org-sheet">
+      <header class="org-head" id="orgHead"></header>
+      <div class="org-body">
+        <aside class="org-tray" id="orgTray" aria-label="Мої люди на проєкті"></aside>
+        <div class="cork org-wrap" id="orgWrap">
+          <div class="org-canvas" id="orgCanvas"><div class="org-stage" id="orgStage"></div></div>
+        </div>
+      </div>
+    </div>`);
+    orgSize();
     const cards = og.cards.map((c) => ({ ...c, ...clampPos(c.x, c.y) }));
     const byId = new Map(cards.map((c) => [c.id, c]));
     [...cards].sort((a, b) => (Number(a.z) || 0) - (Number(b.z) || 0)).forEach((c, i) => { c.rank = i + 1; });
@@ -2792,17 +2805,6 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const selL = og.selLink && links.find((l) => l.id === og.selLink);
     const cut = selL && canCut(selL) ? (() => { const m = orgThread(byId.get(selL.a), byId.get(selL.b)).mid;
       return `<button type="button" class="btn olink-x" data-og="cut" data-id="${esc(selL.id)}" style="left:${m.x.toFixed(0)}px;top:${m.y.toFixed(0)}px">✕ Зняти нитку</button>`; })() : "";
-    /* the window frame is built once per opening; only its parts are refreshed, so the sheet never re-plays its fade-in
-       (a full rebuild let the dark backdrop flash through on every move) */
-    if (!$("orgStage")) setHtml(el, `<div class="org-sheet">
-      <header class="org-head" id="orgHead"></header>
-      <div class="org-body">
-        <aside class="org-tray" id="orgTray" aria-label="Мої люди на проєкті"></aside>
-        <div class="cork org-wrap" id="orgWrap">
-          <div class="org-canvas" id="orgCanvas"><div class="org-stage" id="orgStage"></div></div>
-        </div>
-      </div>
-    </div>`);
     setHtml($("orgHead"), `${labelHtml(sel)}
         <div class="org-title"><span class="kick">Ієрархія команди · спільна дошка</span><h2>${esc(sel.name)}</h2>
           <span class="org-msg${og.loadErr || og.warn ? " warn" : ""}" id="orgMsg" role="status">${esc(msg)}</span></div>
@@ -2813,26 +2815,43 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
             : tray.map((p) => { const past = activeOf(p) !== og.pid; return `<button type="button" class="otray${past ? " past" : ""}" data-pid="${esc(p.id)}" title="Перетягніть на дошку або натисніть">
                 <span class="avatar">${faceHtml(p)}</span><span style="min-width:0"><span class="ot-name">${esc(p.name)}</span><span class="ot-role">${esc([p.role, past ? "раніше" : ""].filter(Boolean).join(" · ") || "—")}</span></span></button>`; }).join("")
               + (tray.length > 1 ? `<button type="button" class="btn" data-og="all">Викласти всіх (${tray.length})</button>` : "")}`);
-    setHtml($("orgStage"), `<svg class="org-lines" id="orgLines" viewBox="0 0 ${OW} ${OH}" aria-hidden="true">${orgLinesHtml(links, (id) => byId.get(id))}</svg>
+    setHtml($("orgStage"), `<svg class="org-lines" id="orgLines" aria-hidden="true">${orgLinesHtml(links, (id) => byId.get(id))}</svg>
             ${cards.map(card).join("")}
             ${cut}
-            <svg class="org-rubber" id="orgRubber" viewBox="0 0 ${OW} ${OH}" aria-hidden="true"></svg>
+            <svg class="org-rubber" id="orgRubber" aria-hidden="true"></svg>
             ${!cards.length ? `<p class="org-empty cork-empty">${loading ? "Завантажуємо дошку…" : og.loadErr ? "" : "Дошка порожня. Перетягніть людей з панелі ліворуч або натисніть на них."}</p>` : ""}`);
     fitOrg();
   }
-  /* the whole board fits the window down to 70%; below that it scrolls */
+  /* scale: the board's width of OW units fits the cork, between 70% and 100%. Size: the whole visible cork,
+     and further right / down when cards lie there (someone with a wider screen put them there, or they were dragged down) */
+  function orgSize() {
+    const og = S.og, wrap = $("orgWrap"); if (!og || !wrap) return;
+    const s = Math.max(0.7, Math.min(1, wrap.clientWidth / OW || 1));
+    let r = 0, b = 0;
+    for (const c of og.cards) { r = Math.max(r, (Number(c.x) || 0) + OCW); b = Math.max(b, (Number(c.y) || 0) + OCH); }
+    const d = og.drag; if (d && d.kind === "move" && d.x != null) { r = Math.max(r, d.x + OCW); b = Math.max(b, d.y + OCH); }
+    og.scale = s;
+    og.W = Math.max(Math.floor(wrap.clientWidth / s), Math.ceil(r + 30));
+    og.H = Math.max(Math.floor(wrap.clientHeight / s), Math.ceil(b + 120), og.grow || 0);
+  }
   function fitOrg() {
-    const og = S.og, wrap = $("orgWrap"), canvas = $("orgCanvas"), stage = $("orgStage"); if (!og || !wrap || !canvas || !stage) return;
-    const fit = Math.min(wrap.clientWidth / OW, wrap.clientHeight / OH);
-    const s = Math.max(0.7, Math.min(1, fit || 1));
-    og.scale = s; canvas.style.width = Math.round(OW * s) + "px"; canvas.style.height = Math.round(OH * s) + "px"; stage.style.transform = `scale(${s})`;
+    const og = S.og, canvas = $("orgCanvas"), stage = $("orgStage"); if (!og || !canvas || !stage) return;
+    /* twice: a scrollbar that appears or goes away changes the visible cork */
+    for (let i = 0; i < 2; i++) {
+      orgSize();
+      const { W, H, scale: s } = og;
+      canvas.style.width = Math.floor(W * s) + "px"; canvas.style.height = Math.floor(H * s) + "px";
+      Object.assign(stage.style, { width: W + "px", height: H + "px", transform: `scale(${s})` });
+      for (const id of ["orgLines", "orgRubber"]) { const v = $(id); if (v) { v.setAttribute("viewBox", `0 0 ${W} ${H}`); v.style.width = W + "px"; v.style.height = H + "px"; } }
+    }
   }
   const orgPoint = (x, y) => { const r = $("orgStage").getBoundingClientRect(), s = (S.og && S.og.scale) || 1; return { x: (x - r.left) / s, y: (y - r.top) / s }; };
   function freeSpot(taken) {
     const SX = OCW + 34, SY = OCH + 56;
-    for (let y = 40; y + OCH <= OH; y += SY) for (let x = 30; x + OCW <= OW; x += SX)
+    /* first free cell of the visible cork, row by row; past its bottom the board simply grows */
+    for (let y = 40; y < boardH() + 4000; y += SY) for (let x = 30; x + OCW <= boardW(); x += SX)
       if (!taken.some((t) => x < t.x + OCW + 12 && x + OCW + 12 > t.x && y < t.y + OCH + 12 && y + OCH + 12 > t.y)) return { x, y };
-    return clampPos(30 + (taken.length * 17) % 600, 40 + (taken.length * 23) % 500);
+    return { x: 30, y: 40 };
   }
 
   /* ---------- writes ---------- */
@@ -2941,7 +2960,12 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const now = performance.now(); d.vx = d.vx * 0.6 + (e.clientX - d.lx) / Math.max(1, now - d.vt) * 0.4; d.lx = e.clientX; d.vt = now;
     const s = og.scale || 1;
     if (d.kind === "move") {
-      const q = clampPos(d.ox + dx / s, d.oy + dy / s); d.x = q.x; d.y = q.y;
+      const wrap = $("orgWrap"), wr = wrap.getBoundingClientRect(), E = 36;
+      if (e.clientY > wr.bottom - E) wrap.scrollTop += 14; else if (e.clientY < wr.top + E) wrap.scrollTop -= 14;
+      if (e.clientX > wr.right - E) wrap.scrollLeft += 14; else if (e.clientX < wr.left + E) wrap.scrollLeft -= 14;
+      const p = orgPoint(e.clientX, e.clientY);
+      if (p.y - d.gy + OCH > boardH() - 8) { og.grow = boardH() + 60; fitOrg(); }
+      const q = clampPos(p.x - d.gx, p.y - d.gy); d.x = q.x; d.y = q.y;
       d.el.style.left = q.x + "px"; d.el.style.top = q.y + "px";
       drawOrgLines({ [d.id]: q });
     } else if (d.kind === "line") {
@@ -2958,7 +2982,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   }, { passive: false });
   const endOrgDrag = (e) => {
     const og = S.og, d = og && og.drag; if (!d || (e && e.pointerId !== d.pointer)) return;
-    og.drag = null;
+    og.drag = null; og.grow = 0;
     const wrap = $("orgWrap"); if (wrap) wrap.classList.remove("drop-ok");
     if (d.toEl) d.toEl.classList.remove("target");
     if (d.kind === "line") { d.el.classList.remove("from"); const r = $("orgRubber"); if (r) r.innerHTML = ""; }
