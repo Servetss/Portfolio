@@ -2792,33 +2792,32 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const selL = og.selLink && links.find((l) => l.id === og.selLink);
     const cut = selL && canCut(selL) ? (() => { const m = orgThread(byId.get(selL.a), byId.get(selL.b)).mid;
       return `<button type="button" class="btn olink-x" data-og="cut" data-id="${esc(selL.id)}" style="left:${m.x.toFixed(0)}px;top:${m.y.toFixed(0)}px">✕ Зняти нитку</button>`; })() : "";
-    setHtml(el, `<div class="org-sheet">
-      <header class="org-head">
-        ${labelHtml(sel)}
+    /* the window frame is built once per opening; only its parts are refreshed, so the sheet never re-plays its fade-in
+       (a full rebuild let the dark backdrop flash through on every move) */
+    if (!$("orgStage")) setHtml(el, `<div class="org-sheet">
+      <header class="org-head" id="orgHead"></header>
+      <div class="org-body">
+        <aside class="org-tray" id="orgTray" aria-label="Мої люди на проєкті"></aside>
+        <div class="cork org-wrap" id="orgWrap">
+          <div class="org-canvas" id="orgCanvas"><div class="org-stage" id="orgStage"></div></div>
+        </div>
+      </div>
+    </div>`);
+    setHtml($("orgHead"), `${labelHtml(sel)}
         <div class="org-title"><span class="kick">Ієрархія команди · спільна дошка</span><h2>${esc(sel.name)}</h2>
           <span class="org-msg${og.loadErr || og.warn ? " warn" : ""}" id="orgMsg" role="status">${esc(msg)}</span></div>
-        <button type="button" class="btn" data-og="close" title="Закрити (Esc)">Закрити</button>
-      </header>
-      <div class="org-body">
-        <aside class="org-tray" aria-label="Мої люди на проєкті">
-          <span class="org-tray-title">Мої люди на проєкті</span>
+        <button type="button" class="btn" data-og="close" title="Закрити (Esc)">Закрити</button>`);
+    setHtml($("orgTray"), `<span class="org-tray-title">Мої люди на проєкті</span>
           ${!team.length ? `<p class="notice">У вас до цього проєкту ще ніхто не підв’язаний. Підв’яжіть людей у їхніх справах, розділ «Проєкти».</p>`
             : !tray.length ? `<p class="notice">Усі ваші люди вже на дошці.</p>`
             : tray.map((p) => { const past = activeOf(p) !== og.pid; return `<button type="button" class="otray${past ? " past" : ""}" data-pid="${esc(p.id)}" title="Перетягніть на дошку або натисніть">
                 <span class="avatar">${faceHtml(p)}</span><span style="min-width:0"><span class="ot-name">${esc(p.name)}</span><span class="ot-role">${esc([p.role, past ? "раніше" : ""].filter(Boolean).join(" · ") || "—")}</span></span></button>`; }).join("")
-              + (tray.length > 1 ? `<button type="button" class="btn" data-og="all">Викласти всіх (${tray.length})</button>` : "")}
-        </aside>
-        <div class="cork org-wrap" id="orgWrap">
-          <div class="org-canvas" id="orgCanvas"><div class="org-stage" id="orgStage">
-            <svg class="org-lines" id="orgLines" viewBox="0 0 ${OW} ${OH}" aria-hidden="true">${orgLinesHtml(links, (id) => byId.get(id))}</svg>
+              + (tray.length > 1 ? `<button type="button" class="btn" data-og="all">Викласти всіх (${tray.length})</button>` : "")}`);
+    setHtml($("orgStage"), `<svg class="org-lines" id="orgLines" viewBox="0 0 ${OW} ${OH}" aria-hidden="true">${orgLinesHtml(links, (id) => byId.get(id))}</svg>
             ${cards.map(card).join("")}
             ${cut}
             <svg class="org-rubber" id="orgRubber" viewBox="0 0 ${OW} ${OH}" aria-hidden="true"></svg>
-            ${!cards.length ? `<p class="org-empty cork-empty">${loading ? "Завантажуємо дошку…" : og.loadErr ? "" : "Дошка порожня. Перетягніть людей з панелі ліворуч або натисніть на них."}</p>` : ""}
-          </div></div>
-        </div>
-      </div>
-    </div>`);
+            ${!cards.length ? `<p class="org-empty cork-empty">${loading ? "Завантажуємо дошку…" : og.loadErr ? "" : "Дошка порожня. Перетягніть людей з панелі ліворуч або натисніть на них."}</p>` : ""}`);
     fitOrg();
   }
   /* the whole board fits the window down to 70%; below that it scrolls */
