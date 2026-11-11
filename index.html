@@ -712,7 +712,11 @@ body.org-open { overflow: hidden; }
 .otray.lifted { opacity: .35; }
 .ot-name { display: block; font-weight: 700; font-size: .84rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ot-role { display: block; font-size: .72rem; font-style: italic; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.org-board { position: relative; min-height: 0; min-width: 0; display: grid; }
 .org-wrap { min-height: 0; padding: 0; overflow: auto; scrollbar-width: thin; }
+.org-zoom { position: absolute; right: 20px; bottom: 20px; z-index: 5; display: flex; gap: 4px; padding: 5px; background: var(--noise), var(--paper); box-shadow: 0 4px 10px rgba(20, 10, 0, .45); }
+.org-zoom .btn { padding: 4px 9px; font-size: .74rem; min-width: 30px; }
+.org-zoom .oz-val { min-width: 54px; }
 .org-wrap.drop-ok { box-shadow: inset 0 0 0 3px rgba(255, 240, 200, .7), inset 0 0 26px rgba(40, 20, 5, .55); }
 .org-canvas { position: relative; margin: 0 auto; }
 .org-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
@@ -764,6 +768,8 @@ body.org-open { overflow: hidden; }
   .org-tray .notice { flex: none; max-width: 240px; }
   .otray { width: 168px; touch-action: pan-x; }
   .org-tray .btn { align-self: center; flex: none; }
+  .org-zoom { right: 12px; bottom: 12px; }
+  .org-zoom [data-og="zfit"] { font-size: .66rem; padding: 4px 7px; }
 }
 
 /* ---------- responsive ---------- */
@@ -2776,8 +2782,16 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       <header class="org-head" id="orgHead"></header>
       <div class="org-body">
         <aside class="org-tray" id="orgTray" aria-label="Мої люди на проєкті"></aside>
-        <div class="cork org-wrap" id="orgWrap">
-          <div class="org-canvas" id="orgCanvas"><div class="org-stage" id="orgStage"></div></div>
+        <div class="org-board">
+          <div class="cork org-wrap" id="orgWrap">
+            <div class="org-canvas" id="orgCanvas"><div class="org-stage" id="orgStage"></div></div>
+          </div>
+          <div class="org-zoom" role="group" aria-label="Масштаб дошки">
+            <button type="button" class="btn" data-og="zout" title="Віддалити (Ctrl + колесо миші)" aria-label="Віддалити">−</button>
+            <button type="button" class="btn oz-val" data-og="z100" id="orgZoomVal" title="Масштаб 100%">100%</button>
+            <button type="button" class="btn" data-og="zin" title="Наблизити (Ctrl + колесо миші)" aria-label="Наблизити">+</button>
+            <button type="button" class="btn" data-og="zfit" title="Показати всю ієрархію">Вмістити все</button>
+          </div>
         </div>
       </div>
     </div>`);
@@ -2824,9 +2838,23 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   }
   /* scale: the board's width of OW units fits the cork, between 70% and 100%. Size: the whole visible cork,
      and further right / down when cards lie there (someone with a wider screen put them there, or they were dragged down) */
+  const ZMIN = 0.25, ZMAX = 1.5;
+  const clampZoom = (z) => Math.min(ZMAX, Math.max(ZMIN, Number(z) || 1));
+  /* the zoom each viewer last used on a project's board, only in this browser */
+  const zoomStore = { get(pid) { try { return JSON.parse(localStorage.getItem("pf-org-zoom") || "{}")[pid]; } catch { return undefined; } },
+    set(pid, z) { try { const m = JSON.parse(localStorage.getItem("pf-org-zoom") || "{}"); m[pid] = z; localStorage.setItem("pf-org-zoom", JSON.stringify(m)); } catch {} } };
+  /* the scale at which every card is in view (never bigger than the usual 1400-units-wide fit) */
+  function fitZoom() {
+    const og = S.og, wrap = $("orgWrap"); if (!og || !wrap) return 1;
+    const base = Math.max(0.7, Math.min(1, wrap.clientWidth / OW || 1));
+    let r = 0, b = 0; for (const c of og.cards) { r = Math.max(r, (Number(c.x) || 0) + OCW); b = Math.max(b, (Number(c.y) || 0) + OCH); }
+    if (!og.cards.length) return base;
+    return clampZoom(Math.min(base, wrap.clientWidth / (r + 40), wrap.clientHeight / (b + 110))); /* room for the zoom bar below */
+  }
   function orgSize() {
     const og = S.og, wrap = $("orgWrap"); if (!og || !wrap) return;
-    const s = Math.max(0.7, Math.min(1, wrap.clientWidth / OW || 1));
+    if (og.zoom == null && og.got.cards) { const z = zoomStore.get(og.pid); og.zoom = z != null ? clampZoom(z) : fitZoom(); }
+    const s = og.zoom != null ? og.zoom : Math.max(0.7, Math.min(1, wrap.clientWidth / OW || 1));
     let r = 0, b = 0;
     for (const c of og.cards) { r = Math.max(r, (Number(c.x) || 0) + OCW); b = Math.max(b, (Number(c.y) || 0) + OCH); }
     const d = og.drag; if (d && d.kind === "move" && d.x != null) { r = Math.max(r, d.x + OCW); b = Math.max(b, d.y + OCH); }
@@ -2836,6 +2864,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   }
   function fitOrg() {
     const og = S.og, canvas = $("orgCanvas"), stage = $("orgStage"); if (!og || !canvas || !stage) return;
+    const zv = $("orgZoomVal"); if (zv && og.scale) zv.textContent = Math.round(og.scale * 100) + "%";
     /* twice: a scrollbar that appears or goes away changes the visible cork */
     for (let i = 0; i < 2; i++) {
       orgSize();
@@ -2844,6 +2873,19 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       Object.assign(stage.style, { width: W + "px", height: H + "px", transform: `scale(${s})` });
       for (const id of ["orgLines", "orgRubber"]) { const v = $(id); if (v) { v.setAttribute("viewBox", `0 0 ${W} ${H}`); v.style.width = W + "px"; v.style.height = H + "px"; } }
     }
+    const zv2 = $("orgZoomVal"); if (zv2) zv2.textContent = Math.round(og.scale * 100) + "%";
+  }
+  /* change the zoom keeping the board point under (cx, cy) in place — the cursor, or the middle of the cork */
+  function setZoom(z, cx, cy) {
+    const og = S.og, wrap = $("orgWrap"), stage = $("orgStage"); if (!og || !wrap || !stage) return;
+    z = clampZoom(z); if (og.zoom != null && Math.abs(z - og.zoom) < 0.001) return;
+    const wr = wrap.getBoundingClientRect();
+    if (cx == null) { cx = wr.left + wr.width / 2; cy = wr.top + wr.height / 2; }
+    const p = orgPoint(cx, cy);
+    og.zoom = z; zoomStore.set(og.pid, Math.round(z * 1000) / 1000);
+    fitOrg();
+    const r2 = stage.getBoundingClientRect();
+    wrap.scrollLeft += r2.left + p.x * og.scale - cx; wrap.scrollTop += r2.top + p.y * og.scale - cy;
   }
   const orgPoint = (x, y) => { const r = $("orgStage").getBoundingClientRect(), s = (S.og && S.og.scale) || 1; return { x: (x - r.left) / s, y: (y - r.top) / s }; };
   function freeSpot(taken) {
@@ -3012,6 +3054,10 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     if (b) {
       const act = b.dataset.og, id = b.dataset.id;
       if (act === "close") { closeOrg(); return; }
+      if (act === "zin") { setZoom((og.zoom || og.scale) * 1.2); return; }
+      if (act === "zout") { setZoom((og.zoom || og.scale) / 1.2); return; }
+      if (act === "z100") { setZoom(1); return; }
+      if (act === "zfit") { setZoom(fitZoom()); const w = $("orgWrap"); if (w) { w.scrollLeft = 0; w.scrollTop = 0; } return; }
       if (act === "all") { orgAddCards(orgTray(og).map((p) => [p])); return; }
       if (act === "drop") { if (og.confirm !== id) { og.confirm = id; og.selLink = null; renderOrg(); return; } og.confirm = null; orgDrop(id); return; }
       if (act === "cut") { og.selLink = null; renderOrg(); S.db.doc(`projects/${og.pid}/orgLinks/${id}`).delete().catch((err) => orgSay(orgErr(err), true)); return; }
@@ -3053,6 +3099,11 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     clearTimeout(og.keyT); og.keyT = setTimeout(() => { if (S.og === og) S.db.doc(`projects/${og.pid}/org/${c.id}`).update(q).catch((err) => orgSay(orgErr(err), true)); }, 400);
   });
   window.addEventListener("resize", () => { if (S.og) fitOrg(); });
+  $("org").addEventListener("wheel", (e) => {
+    const og = S.og; if (!og || !(e.ctrlKey || e.metaKey) || !e.target.closest || !e.target.closest("#orgWrap")) return;
+    e.preventDefault();
+    setZoom((og.zoom || og.scale) * Math.exp(-Math.max(-60, Math.min(60, e.deltaY)) * 0.004), e.clientX, e.clientY);
+  }, { passive: false });
 
   /* ================= data (Firebase) ================= */
   S.unsubs = [];
