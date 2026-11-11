@@ -3007,7 +3007,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     e.preventDefault();
     const now = performance.now(); d.vx = d.vx * 0.6 + (e.clientX - d.lx) / Math.max(1, now - d.vt) * 0.4; d.lx = e.clientX; d.vt = now;
     const s = og.scale || 1;
-    if (d.kind === "pan") { d.el.scrollLeft = d.sl - dx; d.el.scrollTop = d.st - dy; }
+    /* pan by the step since the last move, not from the press point: pushing past an edge builds up no slack, the way back moves at once */
+    if (d.kind === "pan") { d.el.scrollLeft -= e.clientX - (d.px ?? d.sx); d.el.scrollTop -= e.clientY - (d.py ?? d.sy); d.px = e.clientX; d.py = e.clientY; }
     else if (d.kind === "move") {
       const wrap = $("orgWrap"), wr = wrap.getBoundingClientRect(), E = 36;
       if (e.clientY > wr.bottom - E) wrap.scrollTop += 14; else if (e.clientY < wr.top + E) wrap.scrollTop -= 14;
