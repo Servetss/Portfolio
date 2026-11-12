@@ -2756,7 +2756,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   }
   function drawOrgLines(over = {}) {
     const og = S.og, svg = $("orgLines"); if (!og || !svg) return;
-    const hid = hiddenOf(og.pid), byId = new Map(og.cards.filter((c) => !hid.has(c.id)).map((c) => [c.id, c]));
+    const hid = hiddenOf(og.pid), byId = new Map(og.cards.filter((c) => orgShown(c) && !hid.has(c.id)).map((c) => [c.id, c]));
     const posOf = (id) => over[id] || clampPos(byId.get(id).x, byId.get(id).y);
     svg.innerHTML = orgLinesHtml(og.links.filter((l) => byId.has(l.a) && byId.has(l.b)), posOf);
   }
@@ -2765,6 +2765,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     : "Люди, підв’язані до проєкту, з’являються тут самі — їх бачать усі ліди.";
   /* cards this viewer hid for themselves (users/{uid}/orgHidden/{pid}: { ids }); everyone else still sees them */
   const hiddenOf = (pid) => new Set((S.orgHidden && S.orgHidden[pid]) || []);
+  /* other leaders' people who no longer work on the project ("раніше") are not shown; my own past people stay (grey) */
+  const orgShown = (c) => isMineCard(c) || c.current !== false;
   function orgSetHidden(pid, ids) {
     S.orgHidden = { ...(S.orgHidden || {}), [pid]: ids }; renderOrg();
     S.db.doc("orgHidden/" + pid).set({ ids, updatedAt: new Date().toISOString() }).catch((err) => orgSay(failText(err), true));
@@ -2803,8 +2805,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       </div>
     </div>`);
     orgSize();
-    const hid = hiddenOf(og.pid), hiddenCards = og.cards.filter((c) => hid.has(c.id));
-    const cards = og.cards.filter((c) => !hid.has(c.id)).map((c) => ({ ...c, ...clampPos(c.x, c.y) }));
+    const hid = hiddenOf(og.pid), shown = og.cards.filter(orgShown), hiddenCards = shown.filter((c) => hid.has(c.id));
+    const cards = shown.filter((c) => !hid.has(c.id)).map((c) => ({ ...c, ...clampPos(c.x, c.y) }));
     const byId = new Map(cards.map((c) => [c.id, c]));
     [...cards].sort((a, b) => (Number(a.z) || 0) - (Number(b.z) || 0)).forEach((c, i) => { c.rank = i + 1; });
     const links = og.links.filter((l) => byId.has(l.a) && byId.has(l.b));
