@@ -609,13 +609,11 @@ section h3 .notice { text-transform: none; letter-spacing: 0; }
 .acc-list .notice { font-family: var(--font-body); }
 .acc-add { display: flex; gap: 12px 18px; align-items: flex-end; flex-wrap: wrap; }
 .acc-add label { flex: 1 1 200px; }
-.acc-kind { display: flex; gap: 8px 22px; flex-wrap: wrap; }
 .acc-who { min-width: 0; display: grid; gap: 2px; }
 .acc-who small { font-family: var(--font-body); font-size: .82rem; color: var(--ink-3); }
 .acc-who code { font-family: var(--font-type); color: var(--ink); background: rgba(60, 45, 20, .07); padding: 0 4px; }
 .acc-acts { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
 .acc-acts .btn { padding: 4px 8px; font-size: .7rem; }
-.acc-acts input { width: 170px; }
 
 /* status in the dossier */
 .st-line { display: grid; gap: 4px; }
@@ -840,8 +838,6 @@ img { max-width: 100%; }
 .login-card { width: min(440px, 100%); display: grid; gap: 14px; padding: 26px 28px 30px; background: var(--noise), var(--paper); box-shadow: 0 10px 24px rgba(60, 40, 10, .3); transform: rotate(-.6deg); }
 .login-card h2 { font-family: var(--font-display); font-size: 1.8rem; margin: 0; }
 .login-card .btn { justify-self: start; }
-.pw-login { display: grid; gap: 12px; }
-.login-alt { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding-top: 12px; border-top: 1px dashed var(--rule); font-family: var(--font-type); font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
 .toast { font-family: var(--font-type); font-size: .75rem; color: #f1e6c8; }
 </style>
 </head>
@@ -883,24 +879,15 @@ img { max-width: 100%; }
     <section class="alerts" id="alerts" aria-live="polite" hidden></section>
     <form class="blank" id="accessForm" novalidate hidden>
       <div class="blank-title">Доступ: лідери, які можуть входити</div>
-      <p class="notice" style="margin:0">Проєкти спільні. Люди, статистика, нагадування, розкладка дошки й посилання — у кожного свої; ніхто, крім самого лідера, їх не бачить (і ви теж). Пароль задаєте ви; лідер його не змінює.</p>
+      <p class="notice" style="margin:0">Проєкти спільні. Люди, статистика, нагадування, розкладка дошки й посилання — у кожного свої; ніхто, крім самого лідера, їх не бачить (і ви теж). Лідер входить своїм акаунтом Google.</p>
       <ul class="acc-list" id="accList"></ul>
-      <div class="acc-kind" role="radiogroup" aria-label="Спосіб входу">
-        <label class="check"><input type="radio" name="acc-kind" value="password" checked> Логін і пароль</label>
-        <label class="check"><input type="radio" name="acc-kind" value="google"> Акаунт Google</label>
-      </div>
-      <div class="acc-add" id="accPw">
-        <label>Логін (латиницею)<input id="acc-login" maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="olena"></label>
-        <label>Пароль<input id="acc-pass" maxlength="60" autocomplete="off" spellcheck="false"></label>
-        <label>Пошта для нагадувань (необов’язково)<input id="acc-notify" type="email" maxlength="120" autocomplete="off" placeholder="name@gmail.com"></label>
-      </div>
-      <div class="acc-add" id="accGg" hidden>
+      <div class="acc-add">
         <label>Пошта Google лідера<input id="acc-email" type="email" maxlength="120" autocomplete="off" placeholder="name@gmail.com"></label>
       </div>
       <div class="row">
         <span class="err" id="acc-err"></span>
         <button class="btn" type="button" id="acc-close">Закрити</button>
-        <button class="btn primary" type="submit" id="acc-submit">Створити вхід</button>
+        <button class="btn primary" type="submit" id="acc-submit">Відкрити доступ</button>
       </div>
     </form>
     <form class="blank" id="addPersonForm" novalidate hidden>
@@ -940,14 +927,9 @@ img { max-width: 100%; }
       <div class="login-card">
         <div class="blank-title">Кадровий архів · вхід</div>
         <h2>Портфоліо команди</h2>
-        <p class="notice" style="margin:0">Увійдіть логіном і паролем, які вам дав власник.</p>
-        <form class="pw-login" id="pwLogin" novalidate>
-          <label>Логін<input id="lg-login" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="60"></label>
-          <label>Пароль<input id="lg-pass" type="password" autocomplete="current-password" maxlength="100"></label>
-          <button class="btn primary" type="submit" id="lg-submit">Увійти</button>
-        </form>
+        <p class="notice" style="margin:0">Увійдіть своїм акаунтом Google. Доступ відкриває власник.</p>
+        <button class="btn primary" id="loginBtn" type="button">Увійти через Google</button>
         <span class="err" id="login-err"></span>
-        <div class="login-alt"><span>або</span><button class="btn" id="loginBtn" type="button">Увійти через Google</button></div>
       </div>
     </div>
 
@@ -977,7 +959,7 @@ img { max-width: 100%; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-import { getAuth, initializeAuth, inMemoryPersistence, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, updatePassword, deleteUser, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import { getAuth, initializeAuth, inMemoryPersistence, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, deleteUser, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 import { initializeFirestore, collection, query, orderBy, limit, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, getDocs, writeBatch, FieldPath, where } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -992,12 +974,12 @@ const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 const fdb = initializeFirestore(fbApp, { ignoreUndefinedProperties: true });
 
-/* Leaders sign in with a login + password the owner gave them. Firebase needs an e-mail, so the login becomes
-   a made-up address login@portfolio.local: no real mailbox, nothing to verify. */
+/* Sign-in is Google only (12.11). Old login accounts (made-up address login@portfolio.local) are signed out
+   at once; the owner can still remove them from the access list. */
 const LOGIN_DOMAIN = "portfolio.local";
-const loginToEmail = (login) => (String(login).includes("@") ? String(login) : String(login) + "@" + LOGIN_DOMAIN).trim().toLowerCase();
+const isLoginAccount = (email) => String(email || "").toLowerCase().endsWith("@" + LOGIN_DOMAIN);
 const shownName = (email) => (String(email || "").endsWith("@" + LOGIN_DOMAIN) ? String(email).slice(0, -LOGIN_DOMAIN.length - 1) : String(email || ""));
-/* The owner creates, re-keys and removes leader accounts through a second, in-memory sign-in,
+/* The owner removes an old login account through a second, in-memory sign-in,
    so their own session is never touched. */
 let helperAuth = null;
 async function withHelper(fn) {
@@ -3144,7 +3126,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     /* only the owner may read the access list: success here is what shows the «Доступ» button */
     S.unsubs.push(S.db.collection("members").onSnapshot((snap) => {
       S.isOwner = true; S.members = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.id.localeCompare(b.id));
-      $("accessBtn").hidden = false; if (!$("accessForm").hidden && !S.accEdit) renderAccess();
+      $("accessBtn").hidden = false; if (!$("accessForm").hidden) renderAccess();
     }, () => { S.isOwner = false; $("accessBtn").hidden = true; }));
     S.unsubs.push(S.db.collection("comments").orderBy("createdAt", "desc").limit(1000).onSnapshot((snap) => { S.comments = snap.docs.map((d) => ({ id: d.id, ...d.data() })); scheduleRender(); }, onErr()));
     S.unsubs.push(S.db.collection("reviews").orderBy("createdAt").limit(1000).onSnapshot((snap) => { S.reviews = snap.docs.map((d) => ({ id: d.id, ...d.data() })); scheduleRender(); }, onErr()));
@@ -3173,23 +3155,6 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
         location.protocol === "file:" ? "Вхід не працює з файлу на диску. Відкрийте сайт через GitHub Pages." :
         "Не вдалося увійти: " + ((e && e.message) || c || "невідома помилка");
     }
-  });
-  $("pwLogin").addEventListener("submit", async (e) => {
-    e.preventDefault(); $("login-err").textContent = "";
-    const login = $("lg-login").value.trim(), pass = $("lg-pass").value;
-    if (!login || !pass) { $("login-err").textContent = "Вкажіть логін і пароль."; (login ? $("lg-pass") : $("lg-login")).focus(); return; }
-    $("lg-submit").disabled = true;
-    try { await signInWithEmailAndPassword(auth, loginToEmail(login), pass); $("lg-pass").value = ""; }
-    catch (err) {
-      const c = err && err.code;
-      $("login-err").textContent =
-        ["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found", "auth/invalid-email", "auth/invalid-login-credentials"].includes(c) ? "Невірний логін або пароль." :
-        c === "auth/too-many-requests" ? "Забагато спроб. Спробуйте за кілька хвилин." :
-        c === "auth/user-disabled" ? "Цей вхід вимкнено. Зверніться до власника." :
-        c === "auth/operation-not-allowed" ? "Вхід за логіном ще не увімкнено у Firebase → Authentication → Sign-in method → Email/Password." :
-        c === "auth/network-request-failed" ? "Немає з’єднання з інтернетом." :
-        "Не вдалося увійти: " + ((err && err.message) || c || "невідома помилка");
-    } finally { $("lg-submit").disabled = false; }
   });
   $("logoutBtn").addEventListener("click", () => signOut(auth));
 
@@ -3277,123 +3242,49 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   $("migrate").addEventListener("click", (e) => { if (e.target.closest("#migrateBtn")) migrate(); });
 
   /* ================= access list (owner only) ================= */
-  /* members/{email}: kind "password" (login, password, uid, notify) — a login the owner made; otherwise a Google e-mail.
-     The owner can always see a password to remind a leader: these are access keys, not personal passwords. */
-  const genPass = () => { const a = "abcdefghjkmnpqrstuvwxyz23456789"; const r = crypto.getRandomValues(new Uint32Array(8)); return Array.from(r, (n) => a[n % a.length]).join(""); };
+  /* members/{email}: a Google e-mail (kind "google"). Old records with kind "password" (login, password, uid, notify)
+     are logins made before 12.11: they can no longer sign in, the owner only removes them. */
   const isPw = (m) => m.kind === "password";
-  const accKind = () => (document.querySelector('input[name="acc-kind"]:checked') || {}).value || "password";
-  const authFail = (err) => {
-    const c = err && err.code;
-    return c === "auth/email-already-in-use" ? "Такий логін уже зайнятий. Виберіть інший." :
-      c === "auth/weak-password" ? "Пароль має бути щонайменше 6 символів." :
-      c === "auth/operation-not-allowed" ? "Увімкніть вхід Email/Password у Firebase → Authentication → Sign-in method." :
-      c === "auth/invalid-email" ? "Логін може містити лише латинські літери, цифри, крапку, дефіс і _." :
-      ["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found", "auth/invalid-login-credentials"].includes(c) ? "Збережений пароль не підходить до акаунта. Видаліть цей вхід і створіть заново." :
-      c === "auth/too-many-requests" ? "Забагато спроб. Спробуйте за кілька хвилин." :
-      c && String(c).startsWith("auth/") ? "Не вдалося: " + ((err && err.message) || c) : failText(err);
-  };
   function renderAccess() {
-    const ed = S.accEdit || {};
     const row = (m) => {
       const id = esc(m.id), del = S.accConfirm === m.id;
       const x = `<button type="button" class="x${del ? " danger" : ""}" data-acc="del" data-id="${id}" title="Закрити доступ">${del ? "Закрити доступ?" : "✕"}</button>`;
-      if (!isPw(m)) return `<li><span class="acc-who"><b>${esc(m.id)}</b><small>вхід через Google</small></span><span class="acc-acts">${x}</span></li>`;
-      if (ed.id === m.id) {
-        const isPass = ed.field === "pass";
-        return `<li><span class="acc-who"><b>${esc(m.login)}</b><small>${isPass ? "новий пароль" : "пошта для нагадувань (порожньо — без листів)"}</small></span>
-          <span class="acc-acts"><input id="acc-edit" ${isPass ? 'maxlength="60" autocomplete="off" spellcheck="false"' : 'type="email" maxlength="120" autocomplete="off"'} value="${esc(isPass ? ed.value : (m.notify || ""))}" aria-label="${isPass ? "Новий пароль" : "Пошта для нагадувань"}">
-          <button type="button" class="btn primary" data-acc="save" data-id="${id}"${S.accBusy ? " disabled" : ""}>Зберегти</button><button type="button" class="btn" data-acc="cancel">Скасувати</button></span></li>`;
-      }
-      const shown = S.accShow && S.accShow[m.id];
-      return `<li><span class="acc-who"><b>${esc(m.login)}</b>
-          <small>пароль <code>${shown ? esc(m.password) : "••••••"}</code> · ${m.notify ? "нагадування на " + esc(m.notify) : "без листів-нагадувань"}</small></span>
-        <span class="acc-acts">
-          <button type="button" class="btn ghost" data-acc="show" data-id="${id}">${shown ? "Сховати" : "Показати пароль"}</button>
-          <button type="button" class="btn ghost" data-acc="pass" data-id="${id}">Новий пароль</button>
-          <button type="button" class="btn ghost" data-acc="notify" data-id="${id}">Пошта</button>${x}</span></li>`;
+      if (isPw(m)) return `<li><span class="acc-who"><b>${esc(m.login || m.id)}</b><small>старий вхід за логіном — вимкнено, можна прибрати</small></span><span class="acc-acts">${x}</span></li>`;
+      return `<li><span class="acc-who"><b>${esc(m.id)}</b><small>вхід через Google</small></span><span class="acc-acts">${x}</span></li>`;
     };
     $("accList").innerHTML = S.members.length ? S.members.map(row).join("") : `<li><span class="notice">Поки що доступ є тільки у вас.</span></li>`;
   }
-  function syncAccKind() {
-    const pw = accKind() === "password";
-    $("accPw").hidden = !pw; $("accGg").hidden = pw;
-    $("acc-submit").textContent = pw ? "Створити вхід" : "Відкрити доступ";
-    if (pw && !$("acc-pass").value) $("acc-pass").value = genPass();
-  }
-  $("accessForm").addEventListener("change", (e) => { if (e.target.name === "acc-kind") { $("acc-err").textContent = ""; syncAccKind(); } });
   $("accessBtn").addEventListener("click", () => {
-    const f = $("accessForm"); f.hidden = !f.hidden; S.accConfirm = null; S.accEdit = null; S.accShow = {}; $("acc-err").textContent = "";
-    if (!f.hidden) { $("addPersonForm").hidden = true; $("addProjectForm").hidden = true; syncAccKind(); renderAccess(); (accKind() === "password" ? $("acc-login") : $("acc-email")).focus(); }
+    const f = $("accessForm"); f.hidden = !f.hidden; S.accConfirm = null; $("acc-err").textContent = "";
+    if (!f.hidden) { $("addPersonForm").hidden = true; $("addProjectForm").hidden = true; renderAccess(); $("acc-email").focus(); }
   });
-  $("acc-close").addEventListener("click", () => { $("accessForm").hidden = true; S.accConfirm = null; S.accEdit = null; S.accShow = {}; });
+  $("acc-close").addEventListener("click", () => { $("accessForm").hidden = true; S.accConfirm = null; });
   $("accList").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-acc]"); if (!b || S.accBusy) return;
-    const act = b.dataset.acc, m = S.members.find((x) => x.id === b.dataset.id);
+    const m = S.members.find((x) => x.id === b.dataset.id);
     $("acc-err").textContent = "";
-    if (act === "cancel") { S.accEdit = null; renderAccess(); return; }
-    if (!m) return;
-    if (act === "show") { S.accShow = { ...S.accShow, [m.id]: !(S.accShow || {})[m.id] }; renderAccess(); return; }
-    if (act === "pass" || act === "notify") { S.accConfirm = null; S.accEdit = { id: m.id, field: act, value: act === "pass" ? genPass() : "" }; renderAccess(); const i = $("acc-edit"); if (i) { i.focus(); i.select(); } return; }
-    if (act === "save") {
-      const v = $("acc-edit").value.trim();
-      S.accBusy = true; renderAccess();
-      try {
-        if (S.accEdit.field === "pass") {
-          if (v.length < 6) throw { code: "auth/weak-password" };
-          await withHelper(async (a) => { const c = await signInWithEmailAndPassword(a, m.id, m.password); await updatePassword(c.user, v); });
-          await S.db.doc("members/" + m.id).update({ password: v });
-          S.accShow = { ...S.accShow, [m.id]: true };
-        } else {
-          if (v && !/^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(v)) throw { message: "Вкажіть пошту, напр. name@gmail.com, або залиште порожнім." };
-          await S.db.doc("members/" + m.id).update({ notify: v.toLowerCase() });
-        }
-        S.accEdit = null;
-      } catch (err) { $("acc-err").textContent = err && err.message && !err.code ? err.message : authFail(err); }
-      finally { S.accBusy = false; renderAccess(); }
-      return;
-    }
-    if (act === "del") {
-      if (S.accConfirm !== m.id) { S.accConfirm = m.id; S.accEdit = null; renderAccess(); return; }
-      S.accConfirm = null; S.accBusy = true;
-      try {
-        /* a login is removed together with its account, so the name can be given out again */
-        if (isPw(m)) { try { await withHelper(async (a) => { const c = await signInWithEmailAndPassword(a, m.id, m.password); await deleteUser(c.user); }); } catch { /* the access goes anyway */ } }
-        await S.db.doc("members/" + m.id).delete();
-      } catch (err) { $("acc-err").textContent = failText(err); }
-      finally { S.accBusy = false; renderAccess(); }
-    }
+    if (!m || b.dataset.acc !== "del") return;
+    if (S.accConfirm !== m.id) { S.accConfirm = m.id; renderAccess(); return; }
+    S.accConfirm = null; S.accBusy = true;
+    try {
+      /* an old login is removed together with its account (if Firebase still lets us sign in to it) */
+      if (isPw(m) && m.password) { try { await withHelper(async (a) => { const c = await signInWithEmailAndPassword(a, m.id, m.password); await deleteUser(c.user); }); } catch { /* the access goes anyway */ } }
+      await S.db.doc("members/" + m.id).delete();
+    } catch (err) { $("acc-err").textContent = failText(err); }
+    finally { S.accBusy = false; renderAccess(); }
   });
   $("accList").addEventListener("pointerleave", () => { if (S.accConfirm) { S.accConfirm = null; renderAccess(); } });
-  $("accList").addEventListener("keydown", (e) => { if (e.target.id === "acc-edit" && e.key === "Enter") { e.preventDefault(); const b = $("accList").querySelector('[data-acc="save"]'); if (b) b.click(); } if (e.key === "Escape" && S.accEdit) { S.accEdit = null; renderAccess(); } });
   $("accessForm").addEventListener("submit", async (e) => {
     e.preventDefault(); if (S.accBusy) return;
     const err = (t, el) => { $("acc-err").textContent = t; if (el) el.focus(); };
     const me = String((S.user && S.user.email) || "").toLowerCase();
-    if (accKind() === "google") {
-      const email = $("acc-email").value.trim().toLowerCase();
-      if (!/^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(email)) return err("Вкажіть пошту, напр. name@gmail.com.", $("acc-email"));
-      if (email === me) return err("Це ваша пошта: у вас доступ і так є.");
-      if (S.members.some((m) => m.id === email)) return err("Ця пошта вже має доступ.");
-      $("acc-err").textContent = "";
-      try { await S.db.doc("members/" + email).set({ kind: "google", email, addedAt: new Date().toISOString() }); $("acc-email").value = ""; }
-      catch (x) { err(failText(x)); }
-      return;
-    }
-    const login = $("acc-login").value.trim().toLowerCase(), pass = $("acc-pass").value.trim(), notify = $("acc-notify").value.trim().toLowerCase();
-    if (!/^[a-z0-9][a-z0-9._-]{1,29}$/.test(login)) return err("Логін: від 2 символів, латинські літери, цифри, крапка, дефіс або _.", $("acc-login"));
-    if (pass.length < 6) return err("Пароль має бути щонайменше 6 символів.", $("acc-pass"));
-    if (notify && !/^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(notify)) return err("Пошта для нагадувань виглядає неправильно (або залиште порожнім).", $("acc-notify"));
-    const email = loginToEmail(login);
-    if (S.members.some((m) => m.id === email)) return err("Такий логін уже є у списку.", $("acc-login"));
+    const email = $("acc-email").value.trim().toLowerCase();
+    if (!/^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(email)) return err("Вкажіть пошту, напр. name@gmail.com.", $("acc-email"));
+    if (email === me) return err("Це ваша пошта: у вас доступ і так є.");
+    if (S.members.some((m) => m.id === email)) return err("Ця пошта вже має доступ.");
     $("acc-err").textContent = ""; S.accBusy = true; $("acc-submit").disabled = true;
-    try {
-      /* account first, then the access record: there is no moment when a stranger could claim this login */
-      const newUid = await withHelper(async (a) => (await createUserWithEmailAndPassword(a, email, pass)).user.uid);
-      await S.db.doc("members/" + email).set({ kind: "password", login, email, uid: newUid, password: pass, notify, addedAt: new Date().toISOString() });
-      $("acc-login").value = ""; $("acc-notify").value = ""; $("acc-pass").value = genPass();
-      S.accShow = { ...S.accShow, [email]: true };
-      toast(`Вхід створено: ${login}`);
-    } catch (x) { err(authFail(x)); }
+    try { await S.db.doc("members/" + email).set({ kind: "google", email, addedAt: new Date().toISOString() }); $("acc-email").value = ""; toast(`Доступ відкрито: ${email}`); }
+    catch (x) { err(failText(x)); }
     finally { S.accBusy = false; $("acc-submit").disabled = false; renderAccess(); }
   });
 
@@ -3401,9 +3292,16 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     closeOrg(); stopData();
     curUid = u ? u.uid : null;
     Object.assign(S, { user: u, people: [], projects: [], projRaw: [], myPos: {}, localPos: {}, comments: [], reviews: [], links: [], selected: null, selProject: null,
-      loaded: false, denied: false, ui: {}, pui: {}, drafts: {}, isOwner: false, members: [], legacy: 0, migrating: false, migrateErr: "", accConfirm: null, accEdit: null, accShow: {}, accBusy: false });
+      loaded: false, denied: false, ui: {}, pui: {}, drafts: {}, isOwner: false, members: [], legacy: 0, migrating: false, migrateErr: "", accConfirm: null, accBusy: false });
     $("accessBtn").hidden = true; $("accessForm").hidden = true; renderMigrate();
     if (!u) { S.db = null; showLogin(true); return; }
+    if (isLoginAccount(u.email)) {
+      /* login + password is switched off: an old session of such an account is closed right away */
+      S.db = null; showLogin(true);
+      $("login-err").textContent = "Вхід за логіном і паролем вимкнено. Увійдіть через Google.";
+      signOut(auth).catch(() => {});
+      return;
+    }
     $("acct-email").textContent = shownName(u.email);
     S.db = FB; S.assets = {}; S.canWrite = true;
     showLogin(false);
