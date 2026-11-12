@@ -762,7 +762,6 @@ body.org-open { overflow: hidden; }
 .onote .on-name { font-family: var(--font-display); font-weight: 700; font-size: 1rem; overflow-wrap: anywhere; }
 .onote .on-role { font-style: italic; color: var(--ink-2); overflow-wrap: anywhere; }
 .onote .on-line b { font-family: var(--font-type); font-weight: 400; font-size: .7rem; color: var(--ink-2); }
-.onote .on-text { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 180px; overflow: auto; scrollbar-width: thin; }
 .org-legend { right: 12px; left: auto; }
 @media (max-width: 860px) {
   .org { padding: 0; }
@@ -2694,10 +2693,11 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   const orgErr = (e) => (e && e.denied ? "Немає дозволу на запис. Схоже, у Firebase ще не оновлено правила Firestore для дошки ієрархії." : failText(e));
   const myName = () => (S.user && (S.user.displayName || shownName(S.user.email))) || "";
   /* what other leaders may see about a person: nothing beyond this */
-  /* (since 12.11 also the role on this project and what the person did there — the owner allowed that) */
+  /* (since 12.11 also the role and period on this project; what the person did there stays personal —
+     jobText is kept empty so cards written before that get cleared) */
   const cardFields = (p, pid) => { const w = workOf(p, pid);
     return { name: p.name || "", role: p.role || "", photoKey: p.photoData ? String(hash(p.photoData)) : "", current: activeOf(p) === pid, ownerName: myName(),
-      jobRole: w.role || "", jobPeriod: w.period || "", jobText: w.text || "" }; };
+      jobRole: w.role || "", jobPeriod: w.period || "", jobText: "" }; };
   const thumbCache = new Map();
   function thumbOf(src) {
     if (!src) return Promise.resolve("");
@@ -2816,13 +2816,12 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
         ${mine || S.isOwner ? `<button type="button" class="x${conf ? " danger" : ""}" data-og="drop" data-id="${esc(c.id)}" aria-label="Зняти з дошки" title="${mine ? "Зняти з дошки: інші ліди її більше не бачитимуть" : "Зняти з дошки"}">${conf ? "Зняти?" : "✕"}</button>` : ""}
       </div>`;
     };
-    /* the note under a clicked card: role on the project and what the person did there (no pay, comments or statuses) */
+    /* the note under a clicked card: role and period on the project (no pay, comments, statuses or work description) */
     const selC = og.selCard && byId.get(og.selCard);
     const note = selC ? `<div class="onote" style="left:${selC.x}px;top:${selC.y + OCH + 10}px">
         <span class="on-kick">Довідка · ${isMineCard(selC) ? "ваша людина" : "лід: " + esc(selC.ownerName || "—")}</span>
         <span class="on-name">${esc(selC.name || "Без імені")}</span>${selC.role ? `<span class="on-role">${esc(selC.role)}</span>` : ""}
         <span class="on-line"><b>Роль на проєкті:</b> ${esc([selC.jobRole, selC.jobPeriod].filter(Boolean).join(" · ") || "—")}${selC.current === false ? " · раніше" : ""}</span>
-        <span class="on-text">${selC.jobText ? esc(selC.jobText) : `<span class="notice">Що робив(ла) — ще не описано</span>`}</span>
       </div>` : "";
     const selL = og.selLink && links.find((l) => l.id === og.selLink);
     const cut = selL && canCut(selL) ? (() => { const m = orgThread(byId.get(selL.a), byId.get(selL.b)).mid;
