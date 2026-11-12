@@ -708,6 +708,8 @@ body.org-open { overflow: hidden; }
 .otray img { pointer-events: none; -webkit-user-drag: none; }
 .otray.past { background: var(--noise), #e2ddd2; color: var(--ink-2); }
 .otray.lifted { opacity: .35; }
+.otray.ohid { cursor: pointer; }
+.org-hid-title { margin-top: 8px; }
 .ot-name { display: block; font-weight: 700; font-size: .84rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ot-role { display: block; font-size: .72rem; font-style: italic; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .org-board { position: relative; min-height: 0; min-width: 0; display: grid; }
@@ -999,7 +1001,7 @@ async function withHelper(fn) {
 /* Personal data lives in each leader's own drawer users/{uid}/…; projects (and the access list) are shared.
    The app keeps writing "people/…", "links/…" etc.; the adapter routes those paths into the drawer. */
 let curUid = null;
-const PERSONAL = new Set(["people", "comments", "reviews", "links", "boardPos"]);
+const PERSONAL = new Set(["people", "comments", "reviews", "links", "boardPos", "orgHidden"]);
 const mapPath = (path) => (curUid && PERSONAL.has(String(path).split("/")[0]) ? "users/" + curUid + "/" + path : path);
 
 /* Small adapter: the same db interface the app used inside claude.ai, backed by Firestore. */
@@ -2722,7 +2724,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const base = "projects/" + pid + "/";
     const fail = (k) => (e) => { if (S.og !== og) return; og.got[k] = true; og.loadErr = e && e.denied ? "Дошка ще не працює: у Firebase потрібно оновити правила Firestore (версія з дошкою ієрархії)." : failText(e); renderOrg(); };
     og.unsubs.push(S.db.collection(base + "org").onSnapshot((snap) => {
-      if (S.og !== og) return; og.all = snap.docs.map((d) => ({ id: d.id, ...d.data() })); og.cards = og.all.filter((c) => !c.off);
+      if (S.og !== og) return; og.all = snap.docs.map((d) => ({ id: d.id, ...d.data() })); og.cards = og.all;
       og.got.cards = true; og.loadErr = ""; orgRemember(pid, og.all); queueOrgSync(); renderOrg();
     }, fail("cards")));
     og.unsubs.push(S.db.collection(base + "orgLinks").onSnapshot((snap) => {
@@ -2754,19 +2756,25 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   }
   function drawOrgLines(over = {}) {
     const og = S.og, svg = $("orgLines"); if (!og || !svg) return;
-    const byId = new Map(og.cards.map((c) => [c.id, c]));
+    const hid = hiddenOf(og.pid), byId = new Map(og.cards.filter((c) => !hid.has(c.id)).map((c) => [c.id, c]));
     const posOf = (id) => over[id] || clampPos(byId.get(id).x, byId.get(id).y);
     svg.innerHTML = orgLinesHtml(og.links.filter((l) => byId.has(l.a) && byId.has(l.b)), posOf);
   }
   const orgHint = (n, leaders) => n
     ? `${n} ${plural(n, "людина", "людини", "людей")} на дошці${leaders > 1 ? ` · ${leaders} ${plural(leaders, "лід", "ліди", "лідів")}` : ""}. Тягніть нитку від шпильки до іншої картки; натисніть нитку, щоб зняти.`
     : "Люди, підв’язані до проєкту, з’являються тут самі — їх бачать усі ліди.";
+  /* cards this viewer hid for themselves (users/{uid}/orgHidden/{pid}: { ids }); everyone else still sees them */
+  const hiddenOf = (pid) => new Set((S.orgHidden && S.orgHidden[pid]) || []);
+  function orgSetHidden(pid, ids) {
+    S.orgHidden = { ...(S.orgHidden || {}), [pid]: ids }; renderOrg();
+    S.db.doc("orgHidden/" + pid).set({ ids, updatedAt: new Date().toISOString() }).catch((err) => orgSay(failText(err), true));
+  }
   function orgSay(text, warn) {
     const og = S.og; if (!og) return; og.msg = text; og.warn = !!warn;
     const m = $("orgMsg"); if (m) { m.textContent = text; m.classList.toggle("warn", !!warn); }
   }
-  /* my people on the project who are not on the board: taken off by hand (off), examples, or not added yet */
-  const orgTray = (og) => peopleOn(og.pid).filter((p) => { const c = og.all.find((x) => x.id === cardIdOf(p.id)); return !c || c.off; })
+  /* my people on the project who have no card: examples, or not added yet */
+  const orgTray = (og) => peopleOn(og.pid).filter((p) => !og.all.some((x) => x.id === cardIdOf(p.id)))
     .sort((a, b) => (activeOf(b) === og.pid) - (activeOf(a) === og.pid) || String(a.name).localeCompare(String(b.name), "uk"));
 
   function renderOrg() {
@@ -2795,7 +2803,8 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       </div>
     </div>`);
     orgSize();
-    const cards = og.cards.map((c) => ({ ...c, ...clampPos(c.x, c.y) }));
+    const hid = hiddenOf(og.pid), hiddenCards = og.cards.filter((c) => hid.has(c.id));
+    const cards = og.cards.filter((c) => !hid.has(c.id)).map((c) => ({ ...c, ...clampPos(c.x, c.y) }));
     const byId = new Map(cards.map((c) => [c.id, c]));
     [...cards].sort((a, b) => (Number(a.z) || 0) - (Number(b.z) || 0)).forEach((c, i) => { c.rank = i + 1; });
     const links = og.links.filter((l) => byId.has(l.a) && byId.has(l.b));
@@ -2805,15 +2814,15 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const team = peopleOn(og.pid), tray = orgTray(og);
     const leaders = new Set(cards.map((c) => c.owner)).size;
     const loading = !(og.got.cards && og.got.links);
-    const msg = og.loadErr || og.msg || (loading ? "Завантажуємо дошку…" : orgHint(cards.length, leaders));
+    const msg = og.loadErr || og.msg || (loading ? "Завантажуємо дошку…" : orgHint(cards.length, leaders) + (hiddenCards.length ? ` Сховано у вас: ${hiddenCards.length}.` : ""));
     const card = (c) => {
-      const mine = isMineCard(c), conf = og.confirm === c.id, past = c.current === false;
+      const mine = isMineCard(c), past = c.current === false;
       return `<div class="ocard ${mine ? "mine" : "theirs"}${past ? " past" : ""}${og.selCard === c.id ? " sel" : ""}" data-id="${esc(c.id)}" data-owner="${esc(c.ownerName || "")}"${mine ? ' tabindex="0"' : ""} style="left:${c.x}px;top:${c.y}px;z-index:${c.rank};--rot:${rotFor(c.id, 1.2).toFixed(2)}deg"
         title="${esc(mine ? "Натисніть — довідка. Перетягніть, щоб пересунути. Двічі клацніть, щоб відкрити справу." : "Натисніть — довідка. Картку розставляє " + (c.ownerName || "інший лід"))}">
         <span class="pin" title="Потягніть нитку до іншої картки"></span>
         <span class="avatar">${c.photo ? `<img src="${esc(c.photo)}" alt="">` : pixelFace(c.personId || c.id)}</span>
         <span class="oc-txt"><span class="oc-name">${esc(c.name || "Без імені")}</span><span class="oc-role">${esc([c.role, past ? "раніше" : ""].filter(Boolean).join(" · ") || "—")}</span>${mine ? "" : `<span class="oc-own">лід: ${esc(c.ownerName || "—")}</span>`}</span>
-        ${mine || S.isOwner ? `<button type="button" class="x${conf ? " danger" : ""}" data-og="drop" data-id="${esc(c.id)}" aria-label="Зняти з дошки" title="${mine ? "Зняти з дошки: інші ліди її більше не бачитимуть" : "Зняти з дошки"}">${conf ? "Зняти?" : "✕"}</button>` : ""}
+        <button type="button" class="x" data-og="hide" data-id="${esc(c.id)}" aria-label="Сховати у себе" title="Сховати у себе (інші ліди й далі бачать)">✕</button>
       </div>`;
     };
     /* the note under a clicked card: role and period on the project (no pay, comments, statuses or work description) */
@@ -2833,9 +2842,14 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     setHtml($("orgTray"), `<span class="org-tray-title">Мої люди на проєкті</span>
           ${!team.length ? `<p class="notice">У вас до цього проєкту ще ніхто не підв’язаний. Підв’яжіть людей у їхніх справах, розділ «Проєкти».</p>`
             : !tray.length ? `<p class="notice">Усі ваші люди вже на дошці — їх бачать усі ліди.</p>`
-            : `<p class="notice">Не на дошці — інші ліди їх не бачать:</p>` + tray.map((p) => { const past = activeOf(p) !== og.pid; return `<button type="button" class="otray${past ? " past" : ""}" data-pid="${esc(p.id)}" title="Перетягніть на дошку або натисніть">
+            : `<p class="notice">Ще не на дошці:</p>` + tray.map((p) => { const past = activeOf(p) !== og.pid; return `<button type="button" class="otray${past ? " past" : ""}" data-pid="${esc(p.id)}" title="Перетягніть на дошку або натисніть">
                 <span class="avatar">${faceHtml(p)}</span><span style="min-width:0"><span class="ot-name">${esc(p.name)}</span><span class="ot-role">${esc([p.role, past ? "раніше" : ""].filter(Boolean).join(" · ") || "—")}</span></span></button>`; }).join("")
-              + (tray.length > 1 ? `<button type="button" class="btn" data-og="all">Викласти всіх (${tray.length})</button>` : "")}`);
+              + (tray.length > 1 ? `<button type="button" class="btn" data-og="all">Викласти всіх (${tray.length})</button>` : "")}
+          ${hiddenCards.length ? `<span class="org-tray-title org-hid-title">Сховані у вас</span>
+            <p class="notice">Інші ліди їх бачать. Натисніть, щоб повернути:</p>
+            ${hiddenCards.map((c) => `<button type="button" class="otray ohid${c.current === false ? " past" : ""}" data-og="unhide" data-id="${esc(c.id)}" title="Показати на дошці">
+              <span class="avatar">${c.photo ? `<img src="${esc(c.photo)}" alt="">` : pixelFace(c.personId || c.id)}</span><span style="min-width:0"><span class="ot-name">${esc(c.name || "Без імені")}</span><span class="ot-role">${esc(isMineCard(c) ? (c.role || "—") : "лід: " + (c.ownerName || "—"))}</span></span></button>`).join("")}
+            ${hiddenCards.length > 1 ? `<button type="button" class="btn" data-og="unhide-all">Показати всіх (${hiddenCards.length})</button>` : ""}` : ""}`);
     setHtml($("orgStage"), `<svg class="org-lines" id="orgLines" aria-hidden="true">${orgLinesHtml(links, (id) => byId.get(id))}</svg>
             ${cards.map(card).join("")}
             ${cut}${note}
@@ -2926,15 +2940,13 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     try { await S.db.doc(`projects/${og.pid}/orgLinks/${id}`).set({ a: x, b: y, by: curUid, createdAt: new Date().toISOString() }); }
     catch (err) { orgSay(orgErr(err), true); }
   }
-  /* a card leaves the board together with its threads. My own card stays as a hidden record (off), so it is not
-     put back on its own; `hard` (person unlinked or deleted) and the owner removing someone else's card delete it */
-  async function orgDrop(id, hard) {
+  /* a card leaves the board together with its threads — only when its person is unlinked or deleted
+     (since 12.11 ✕ just hides a card for the viewer, nothing disappears for the others) */
+  async function orgDrop(id) {
     const og = S.og; if (!og) return; const pid = og.pid;
     const links = og.links.filter((l) => l.a === id || l.b === id);
-    const c = og.all.find((x) => x.id === id);
     try {
-      if (!hard && isMineCard(c)) await S.db.doc(`projects/${pid}/org/${id}`).update({ off: true });
-      else await S.db.doc(`projects/${pid}/org/${id}`).delete();
+      await S.db.doc(`projects/${pid}/org/${id}`).delete();
       for (const l of links) await S.db.doc(`projects/${pid}/orgLinks/${l.id}`).delete().catch(() => {});
     } catch (err) { orgSay(orgErr(err), true); }
   }
@@ -2947,9 +2959,10 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       og.busy.add(c.id);
       try {
         const p = S.people.find((x) => x.id === c.personId);
-        if (!p || !(p.projectIds || []).includes(og.pid)) { await orgDrop(c.id, true); continue; }
+        if (!p || !(p.projectIds || []).includes(og.pid)) { await orgDrop(c.id); continue; }
         const f = cardFields(p, og.pid), diff = {};
         for (const k of Object.keys(f)) if (c[k] !== f[k]) diff[k] = f[k];
+        if (c.off) diff.off = false; /* cards taken off for everyone before 12.11 evening come back */
         if ("photoKey" in diff) diff.photo = await thumbOf(p.photoData);
         if (Object.keys(diff).length && S.og === og) await S.db.doc(`projects/${og.pid}/org/${c.id}`).update(diff);
       } catch { /* the next snapshot retries */ }
@@ -2965,7 +2978,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   /* board closed: once a session per project, put my linked people on its board (free spot) and refresh my cards there */
   const orgKnown = new Map(); /* pid -> { ids: Set, taken: [{x,y}], z } | false (no rights) */
   function orgRemember(pid, docs) {
-    orgKnown.set(pid, { ids: new Set(docs.map((c) => c.id)), taken: docs.filter((c) => !c.off).map((c) => ({ x: Number(c.x) || 0, y: Number(c.y) || 0 })), z: Math.max(0, ...docs.map((c) => Number(c.z) || 0)) });
+    orgKnown.set(pid, { ids: new Set(docs.map((c) => c.id)), taken: docs.map((c) => ({ x: Number(c.x) || 0, y: Number(c.y) || 0 })), z: Math.max(0, ...docs.map((c) => Number(c.z) || 0)) });
   }
   function queueAutoPublish() { clearTimeout(S.autoPubT); S.autoPubT = setTimeout(orgAutoPublish, 1200); }
   async function orgAutoPublish() {
@@ -2991,6 +3004,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
             const p = list.find((x) => x.id === c.personId); if (!p) continue;
             const f = cardFields(p, pid), diff = {};
             for (const key of Object.keys(f)) if (c[key] !== f[key]) diff[key] = f[key];
+            if (c.off) diff.off = false;
             if ("photoKey" in diff) diff.photo = await thumbOf(p.photoData);
             if (Object.keys(diff).length) await S.db.doc(`projects/${pid}/org/${c.id}`).update(diff).catch(() => {});
           }
@@ -3138,7 +3152,9 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       if (act === "z100") { setZoom(1); return; }
       if (act === "zfit") { setZoom(fitZoom()); const w = $("orgWrap"); if (w) { w.scrollLeft = 0; w.scrollTop = 0; } return; }
       if (act === "all") { orgAddCards(orgTray(og).map((p) => [p])); return; }
-      if (act === "drop") { if (og.confirm !== id) { og.confirm = id; og.selLink = null; renderOrg(); return; } og.confirm = null; orgDrop(id); return; }
+      if (act === "hide") { og.selLink = null; og.selCard = null; const h = hiddenOf(og.pid); h.add(id); orgSetHidden(og.pid, [...h]); return; }
+      if (act === "unhide") { const h = hiddenOf(og.pid); h.delete(id); orgSetHidden(og.pid, [...h]); return; }
+      if (act === "unhide-all") { orgSetHidden(og.pid, []); return; }
       if (act === "cut") { og.selLink = null; renderOrg(); S.db.doc(`projects/${og.pid}/orgLinks/${id}`).delete().catch((err) => orgSay(orgErr(err), true)); return; }
       return;
     }
@@ -3210,6 +3226,11 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     S.unsubs.push(S.db.collection("projects").orderBy("name").onSnapshot((snap) => {
       S.projRaw = snap.docs.map((d) => ({ id: d.id, ...d.data() })); mark("projects"); mergeProjects(); queueAutoPublish();
     }, onErr("projects")));
+    /* which cards on the hierarchy boards this leader hid for themselves */
+    S.unsubs.push(S.db.collection("orgHidden").onSnapshot((snap) => {
+      S.orgHidden = {}; for (const d of snap.docs) S.orgHidden[d.id] = Array.isArray(d.data().ids) ? d.data().ids : [];
+      if (S.og) renderOrg();
+    }, onErr()));
     S.unsubs.push(S.db.collection("boardPos").onSnapshot((snap) => {
       S.myPos = {}; for (const d of snap.docs) S.myPos[d.id] = d.data(); mergeProjects();
     }, onErr()));
@@ -3381,7 +3402,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   onAuthStateChanged(auth, (u) => {
     closeOrg(); stopData(); orgKnown.clear(); clearTimeout(S.autoPubT);
     curUid = u ? u.uid : null;
-    Object.assign(S, { user: u, people: [], projects: [], projRaw: [], myPos: {}, localPos: {}, comments: [], reviews: [], links: [], selected: null, selProject: null,
+    Object.assign(S, { user: u, people: [], projects: [], projRaw: [], myPos: {}, orgHidden: {}, localPos: {}, comments: [], reviews: [], links: [], selected: null, selProject: null,
       loaded: false, denied: false, ui: {}, pui: {}, drafts: {}, isOwner: false, members: [], legacy: 0, migrating: false, migrateErr: "", accConfirm: null, accBusy: false });
     $("accessBtn").hidden = true; $("accessForm").hidden = true; renderMigrate();
     if (!u) { S.db = null; showLogin(true); return; }
