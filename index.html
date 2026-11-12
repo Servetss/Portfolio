@@ -753,6 +753,16 @@ body.org-open { overflow: hidden; }
 .oc-own { font-family: var(--font-type); font-size: .64rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ocard > .x { position: absolute; top: 1px; right: 1px; font-size: .72rem; padding: 0 5px; }
 .olink-x { position: absolute; z-index: 99999; transform: translate(-50%, -50%); padding: 4px 10px; font-size: .7rem; background: var(--paper); box-shadow: 0 3px 8px rgba(20, 10, 0, .45); }
+.ocard.sel { box-shadow: 0 0 0 2px var(--ink-2), 3px 8px 14px rgba(30, 15, 0, .45); }
+.onote {
+  position: absolute; z-index: 99998; width: 260px; display: grid; gap: 3px; padding: 10px 12px 11px; color: var(--ink); font-size: .82rem; line-height: 1.35;
+  background: var(--noise), var(--paper); box-shadow: 0 2px 0 rgba(0, 0, 0, .08), 3px 8px 14px rgba(30, 15, 0, .45); cursor: auto; animation: view-in var(--t-med) var(--ease);
+}
+.onote .on-kick { font-family: var(--font-type); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); overflow-wrap: anywhere; }
+.onote .on-name { font-family: var(--font-display); font-weight: 700; font-size: 1rem; overflow-wrap: anywhere; }
+.onote .on-role { font-style: italic; color: var(--ink-2); overflow-wrap: anywhere; }
+.onote .on-line b { font-family: var(--font-type); font-weight: 400; font-size: .7rem; color: var(--ink-2); }
+.onote .on-text { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 180px; overflow: auto; scrollbar-width: thin; }
 .org-legend { right: 12px; left: auto; }
 @media (max-width: 860px) {
   .org { padding: 0; }
@@ -960,7 +970,7 @@ img { max-width: 100%; }
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import { getAuth, initializeAuth, inMemoryPersistence, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, deleteUser, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-import { initializeFirestore, collection, query, orderBy, limit, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, getDocs, writeBatch, FieldPath, where } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import { initializeFirestore, collection, query, orderBy, limit, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, getDoc, getDocs, writeBatch, FieldPath, where } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCXokwMSeeqNRzo1UWKLY73bbEiXVFvsoE",
@@ -2437,7 +2447,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       const pid = S.ui.work; if (!pid) return;
       const entry = { role: $("wk-role").value.trim(), period: $("wk-period").value.trim(), text: $("wk-text").value.trim(), updatedAt: new Date().toISOString() };
       const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
-      try { await S.db.doc("people/" + p.id).update({ work: { [pid]: entry } }); clearDrafts("wk-role", "wk-period", "wk-text"); S.ui = { work: pid }; render(); }
+      try { await S.db.doc("people/" + p.id).update({ work: { [pid]: entry } }); orgPushPerson({ ...p, work: { ...(p.work || {}), [pid]: entry } }); clearDrafts("wk-role", "wk-period", "wk-text"); S.ui = { work: pid }; render(); }
       catch (err) { showErr("wk-err", err); btn.disabled = false; }
     } else if (f.id === "noteForm") {
       const text = $("note-text").value.trim(); if (!text) return;
@@ -2684,7 +2694,10 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   const orgErr = (e) => (e && e.denied ? "Немає дозволу на запис. Схоже, у Firebase ще не оновлено правила Firestore для дошки ієрархії." : failText(e));
   const myName = () => (S.user && (S.user.displayName || shownName(S.user.email))) || "";
   /* what other leaders may see about a person: nothing beyond this */
-  const cardFields = (p, pid) => ({ name: p.name || "", role: p.role || "", photoKey: p.photoData ? String(hash(p.photoData)) : "", current: activeOf(p) === pid, ownerName: myName() });
+  /* (since 12.11 also the role on this project and what the person did there — the owner allowed that) */
+  const cardFields = (p, pid) => { const w = workOf(p, pid);
+    return { name: p.name || "", role: p.role || "", photoKey: p.photoData ? String(hash(p.photoData)) : "", current: activeOf(p) === pid, ownerName: myName(),
+      jobRole: w.role || "", jobPeriod: w.period || "", jobText: w.text || "" }; };
   const thumbCache = new Map();
   function thumbOf(src) {
     if (!src) return Promise.resolve("");
@@ -2705,11 +2718,12 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   function openOrg(pid) {
     if (!S.db || !curUid || !projById(pid)) return;
     if (S.og) closeOrg();
-    const og = S.og = { pid, cards: [], links: [], got: {}, unsubs: [], confirm: null, selLink: null, msg: "", warn: false, loadErr: "", busy: new Set(), drag: null, scale: 1, back: document.activeElement };
+    const og = S.og = { pid, cards: [], all: [], links: [], got: {}, unsubs: [], adding: new Set(), confirm: null, selLink: null, selCard: null, msg: "", warn: false, loadErr: "", busy: new Set(), drag: null, scale: 1, back: document.activeElement };
     const base = "projects/" + pid + "/";
     const fail = (k) => (e) => { if (S.og !== og) return; og.got[k] = true; og.loadErr = e && e.denied ? "Дошка ще не працює: у Firebase потрібно оновити правила Firestore (версія з дошкою ієрархії)." : failText(e); renderOrg(); };
     og.unsubs.push(S.db.collection(base + "org").onSnapshot((snap) => {
-      if (S.og !== og) return; og.cards = snap.docs.map((d) => ({ id: d.id, ...d.data() })); og.got.cards = true; og.loadErr = ""; queueOrgSync(); renderOrg();
+      if (S.og !== og) return; og.all = snap.docs.map((d) => ({ id: d.id, ...d.data() })); og.cards = og.all.filter((c) => !c.off);
+      og.got.cards = true; og.loadErr = ""; orgRemember(pid, og.all); queueOrgSync(); renderOrg();
     }, fail("cards")));
     og.unsubs.push(S.db.collection(base + "orgLinks").onSnapshot((snap) => {
       if (S.og !== og) return; og.links = snap.docs.map((d) => ({ id: d.id, ...d.data() })); og.got.links = true; renderOrg();
@@ -2746,12 +2760,13 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   }
   const orgHint = (n, leaders) => n
     ? `${n} ${plural(n, "людина", "людини", "людей")} на дошці${leaders > 1 ? ` · ${leaders} ${plural(leaders, "лід", "ліди", "лідів")}` : ""}. Тягніть нитку від шпильки до іншої картки; натисніть нитку, щоб зняти.`
-    : "Перетягніть своїх людей з панелі ліворуч на дошку.";
+    : "Люди, підв’язані до проєкту, з’являються тут самі — їх бачать усі ліди.";
   function orgSay(text, warn) {
     const og = S.og; if (!og) return; og.msg = text; og.warn = !!warn;
     const m = $("orgMsg"); if (m) { m.textContent = text; m.classList.toggle("warn", !!warn); }
   }
-  const orgTray = (og) => peopleOn(og.pid).filter((p) => !og.cards.some((c) => c.id === cardIdOf(p.id)))
+  /* my people on the project who are not on the board: taken off by hand (off), examples, or not added yet */
+  const orgTray = (og) => peopleOn(og.pid).filter((p) => { const c = og.all.find((x) => x.id === cardIdOf(p.id)); return !c || c.off; })
     .sort((a, b) => (activeOf(b) === og.pid) - (activeOf(a) === og.pid) || String(a.name).localeCompare(String(b.name), "uk"));
 
   function renderOrg() {
@@ -2786,20 +2801,29 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const links = og.links.filter((l) => byId.has(l.a) && byId.has(l.b));
     if (og.selLink && !links.some((l) => l.id === og.selLink)) og.selLink = null;
     if (og.confirm && !byId.has(og.confirm)) og.confirm = null;
+    if (og.selCard && !byId.has(og.selCard)) og.selCard = null;
     const team = peopleOn(og.pid), tray = orgTray(og);
     const leaders = new Set(cards.map((c) => c.owner)).size;
     const loading = !(og.got.cards && og.got.links);
     const msg = og.loadErr || og.msg || (loading ? "Завантажуємо дошку…" : orgHint(cards.length, leaders));
     const card = (c) => {
       const mine = isMineCard(c), conf = og.confirm === c.id, past = c.current === false;
-      return `<div class="ocard ${mine ? "mine" : "theirs"}${past ? " past" : ""}" data-id="${esc(c.id)}"${mine ? ' tabindex="0"' : ""} style="left:${c.x}px;top:${c.y}px;z-index:${c.rank};--rot:${rotFor(c.id, 1.2).toFixed(2)}deg"
-        title="${esc(mine ? "Перетягніть, щоб пересунути. Двічі клацніть, щоб відкрити справу." : "Картку розставляє " + (c.ownerName || "інший лід"))}">
+      return `<div class="ocard ${mine ? "mine" : "theirs"}${past ? " past" : ""}${og.selCard === c.id ? " sel" : ""}" data-id="${esc(c.id)}" data-owner="${esc(c.ownerName || "")}"${mine ? ' tabindex="0"' : ""} style="left:${c.x}px;top:${c.y}px;z-index:${c.rank};--rot:${rotFor(c.id, 1.2).toFixed(2)}deg"
+        title="${esc(mine ? "Натисніть — довідка. Перетягніть, щоб пересунути. Двічі клацніть, щоб відкрити справу." : "Натисніть — довідка. Картку розставляє " + (c.ownerName || "інший лід"))}">
         <span class="pin" title="Потягніть нитку до іншої картки"></span>
         <span class="avatar">${c.photo ? `<img src="${esc(c.photo)}" alt="">` : pixelFace(c.personId || c.id)}</span>
         <span class="oc-txt"><span class="oc-name">${esc(c.name || "Без імені")}</span><span class="oc-role">${esc([c.role, past ? "раніше" : ""].filter(Boolean).join(" · ") || "—")}</span>${mine ? "" : `<span class="oc-own">лід: ${esc(c.ownerName || "—")}</span>`}</span>
-        ${mine || S.isOwner ? `<button type="button" class="x${conf ? " danger" : ""}" data-og="drop" data-id="${esc(c.id)}" aria-label="Зняти з дошки" title="Зняти з дошки">${conf ? "Зняти?" : "✕"}</button>` : ""}
+        ${mine || S.isOwner ? `<button type="button" class="x${conf ? " danger" : ""}" data-og="drop" data-id="${esc(c.id)}" aria-label="Зняти з дошки" title="${mine ? "Зняти з дошки: інші ліди її більше не бачитимуть" : "Зняти з дошки"}">${conf ? "Зняти?" : "✕"}</button>` : ""}
       </div>`;
     };
+    /* the note under a clicked card: role on the project and what the person did there (no pay, comments or statuses) */
+    const selC = og.selCard && byId.get(og.selCard);
+    const note = selC ? `<div class="onote" style="left:${selC.x}px;top:${selC.y + OCH + 10}px">
+        <span class="on-kick">Довідка · ${isMineCard(selC) ? "ваша людина" : "лід: " + esc(selC.ownerName || "—")}</span>
+        <span class="on-name">${esc(selC.name || "Без імені")}</span>${selC.role ? `<span class="on-role">${esc(selC.role)}</span>` : ""}
+        <span class="on-line"><b>Роль на проєкті:</b> ${esc([selC.jobRole, selC.jobPeriod].filter(Boolean).join(" · ") || "—")}${selC.current === false ? " · раніше" : ""}</span>
+        <span class="on-text">${selC.jobText ? esc(selC.jobText) : `<span class="notice">Що робив(ла) — ще не описано</span>`}</span>
+      </div>` : "";
     const selL = og.selLink && links.find((l) => l.id === og.selLink);
     const cut = selL && canCut(selL) ? (() => { const m = orgThread(byId.get(selL.a), byId.get(selL.b)).mid;
       return `<button type="button" class="btn olink-x" data-og="cut" data-id="${esc(selL.id)}" style="left:${m.x.toFixed(0)}px;top:${m.y.toFixed(0)}px">✕ Зняти нитку</button>`; })() : "";
@@ -2809,15 +2833,15 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
         <button type="button" class="btn" data-og="close" title="Закрити (Esc)">Закрити</button>`);
     setHtml($("orgTray"), `<span class="org-tray-title">Мої люди на проєкті</span>
           ${!team.length ? `<p class="notice">У вас до цього проєкту ще ніхто не підв’язаний. Підв’яжіть людей у їхніх справах, розділ «Проєкти».</p>`
-            : !tray.length ? `<p class="notice">Усі ваші люди вже на дошці.</p>`
-            : tray.map((p) => { const past = activeOf(p) !== og.pid; return `<button type="button" class="otray${past ? " past" : ""}" data-pid="${esc(p.id)}" title="Перетягніть на дошку або натисніть">
+            : !tray.length ? `<p class="notice">Усі ваші люди вже на дошці — їх бачать усі ліди.</p>`
+            : `<p class="notice">Не на дошці — інші ліди їх не бачать:</p>` + tray.map((p) => { const past = activeOf(p) !== og.pid; return `<button type="button" class="otray${past ? " past" : ""}" data-pid="${esc(p.id)}" title="Перетягніть на дошку або натисніть">
                 <span class="avatar">${faceHtml(p)}</span><span style="min-width:0"><span class="ot-name">${esc(p.name)}</span><span class="ot-role">${esc([p.role, past ? "раніше" : ""].filter(Boolean).join(" · ") || "—")}</span></span></button>`; }).join("")
               + (tray.length > 1 ? `<button type="button" class="btn" data-og="all">Викласти всіх (${tray.length})</button>` : "")}`);
     setHtml($("orgStage"), `<svg class="org-lines" id="orgLines" aria-hidden="true">${orgLinesHtml(links, (id) => byId.get(id))}</svg>
             ${cards.map(card).join("")}
-            ${cut}
+            ${cut}${note}
             <svg class="org-rubber" id="orgRubber" aria-hidden="true"></svg>
-            ${!cards.length ? `<p class="org-empty cork-empty">${loading ? "Завантажуємо дошку…" : og.loadErr ? "" : "Дошка порожня. Перетягніть людей з панелі ліворуч або натисніть на них."}</p>` : ""}`);
+            ${!cards.length ? `<p class="org-empty cork-empty">${loading ? "Завантажуємо дошку…" : og.loadErr ? "" : "Дошка порожня. Люди, підв’язані до проєкту, з’являються тут самі."}</p>` : ""}`);
     fitOrg();
   }
   /* scale: the board's width of OW units fits the cork, between 70% and 100%. Size: the whole visible cork,
@@ -2872,10 +2896,10 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     wrap.scrollLeft += r2.left + p.x * og.scale - cx; wrap.scrollTop += r2.top + p.y * og.scale - cy;
   }
   const orgPoint = (x, y) => { const r = $("orgStage").getBoundingClientRect(), s = (S.og && S.og.scale) || 1; return { x: (x - r.left) / s, y: (y - r.top) / s }; };
-  function freeSpot(taken) {
+  function freeSpot(taken, W = boardW(), H = boardH()) {
     const SX = OCW + 34, SY = OCH + 56;
     /* first free cell of the visible cork, row by row; past its bottom the board simply grows */
-    for (let y = 40; y < boardH() + 4000; y += SY) for (let x = 30; x + OCW <= boardW(); x += SX)
+    for (let y = 40; y < H + 4000; y += SY) for (let x = 30; x + OCW <= W; x += SX)
       if (!taken.some((t) => x < t.x + OCW + 12 && x + OCW + 12 > t.x && y < t.y + OCH + 12 && y + OCH + 12 > t.y)) return { x, y };
     return { x: 30, y: 40 };
   }
@@ -2903,12 +2927,15 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     try { await S.db.doc(`projects/${og.pid}/orgLinks/${id}`).set({ a: x, b: y, by: curUid, createdAt: new Date().toISOString() }); }
     catch (err) { orgSay(orgErr(err), true); }
   }
-  /* a card leaves the board together with its threads */
-  async function orgDrop(id) {
+  /* a card leaves the board together with its threads. My own card stays as a hidden record (off), so it is not
+     put back on its own; `hard` (person unlinked or deleted) and the owner removing someone else's card delete it */
+  async function orgDrop(id, hard) {
     const og = S.og; if (!og) return; const pid = og.pid;
     const links = og.links.filter((l) => l.a === id || l.b === id);
+    const c = og.all.find((x) => x.id === id);
     try {
-      await S.db.doc(`projects/${pid}/org/${id}`).delete();
+      if (!hard && isMineCard(c)) await S.db.doc(`projects/${pid}/org/${id}`).update({ off: true });
+      else await S.db.doc(`projects/${pid}/org/${id}`).delete();
       for (const l of links) await S.db.doc(`projects/${pid}/orgLinks/${l.id}`).delete().catch(() => {});
     } catch (err) { orgSay(orgErr(err), true); }
   }
@@ -2916,12 +2943,12 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   function queueOrgSync() { clearTimeout(S.orgSyncT); S.orgSyncT = setTimeout(orgSync, 300); }
   async function orgSync() {
     const og = S.og; if (!og || !og.got.cards || !S.loaded || S.denied || !curUid) return;
-    for (const c of og.cards) {
+    for (const c of og.all) {
       if (!isMineCard(c) || og.busy.has(c.id)) continue;
       og.busy.add(c.id);
       try {
         const p = S.people.find((x) => x.id === c.personId);
-        if (!p || !(p.projectIds || []).includes(og.pid)) { await orgDrop(c.id); continue; }
+        if (!p || !(p.projectIds || []).includes(og.pid)) { await orgDrop(c.id, true); continue; }
         const f = cardFields(p, og.pid), diff = {};
         for (const k of Object.keys(f)) if (c[k] !== f[k]) diff[k] = f[k];
         if ("photoKey" in diff) diff.photo = await thumbOf(p.photoData);
@@ -2929,6 +2956,59 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       } catch { /* the next snapshot retries */ }
       finally { og.busy.delete(c.id); }
     }
+    /* everyone linked to the project shows up on the board by itself (examples and cards taken off by hand stay off) */
+    const missing = peopleOn(og.pid).filter((p) => !p.isExample && !og.adding.has(p.id) && !og.all.some((c) => c.id === cardIdOf(p.id)));
+    if (missing.length && S.og === og) {
+      missing.forEach((p) => og.adding.add(p.id));
+      try { await orgAddCards(missing.map((p) => [p])); } finally { missing.forEach((p) => og.adding.delete(p.id)); }
+    }
+  }
+  /* board closed: once a session per project, put my linked people on its board (free spot) and refresh my cards there */
+  const orgKnown = new Map(); /* pid -> { ids: Set, taken: [{x,y}], z } | false (no rights) */
+  function orgRemember(pid, docs) {
+    orgKnown.set(pid, { ids: new Set(docs.map((c) => c.id)), taken: docs.filter((c) => !c.off).map((c) => ({ x: Number(c.x) || 0, y: Number(c.y) || 0 })), z: Math.max(0, ...docs.map((c) => Number(c.z) || 0)) });
+  }
+  function queueAutoPublish() { clearTimeout(S.autoPubT); S.autoPubT = setTimeout(orgAutoPublish, 1200); }
+  async function orgAutoPublish() {
+    if (!S.loaded || S.denied || !curUid || !S.db) return;
+    if (S.autoPubBusy) { S.autoPubAgain = true; return; }
+    S.autoPubBusy = true; const uid = curUid;
+    try {
+      const by = new Map();
+      for (const p of S.people) if (!p.isExample) for (const pid of linkedIds(p)) { if (!by.has(pid)) by.set(pid, []); by.get(pid).push(p); }
+      for (const [pid, list] of by) {
+        if (curUid !== uid) return;
+        if (S.og && S.og.pid === pid) continue; /* the open board does this itself */
+        let k = orgKnown.get(pid); if (k === false) continue;
+        if (!k) {
+          let docs;
+          try { docs = (await getDocs(collection(fdb, `projects/${pid}/org`))).docs.map((d) => ({ id: d.id, ...d.data() })); }
+          catch { orgKnown.set(pid, false); continue; }
+          if (curUid !== uid) return;
+          orgRemember(pid, docs); k = orgKnown.get(pid);
+          /* my existing cards there follow my dossiers (name, position, photo, role and description on the project) */
+          for (const c of docs) {
+            if (!isMineCard(c)) continue;
+            const p = list.find((x) => x.id === c.personId); if (!p) continue;
+            const f = cardFields(p, pid), diff = {};
+            for (const key of Object.keys(f)) if (c[key] !== f[key]) diff[key] = f[key];
+            if ("photoKey" in diff) diff.photo = await thumbOf(p.photoData);
+            if (Object.keys(diff).length) await S.db.doc(`projects/${pid}/org/${c.id}`).update(diff).catch(() => {});
+          }
+        }
+        for (const p of list) {
+          const id = cardIdOf(p.id); if (k.ids.has(id)) continue;
+          k.ids.add(id);
+          try {
+            const ref = doc(fdb, `projects/${pid}/org/${id}`);
+            if ((await getDoc(ref)).exists()) continue; /* another tab or device of mine was quicker */
+            const pos = freeSpot(k.taken, OW, OH); k.taken.push(pos);
+            const photo = await thumbOf(p.photoData);
+            await setDoc(ref, { owner: uid, personId: p.id, ...cardFields(p, pid), photo, x: pos.x, y: pos.y, z: ++k.z, addedAt: new Date().toISOString() });
+          } catch { k.ids.delete(id); }
+        }
+      }
+    } finally { S.autoPubBusy = false; if (S.autoPubAgain) { S.autoPubAgain = false; queueAutoPublish(); } }
   }
   /* board closed: best-effort updates straight to the boards a person may be on (a missing card is fine) */
   async function orgPushPerson(p) {
@@ -2939,6 +3019,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   async function orgDropRemote(pid, personId) {
     if (!curUid || !pid) return;
     const id = cardIdOf(personId), base = `projects/${pid}/`;
+    const k = orgKnown.get(pid); if (k) k.ids.delete(id);
     try {
       for (const f of ["a", "b"]) { const sn = await getDocs(query(collection(fdb, base + "orgLinks"), where(f, "==", id))); for (const d of sn.docs) await deleteDoc(d.ref).catch(() => {}); }
       await deleteDoc(doc(fdb, base + "org/" + id));
@@ -2954,13 +3035,14 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   $("org").addEventListener("pointerdown", (e) => {
     const og = S.og; if (!og || e.button !== 0 || og.drag || !e.target.closest) return;
     const t = e.target;
-    if (t.closest("[data-og], .olink-x")) return;
+    if (t.closest("[data-og], .olink-x, .onote")) return;
     const cardEl = t.closest(".ocard"), item = t.closest(".otray");
     const base = { pointer: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false, vx: 0, lx: e.clientX, vt: performance.now() };
     if (cardEl && t.closest(".pin")) { e.preventDefault(); og.drag = { ...base, kind: "line", from: cardEl.dataset.id, el: cardEl }; return; }
     if (cardEl) {
       const c = og.cards.find((x) => x.id === cardEl.dataset.id); if (!c) return;
-      if (!isMineCard(c)) { orgSay(`Цю картку розставляє ${c.ownerName || "інший лід"}. Нитку від неї можна потягнути за шпильку.`); replay(cardEl, "denied"); return; }
+      /* someone else's card: a click opens its note, an attempt to drag it shakes it */
+      if (!isMineCard(c)) { og.drag = { ...base, kind: "peek", id: c.id, el: cardEl }; return; }
       const p = orgPoint(e.clientX, e.clientY);
       og.drag = { ...base, kind: "move", id: c.id, el: cardEl, ox: cardEl.offsetLeft, oy: cardEl.offsetTop, gx: p.x - cardEl.offsetLeft, gy: p.y - cardEl.offsetTop };
       return;
@@ -2975,8 +3057,12 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
     if (!d.moved) {
       if (Math.hypot(dx, dy) < 5) return;
+      if (d.kind === "peek") {
+        og.drag = null; orgSay(`Цю картку розставляє ${d.el.dataset.owner || "інший лід"}. Нитку від неї можна потягнути за шпильку.`); replay(d.el, "denied");
+        if (og.pending) renderOrg(); return;
+      }
       d.moved = true;
-      if (og.selLink || og.confirm) { og.selLink = null; og.confirm = null; const x = $("org").querySelector(".olink-x"); if (x) x.remove(); }
+      if (og.selLink || og.confirm || og.selCard) { og.selLink = null; og.confirm = null; og.selCard = null; for (const x of $("org").querySelectorAll(".olink-x, .onote")) x.remove(); }
       try { d.el.setPointerCapture(d.pointer); } catch {}
       if (d.kind === "move") { d.el.classList.add("dragging"); hang(d.el, d, rotFor(d.id, 1.2)); }
       else if (d.kind === "line") d.el.classList.add("from");
@@ -3028,6 +3114,9 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       const c = og.cards.find((x) => x.id === d.id); if (c) Object.assign(c, { x: d.x, y: d.y, z });
       S.db.doc(`projects/${og.pid}/org/${d.id}`).update({ x: d.x, y: d.y, z }).catch((err) => orgSay(orgErr(err), true));
     } else if (d.kind === "move" && d.moved) { d.el.classList.remove("dragging"); letGo(d.el, false); og.pending = true; }
+    else if ((d.kind === "move" || d.kind === "peek") && !d.moved && e.type !== "pointercancel") {
+      og.selCard = og.selCard === d.id ? null : d.id; og.selLink = null; og.confirm = null; og.pending = true; og.justDragged = true; setTimeout(() => { og.justDragged = false; }, 0);
+    }
     else if (d.kind === "line" && d.moved && d.toEl) orgLink(d.from, d.toEl.dataset.id);
     else if (d.kind === "line" && !d.moved) orgSay("Тягніть від шпильки до іншої картки, щоб натягнути нитку.");
     else if (d.kind === "tray" && e.type !== "pointercancel") {
@@ -3057,11 +3146,12 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const g = e.target.closest("[data-link]");
     if (g) {
       const l = og.links.find((x) => x.id === g.dataset.link);
-      og.selLink = og.selLink === g.dataset.link ? null : g.dataset.link; og.confirm = null;
+      og.selLink = og.selLink === g.dataset.link ? null : g.dataset.link; og.confirm = null; og.selCard = null;
       if (l && og.selLink && !canCut(l)) orgSay("Цю нитку між чужими картками може зняти лише їхній лід.");
       renderOrg(); return;
     }
-    if (og.selLink || og.confirm) { og.selLink = null; og.confirm = null; renderOrg(); }
+    if (e.target.closest(".onote")) return;
+    if (og.selLink || og.confirm || og.selCard) { og.selLink = null; og.confirm = null; og.selCard = null; renderOrg(); }
   });
   /* "Зняти?" resets once the pointer leaves it, like the other two-click deletes */
   $("org").addEventListener("pointerout", (e) => {
@@ -3078,7 +3168,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
     const og = S.og; if (!og) return;
     if (e.key === "Escape") {
       if (og.drag) return;
-      if (og.selLink || og.confirm) { og.selLink = null; og.confirm = null; renderOrg(); } else closeOrg();
+      if (og.selLink || og.confirm || og.selCard) { og.selLink = null; og.confirm = null; og.selCard = null; renderOrg(); } else closeOrg();
       return;
     }
     const el = e.target.closest && e.target.closest(".ocard.mine");
@@ -3108,6 +3198,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       if (!S.selected && S.people.length && !window.matchMedia("(max-width: 860px)").matches) S.selected = S.people[0].id;
       if (S.selected && !S.people.some((p) => p.id === S.selected)) S.selected = null;
       if (S.og) queueOrgSync();
+      queueAutoPublish();
       scheduleRender();
     }, onErr("people")));
     /* shared projects + this leader's own card positions (the project's old shared pos is only a fallback) */
@@ -3118,7 +3209,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
       scheduleRender();
     };
     S.unsubs.push(S.db.collection("projects").orderBy("name").onSnapshot((snap) => {
-      S.projRaw = snap.docs.map((d) => ({ id: d.id, ...d.data() })); mark("projects"); mergeProjects();
+      S.projRaw = snap.docs.map((d) => ({ id: d.id, ...d.data() })); mark("projects"); mergeProjects(); queueAutoPublish();
     }, onErr("projects")));
     S.unsubs.push(S.db.collection("boardPos").onSnapshot((snap) => {
       S.myPos = {}; for (const d of snap.docs) S.myPos[d.id] = d.data(); mergeProjects();
@@ -3289,7 +3380,7 @@ const FB = { collection: (p) => colApi(p), doc: (p) => docApi(p) };
   });
 
   onAuthStateChanged(auth, (u) => {
-    closeOrg(); stopData();
+    closeOrg(); stopData(); orgKnown.clear(); clearTimeout(S.autoPubT);
     curUid = u ? u.uid : null;
     Object.assign(S, { user: u, people: [], projects: [], projRaw: [], myPos: {}, localPos: {}, comments: [], reviews: [], links: [], selected: null, selProject: null,
       loaded: false, denied: false, ui: {}, pui: {}, drafts: {}, isOwner: false, members: [], legacy: 0, migrating: false, migrateErr: "", accConfirm: null, accBusy: false });
